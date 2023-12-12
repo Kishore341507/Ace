@@ -32,7 +32,7 @@ class MyBot(commands.Bot):
         
         self.db = await asyncpg.create_pool(dsn= os.environ.get(f"DB"))
         print("Connection to db DONE!")
-
+ 
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
 
