@@ -1,0 +1,12 @@
+# Ignore .env files
+*.env
+.env
+
+# Ignore .json files
+*.json
+
+#ignore python build files
+__pycache__
+
+#vertual env
+.venv

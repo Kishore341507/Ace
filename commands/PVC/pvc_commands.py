@@ -1,0 +1,630 @@
+import discord
+from discord.ext import commands
+import asyncio
+from database import *
+from discord.ext.commands import BucketType, cooldown
+from datetime import datetime
+# import traceback
+import typing
+
+class PVC_COMMANDS(commands.Cog):
+
+    def __init__(self , client):
+        self.client = client
+    
+    async def check_channel(ctx) ->bool : 
+        return (client.data[ctx.guild.id]['pvc']) and (client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id or client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels']) 
+
+
+    @commands.hybrid_command()
+    @commands.guild_only()
+    @commands.check(check_perms)
+    async def pvcs(self , ctx):
+        embed = bembed()
+        data = await client.db.fetch('SELECT * FROM pvcs WHERE guild_id = $1 ', ctx.guild.id)
+        if data is None :
+            embed.description = "No Active Pvc In Server"
+            await ctx.send(embed = embed)
+            return 
+        options = []
+        i = 1
+        for pvc in data :
+            if ctx.guild.get_channel(pvc['vcid']) :
+                time = f"End <t:{ int(datetime.now().timestamp() + (pvc['duration']))}:R>"
+                if pvc['auto'] :
+                    time = f"🛺 PAYG Enabled"
+                embed.add_field(name = f"{i}. {ctx.guild.get_channel(pvc['vcid']).name}" , value = f"Owner {ctx.guild.get_member(pvc['id']).mention if ctx.guild.get_member(pvc['id']) else pvc['id']}\n{time}")
+                i += 1
+                options.append( discord.SelectOption(label =  ctx.guild.get_channel(pvc['vcid']).name , value =  ctx.guild.get_channel(pvc['vcid']).id ) )
+        
+        async def delete_pvc( id , refund = True , reason = None ) :
+            info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE vcid = $1 ', id)
+            if info == None or ctx.guild.get_channel(id) is None :
+                return
+            try :
+                await ctx.guild.get_channel(id).delete( reason = reason )
+                await client.db.execute("DELETE FROM pvcs WHERE vcid = $1" , id)
+            except :
+                pass
+            if refund :
+                await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[ctx.guild.id]['rate']/3600)) , info['id'] , ctx.guild.id )
+    
+
+        view = discord.ui.View()
+        select = discord.ui.Select(placeholder = "Select VC You Want TO Delete" , options = options )
+        async def delete_single( interaction ):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message( embed = bembed("Not Your Interaction"), ephemeral = True)
+                return
+            
+            id = int(select.values[0])
+            view1 = Confirm()
+            await interaction.response.send_message( embed = bembed(f"Are You Sure ? You want to delete <#{id}> ?") , view = view1 ,ephemeral = True)
+            await view1.wait()
+            if view1.value :
+                view2 = Confirm()
+                await interaction.followup.send( embed = bembed(f"Do You Want To Refund {pvc_coin(ctx.guild.id)[1]}'s To User ?") , view = view2 ,  ephemeral = True)
+                await view2.wait()
+                if view2.value :
+                    await delete_pvc(id , True , f"PVC Delete By {ctx.author} With Refund")
+                elif view2.value is False :
+                    await delete_pvc(id , False , f"PVC Delete By {ctx.author} Without Refund")
+                await interaction.followup.send(embed = bembed("✅ Done") , ephemeral = True)
+        select.callback = delete_single
+        
+        view.add_item(select)
+        delete = discord.ui.Button( style = discord.ButtonStyle.danger , emoji = "🗑️" )
+        
+        async def delete_multi( interaction ):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message( embed = bembed("Not Your Interaction"), ephemeral = True)
+                return
+
+            view0 = Confirm()
+            await interaction.response.send_message( embed = bembed("Only Delete the Empty PVC's ? **(1/3)**\nConfirm : delete only empty pvc's\nCencel : All pvc's") , view = view0 ,ephemeral = True)
+            await view0.wait()
+            if view0.value :
+                delete_all = False
+            elif view0.value == False :
+                delete_all = True
+            else :
+                return
+
+            view1 = Confirm()
+            await interaction.response.send_message( embed = bembed("Are You Sure ? **(2/3)**") , view = view1 ,ephemeral = True)
+            await view1.wait()
+            if view1.value :
+                view2 = Confirm()
+                await interaction.followup.send( embed = bembed(f"Do You Want To Rrfund {pvc_coin(ctx.guild.id)[1]}'s To User ? **(3/3)**") , view = view2 ,  ephemeral = True)
+                await view2.wait()
+                if view2.value :
+                    pvcs = client.db.fetch("SELECT * FROM pvcs WHERE guild_id = $1" , ctx.guild.id)
+                    for pvc in pvcs :
+                        if delete_all is False :
+                            if ctx.guild.get_channel(pvc['vcid']) and ctx.guild.get_channel(pvc['vcid']).members == 0 : 
+                                await delete_pvc( pvc['vcid'] , True , f"PVC Delete By {ctx.author} With Refund")
+                        elif delete_all :
+                            await delete_pvc( pvc['vcid'] , True , f"PVC Delete By {ctx.author} With Refund")
+
+                elif view2.value is False : 
+                    pvcs = client.db.fetch("SELECT * FROM pvcs WHERE guild_id = $1" , ctx.guild.id)
+                    for pvc in pvcs :
+                        if delete_all is False :
+                            if ctx.guild.get_channel(pvc['vcid']) and ctx.guild.get_channel(pvc['vcid']).members == 0 : 
+                                await delete_pvc( pvc['vcid'] , False , f"PVC Delete By {ctx.author} Without Refund")
+                        elif delete_all :
+                            await delete_pvc( pvc['vcid'] , False , f"PVC Delete By {ctx.author} Without Refund")
+                await interaction.followup.send(embed = bembed("✅ Done") , ephemeral = True)
+        delete.callback = delete_multi
+
+        view.add_item(delete)
+        await ctx.send(embed =embed , view=view)
+
+    
+
+    @commands.command()
+    @commands.guild_only()
+    @commands.check(check_channel)
+    @cooldown(1, 600, BucketType.member)
+    async def rename(self , ctx , * , name : str):
+        
+        info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        if info == None or ctx.guild.get_channel(info['vcid']) is None :
+            return
+        await ctx.guild.get_channel(info['vcid']).edit(name=name)
+        await ctx.send(embed = bembed(f"PVC name Updated to **{name}**"))
+    
+    @rename.error
+    async def rename_error(self,ctx , error):
+        if isinstance(error, commands.CommandOnCooldown):
+            sec = int(error.retry_after)
+            min , sec = divmod(sec, 60)
+            await ctx.send( embed = bembed(f":watch: | You cannot use this command, use after {min}min {sec}seconds."))
+            return
+        
+
+    @commands.command(aliases =["au" , "addm", 'add' , 'addvc'])
+    @commands.guild_only()
+    @commands.check(check_channel)
+    async def adduser(self , ctx , channel : typing.Optional[discord.VoiceChannel] , *members : typing.Optional[discord.Member]):
+        
+        info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        if info == None or ctx.guild.get_channel(info['vcid']) is None :
+            return
+        
+        overwrites = ctx.guild.get_channel(info['vcid']).overwrites
+        if channel and channel.members != 0 :
+            for i , member in enumerate(channel.members , 1) :
+                if i > 10 :
+                    break
+                else :
+                    overwrites[member] = discord.PermissionOverwrite(connect=True , view_channel = True)
+            await ctx.send(embed = bembed(f"{channel.mention} {10 if len(channel.members) > 10 else len(channel.members)} User(s) Added in your pvc"))
+            
+        lis = [ "1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣" ]
+        for i , member in enumerate(members) :
+            if member.bot :
+                continue
+            overwrites[member] = discord.PermissionOverwrite(connect=True , view_channel = True)
+            await ctx.message.add_reaction(lis[i])  
+        
+        if overwrites != ctx.guild.get_channel(info['vcid']).overwrites :
+            await ctx.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
+
+    @commands.command(aliases =["ru" , "removem"])
+    @commands.guild_only()
+    @commands.check(check_channel)
+    async def removeuser(self , ctx , *members : discord.Member):
+
+        info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        if info == None or ctx.guild.get_channel(info['vcid']) is None :
+            return
+        await ctx.message.add_reaction('⛔')  
+        lis = [ "1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣" ]
+        overwrites = ctx.guild.get_channel(info['vcid']).overwrites
+        for i , member in enumerate(members) :
+            try :
+                del overwrites[member]
+            except :
+                pass
+            if member in ctx.guild.get_channel(info['vcid']).members :
+                pass 
+            await ctx.message.add_reaction(lis[i])   
+            if member.voice and member.voice.channel ==  ctx.guild.get_channel(info['vcid']) :
+                await member.move_to(None)
+        
+        if overwrites != ctx.guild.get_channel(info['vcid']).overwrites :
+            await ctx.guild.get_channel(info['vcid']).edit( overwrites = overwrites )     
+  
+    @commands.hybrid_command(aliases = ["am" , 'wtj' , "askforinvite"])
+    @commands.guild_only()
+    @commands.check(check_channel)
+    async def addme(self , ctx, channel : discord.VoiceChannel):
+        info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE vcid = $1 AND guild_id = $2 ', channel.id , ctx.guild.id)
+        if info == None or ctx.guild.get_channel(info['vcid']) is None :
+            return
+        owner = ctx.guild.get_channel(info['vcid'])
+        if owner is None :
+            return
+        view = Confirm(owner)      
+        await ctx.reply( embed = bembed(f'{owner.mention} , {ctx.author} want to join your vc !') , view = view)
+        await view.wait()
+        if view.value :
+            await ctx.guild.get_channel(info["vcid"]).set_permissions(ctx.author , connect=True , view_channel = True)
+            await ctx.message.add_reaction("🙌")
+          
+    @commands.hybrid_command(aliases = ['info' , 'ipvc' , 'i'])
+    @commands.guild_only()
+    # @cooldown(1, 10, BucketType.user)
+    # @commands.check(check_channel)  
+    async def pvcinfo(self , ctx ): 
+        
+        info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        if info == None or ctx.guild.get_channel(info['vcid']) is None :
+            return
+        
+        def check(ctx) ->bool : 
+            return (client.data[ctx.guild.id]['pvc']) and (client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id or client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels']) 
+ 
+        print(check(ctx))
+        print(ctx.channel.id == info['vcid'])
+        if not check(ctx) and not ctx.channel.id == ctx.guild.get_channel(info['vcid']).id :
+            return 
+        # async def updateinfo() :
+        #     global info 
+        #     info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+            
+
+        def pvcinfoembed():
+             
+            vc = ctx.guild.get_channel(info['vcid'])  
+            embed=discord.Embed (title= vc.name , color=0x00ff00) 
+            time = f"VC End <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+            if info['auto'] and info['duration'] > 600 :
+                time = f"🛺 PAYG Enable <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+            elif info['auto'] :
+                time = f"🛺 PAYG Enabled"
+
+            embed.description = f"VC Owner : {ctx.guild.get_member(info['id']).mention}\n{time}" 
+            text = " "
+            i = 1
+            for  j in  vc.overwrites:
+                if type(j) == discord.Member and not j.bot :
+                    # if j.id == info['id'] :
+                    #     text  += f"{i}. {j.mention} 👑\n"
+                    # else :
+                    text  += f"{i}. {j.mention}\n"
+                    i += 1
+            embed.add_field(name = "Members" , value= text)          
+            return embed
+        
+        view = discord.ui.View()
+        items = [ ]
+        
+        async def update_adduser(interaction):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message( embed = bembed("Not Your Interaction"), ephemeral = True)
+                return
+            data = adduser.values
+            if len(data) == 0 :
+               await interaction.response.defer()
+               return
+            overwrites = ctx.guild.get_channel(info['vcid']).overwrites
+            for member in data :
+                if member.bot :
+                    continue
+                overwrites[member] = discord.PermissionOverwrite(connect=True , view_channel = True)
+            if overwrites != ctx.guild.get_channel(info['vcid']).overwrites :
+                await ctx.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
+            await asyncio.sleep(1)
+            await interaction.response.edit_message(embed=pvcinfoembed() )
+
+        adduser = discord.ui.UserSelect(placeholder="Select Members You Want To ADD", min_values=0, max_values=25)
+        adduser.callback = update_adduser
+        items.append(adduser)
+        
+        async def update_removeuser(interaction):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message( embed = bembed("Not Your Interaction"), ephemeral = True)
+                return
+            data = removeuser.values
+            if len(data) == 0:
+               await interaction.response.defer()
+               return
+
+            overwrites = ctx.guild.get_channel(info['vcid']).overwrites
+            for member in data :
+                try :
+                    del overwrites[member]
+                except : pass
+            if overwrites != ctx.guild.get_channel(info['vcid']).overwrites :
+                await ctx.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
+            await asyncio.sleep(1)
+            await interaction.response.edit_message(embed=pvcinfoembed() )
+
+        removeuser = discord.ui.UserSelect(placeholder="Select Members You Want To Remove", min_values=0, max_values=25)
+        removeuser.callback = update_removeuser
+        items.append(removeuser)
+        
+        async def update_hide(interaction):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
+                return
+            if ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).view_channel :
+                await ctx.guild.get_channel(info['vcid']).set_permissions(ctx.guild.default_role , view_channel = False , connect = False , stream = True)
+                await interaction.response.send_message( embed = bembed("VC is Hidden Now") , ephemeral = True)
+            else  :
+                await ctx.guild.get_channel(info['vcid']).set_permissions(ctx.guild.default_role , view_channel = None , connect = False , stream = True)
+                await interaction.response.send_message( embed = bembed(f"VC is Visible Now") , ephemeral = True )
+            
+        hide = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='👁️' ) 
+        hide.callback = update_hide
+        items.append(hide)
+        
+        
+        async def update_to(interaction):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message(embed = bembed("Not Your Interaction"), ephemeral = True)
+                return
+            info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+            if info == None or ctx.guild.get_channel(info['vcid']) is None :
+                return
+            if info['auto'] :
+                await interaction.response.send_message(embed = bembed("You Cant Tansfer A PAYG mode PVC to Someone"), ephemeral = True)
+                return
+
+            confirm = SelectUer(ctx.author)
+            await interaction.response.send_message( embed = bembed(f"Select User You Want To Transfer PVC"), view = confirm , ephemeral = True)
+            await confirm.wait()
+            if confirm.value :
+                info2 = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', (confirm.value).id , ctx.guild.id)
+                if info2 != None :
+                    await interaction.followup.send( embed = bembed("User Already have a PVC") , ephemeral = True)
+                    return
+                
+                await client.db.execute("UPDATE pvcs SET id = $1 WHERE id = $2 AND guild_id = $3" , (confirm.value).id , ctx.author.id , ctx.guild.id )
+                await interaction.followup.send( embed = bembed("✅ Done") , ephemeral = True)
+                
+                try :
+                    await ctx.guild.get_channel(info['vcid']).edit(name = f"{confirm.value.name}'s Pvc")
+                except :
+                    await interaction.followup.send( embed = bembed("⚠️ Cant Update VC name Due to rate limit") , ephemeral = True)
+                await interaction.message.delete()            
+        
+        to = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='👑' )
+        to.callback = update_to
+        items.append(to)
+
+        async def update_auto(interaction):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
+                return
+            info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+            embed = pvcinfoembed()
+            time = f"VC End <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+            
+            if info['auto'] :
+                await client.db.execute('UPDATE pvcs SET auto = $1 WHERE id = $2' , False , ctx.author.id)
+                embed.description = f"VC Owner : {ctx.guild.get_member(info['id']).mention}\n{time}"
+                await interaction.response.edit_message(embed=embed )
+            else : 
+                await client.db.execute('UPDATE pvcs SET auto = $1 WHERE id = $2' , True , ctx.author.id)
+                if info['duration'] > 600 :
+                    time = f"🛺 PAYG Enable <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+                else :
+                    time = f"🛺 PAYG Enabled"
+                
+                await interaction.response.edit_message(embed=embed )
+            
+        auto = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='🛺' ) 
+        auto.callback = update_auto
+        items.append(auto)
+        
+        async def update_friends(interaction):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message(embed = bembed("Not Your Interaction"), ephemeral = True)
+                return
+
+            bal = await self.client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+            info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+            if info == None or ctx.guild.get_channel(info['vcid']) is None :
+                return
+            
+            confirm = SelectUer(ctx.author)
+            await interaction.response.send_message( embed = bembed(f"Select Your PVC mate"), view = confirm , ephemeral = True)
+            await confirm.wait()
+            if confirm.value :
+                embed = bembed()
+                if bal['friends'] and (confirm.value).id in bal['friends'] :
+                    await client.db.execute("UPDATE users SET friends = ARRAY_REMOVE( friends , $1) WHERE id = $2 AND guild_id = $3", (confirm.value).id , ctx.author.id , ctx.guild.id )
+                    embed.description = f"{(confirm.value).mention} Removed From Friendlist\n\nn# FriendList\n"
+                else :
+                    await client.db.execute( "UPDATE users SET friends = ARRAY_APPEND( friends , $1) WHERE id = $2 AND guild_id = $3" , (confirm.value).id , ctx.author.id , ctx.guild.id )
+                    embed.description = f"{(confirm.value).mention} Added In Friendlist\n\n# FriendList\n"
+            
+            bal = await self.client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+            if bal['friends'] :
+                i = 1 
+                for friend in bal['friends'] :
+                    if ctx.guild.get_member(friend) :
+                        embed.description += f"{i}. {ctx.guild.get_member(friend).mention}\n"
+                        i += 1
+            await interaction.followup.send(embed = embed , ephemeral = True)   
+        
+        if client.data[ctx.guild.id]['pvc_vc_limit'] != 0 :
+            async def update_public(interaction):
+                if interaction.user != ctx.author:
+                    await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
+                    return
+                print(ctx.guild.get_channel(info['vcid']).permissions_for(ctx.guild.default_role).connect)
+                if ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).connect :
+                    overwrite = ctx.guild.get_channel(info['vcid']).overwrites_for(ctx.guild.default_role)
+                    overwrite.update(connect = False  , view_channel = None )
+                    overwrites = {**ctx.guild.get_channel(info['vcid']).overwrites , ctx.guild.default_role : overwrite }
+                    await ctx.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = 0 )
+                    await interaction.response.send_message( embed = bembed("VC is Private Now") , ephemeral = True)
+                elif ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).connect == False:
+                    overwrite = ctx.guild.get_channel(info['vcid']).overwrites_for(ctx.guild.default_role)
+                    overwrite.update(connect = True , view_channel = True)
+                    overwrites = {**ctx.guild.get_channel(info['vcid']).overwrites , ctx.guild.default_role : overwrite }
+                    await ctx.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = client.data[ctx.guild.id]['pvc_vc_limit']  )
+                    await interaction.response.send_message( embed = bembed(f"VC is Public Now") , ephemeral = True )
+             
+            public = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='👥' , row = 3 ) 
+            public.callback = update_public
+            items.append(public)
+
+
+        friends = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='🤝' , row = 3 )
+        friends.callback = update_friends
+        items.append(friends)
+
+        async def update_delete_pvc(interaction):
+            if interaction.user != ctx.author:
+                await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
+                return
+            info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+            if info == None or ctx.guild.get_channel(info['vcid']) is None :
+                return
+
+            confirm = Confirm(ctx.author)
+            await interaction.response.send_message( embed = bembed(f"Want To Delete Your PVC ? will get {pvc_coin(interaction.guild.id)[0]} {int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) : ,} back ") , view = confirm , ephemeral = True)
+            await confirm.wait()
+            if confirm.value :
+                try :
+                   await ctx.guild.get_channel(info['vcid']).delete()
+                   await client.db.execute("DELETE FROM pvcs WHERE vcid = $1" , info['vcid'])
+                except :
+                    pass
+                await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) , ctx.author.id , ctx.guild.id )
+                await ctx.message.delete()
+        delete_pvc = discord.ui.Button( style=discord.ButtonStyle.danger , emoji='🗑️' , row = 3 )
+        delete_pvc.callback = update_delete_pvc
+        items.append(delete_pvc)
+        
+        async def update_collapse(interaction) :
+            if interaction.user != ctx.author:
+                await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
+                return
+            if len(view.children) == 1 :
+                view.clear_items()
+                for i in items :
+                    view.add_item(i)
+                collapse.emoji = '<:arrow:1144084016929181756>'
+                view.add_item(collapse)
+            else :
+                view.clear_items()
+                collapse.emoji = '<:arrow:1144084206520123513>'
+                view.add_item(collapse)
+            await interaction.response.edit_message(view = view)
+        
+        collapse = discord.ui.Button( style=discord.ButtonStyle.gray , emoji= '<:arrow:1144084206520123513>' ,  row=4 )
+        collapse.callback = update_collapse
+        view.add_item(collapse)
+        
+        async def view_timeout():
+            await ctx.message.edit(view = None)
+        view.on_timeout = view_timeout
+         
+        await ctx.send(embed = pvcinfoembed() , view = view)
+        
+    
+    
+    
+    # @commands.hybrid_command()
+    # @commands.guild_only()
+    # @commands.check(check_channel)
+    # async def hide(self , ctx):
+    #     pvcdata = db[f"{ctx.guild.id}"]        
+    #     info = await pvcdata.find_one({"info_id" : ctx.author.id})
+    #     guild = ctx.guild
+    #     if info == None :
+    #         return 
+    #     else:
+    #        await guild.get_channel(info["vcid"]).set_permissions( ctx.guild.default_role , view_channel = False , connect = False )
+    #        await ctx.message.add_reaction("🙌")  
+
+    # @commands.hybrid_command()
+    # @commands.guild_only()
+    # @commands.check(check_channel)
+    # async def unhide(self , ctx):
+    #     pvcdata = db[f"{ctx.guild.id}"]        
+    #     info = await pvcdata.find_one({"info_id" : ctx.author.id})
+    #     guild = ctx.guild
+    #     if info == None :
+    #         return 
+    #     else:
+    #        await guild.get_channel(info["vcid"]).set_permissions( ctx.guild.default_role , view_channel = True , connect = False )
+    #        await ctx.message.add_reaction("🙌")                           
+
+    # @commands.hybrid_command(aliases = ["to"])
+    # @commands.guild_only()
+    # @cooldown(1, 600, BucketType.user)
+    # @commands.check(check_channel)
+    # async def tansferownership(self , ctx , member : discord.Member):
+    #     pvcdata = db[f"{ctx.guild.id}"]        
+    #     info = await pvcdata.find_one({"info_id" : ctx.author.id})
+    #     info2 = await pvcdata.find_one({"info_id" : member.id})
+    #     guild = ctx.guild
+    #     if info == None :
+    #         ctx.command.reset_cooldown(ctx)
+    #         return
+    #     elif info2 == None:
+    #         await guild.get_channel(info["vcid"]).edit(name= f"{member.name}'Pvc")
+    #         await pvcdata.update_one({"info_id" : ctx.author.id} , {"$set" : {"info_id" : member.id } }) 
+    #         await ctx.reply(f"PVC ownership transfered to {member.name}") 
+    #     else : 
+    #         ctx.command.reset_cooldown(ctx)
+    #         await ctx.send(f"{member.name} already have a PVC")
+
+    # @tansferownership.error
+    # async def tranferownership_error(self,ctx , error):
+    #     if isinstance(error, commands.CommandOnCooldown):
+    #         sec = int(error.retry_after)
+    #         min , sec = divmod(sec, 60)
+    #         await ctx.send(f":watch: | You cannot use this command use after {min}min {sec}seconds.")
+    #         return
+    #     if isinstance(error, commands.MemberNotFound): 
+    #         ctx.command.reset_cooldown(ctx)
+    #         await ctx.send("cant find user !!!")
+    #         return      
+    #     if isinstance(error, commands.MissingRequiredArgument):
+    #         await ctx.send("Not enough arguments passed !!!")
+    #         ctx.command.reset_cooldown(ctx)
+    #         return                   
+
+    # @commands.hybrid_command()
+    # @commands.guild_only()
+    # @cooldown(1, 600, BucketType.user)
+    # @commands.check(check_channel)
+    # async def rename(self , ctx , * , name):
+    #     def check(reaction, user):
+    #         return user.guild_permissions.manage_messages and str(reaction.emoji) == '✅'
+    #     pvcdata = db[f"{ctx.guild.id}"]        
+    #     info = await pvcdata.find_one({"info_id" : ctx.author.id})
+    #     guild = ctx.guild
+    #     if info == None :
+    #         ctx.command.reset_cooldown(ctx)
+    #         return 
+    #     else : 
+    #         msg = await ctx.reply(f'**Tag any of the online staff (manage_message perms) to rename your vc ! ||Expire in 5 min||**')
+    #         await msg.add_reaction("✅")
+    #         try : 
+    #             reaction , user = await client.wait_for('reaction_add', check=check , timeout = 300)
+    #             await guild.get_channel(info["vcid"]).edit(name= f"☁ {name}")
+    #             await ctx.reply(f"PVC renamed to {name}") 
+    #         except asyncio.TimeoutError:
+    #             ctx.command.reset_cooldown(ctx)
+    #             return
+
+    # @rename.error
+    # async def rename_error(self,ctx , error):
+    #     if isinstance(error, commands.CommandOnCooldown):
+    #         sec = int(error.retry_after)
+    #         min , sec = divmod(sec, 60)
+    #         await ctx.send(f":watch: | You cannot use this command use after {min}min {sec}seconds.")
+    #         return
+    #     if isinstance(error, commands.MemberNotFound): 
+    #         ctx.command.reset_cooldown(ctx)
+    #         await ctx.send("cant find user !!!")
+    #         return      
+    #     if isinstance(error, commands.MissingRequiredArgument):
+    #         await ctx.send("Not enough arguments passed !!!")
+    #         ctx.command.reset_cooldown(ctx)
+    #         return  
+    
+    
+            
+    # @commands.hybrid_command(aliases = ["e"])
+    # @commands.guild_only()
+    # @cooldown(1, 10, BucketType.user)
+    # @commands.check(check_channel)
+    # async def extend(self , ctx , duration : DurationConverter):
+    #     multiplier = { 'h' : 3600}
+    #     amount , unit = duration
+    #     guild = ctx.guild
+    #     user = ctx.author 
+    #     economy = db[f"{ctx.guild.id}"]
+    #     bal = await economy.find_one({'id' : ctx.author.id})
+    #     info = await economy.find_one({"info_id" : ctx.author.id})
+    #     rate = (await economy.find_one({"category": "pvc"}))["rate"]  
+    #     if info == None:
+    #         await ctx.send("You dont have PVC , create with command ,pvc <time>h")
+    #         return
+    #     elif bal['pvc'] >= int((amount*multiplier[unit])* rate): 
+    #         def check( m):
+    #             return (m.content =='yes' or m.content =='Yes' or m.content =='T' or m.content =='t' or m.content =='Y' or m.content =='y') and m.channel == ctx.channel and m.author.id == ctx.author.id
+    #         await ctx.send(f'This will charge you **{int((amount*multiplier[unit])* rate)}** PAODs ! \nif you want to cont. type `yes`')
+    #         try:
+    #             await client.wait_for('message', check=check , timeout = 10) 
+    #             await economy.update_one({"info_id" : ctx.author.id } , {"$inc": {"info_time" : + (amount*60) }}) 
+    #             await economy.update_one({"id" : ctx.author.id } , {"$inc": {"pvc" : -(int((amount*multiplier[unit])* rate))}})
+    #             time = (await economy.find_one({"id" : ctx.author.id }))["info_time"] 
+    #             await ctx.reply(f"Time inc. now you have more then {time}min")
+    #         except asyncio.TimeoutError:
+    #             await ctx.reply("transetion cenceled")      
+    #     else:
+    #             await ctx.send(f"not enough pvc coins you need {int((amount*multiplier[unit])* rate)} pvc coins")    
+
+async def setup(client):
+    await client.add_cog(PVC_COMMANDS(client))                     
