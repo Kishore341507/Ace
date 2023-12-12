@@ -16,27 +16,25 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         
-        MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-        print(MIGRATIONS_DIR)
-        con = await asyncpg.connect(dsn= os.environ.get(f"DB"))
-        async def migrate(
-            conn: asyncpg.Connection,
-            target_revision: str,
-        ) -> None:
-            backend = AsyncpgBackend(conn)
-            async with backend.connect() as conn:
-                planned = await plan(conn, backend, MIGRATIONS_DIR, target_revision=target_revision, direction=Direction.up)
-                await execute(conn, backend, planned)
-        await migrate( conn=con ,target_revision ="V0_initial.sql")
-        await con.close()
-        
+        # MIGRATIONS_DIR = Path(__file__).parent / "migrations"
+        # print(MIGRATIONS_DIR)
+        # con = await asyncpg.connect(dsn= os.environ.get(f"DB"))
+        # async def migrate(
+        #     conn: asyncpg.Connection,
+        #     target_revision: str,
+        # ) -> None:
+        #     backend = AsyncpgBackend(conn)
+        #     async with backend.connect() as conn:
+        #         planned = await plan(backend= backend, directory= MIGRATIONS_DIR, target_revision=target_revision, direction=Direction.up)
+        #         await execute(backend, planned)
+        # await migrate( conn=con ,target_revision ="V0")
+        # await con.close()
         
         self.db = await asyncpg.create_pool(dsn= os.environ.get(f"DB"))
         print("Connection to db DONE!")
 
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
-      
 
 async def get_prefix(client , message):  
     try :

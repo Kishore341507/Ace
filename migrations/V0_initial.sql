@@ -1,7 +1,3 @@
--- Revises: V0
--- Creation Date: 2022-04-25 03:26:29.804348 UTC
--- Reason: Initial migration
-
 CREATE TABLE IF NOT EXISTS public.guilds
 (
     id bigint NOT NULL,
@@ -25,7 +21,7 @@ CREATE TABLE IF NOT EXISTS public.guilds
     pvc_max integer NOT NULL DEFAULT 0,
     pvc_vc_limit integer NOT NULL DEFAULT 0,
     CONSTRAINT guilds_pkey PRIMARY KEY (id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS public.income
 (
@@ -36,7 +32,7 @@ CREATE TABLE IF NOT EXISTS public.income
     bank integer NOT NULL DEFAULT 0,
     cooldown integer NOT NULL DEFAULT 43200,
     CONSTRAINT income_pkey PRIMARY KEY (guild_id, role_id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS public.pvcs
 (
@@ -46,12 +42,12 @@ CREATE TABLE IF NOT EXISTS public.pvcs
     duration integer NOT NULL DEFAULT 0,
     auto boolean NOT NULL DEFAULT false,
     CONSTRAINT pvcs_pkey PRIMARY KEY (guild_id, id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS public.store
 (
     guild_id bigint NOT NULL,
-    id integer NOT NULL DEFAULT nextval('store_id_seq'::regclass),
+    id SERIAL,
     name character varying COLLATE pg_catalog."default" NOT NULL,
     price integer NOT NULL,
     info text COLLATE pg_catalog."default",
@@ -63,7 +59,7 @@ CREATE TABLE IF NOT EXISTS public.store
     pvc bigint DEFAULT 0,
     currency integer DEFAULT 1,
     CONSTRAINT store_pkey PRIMARY KEY (id)
-)
+);
 
 CREATE TABLE IF NOT EXISTS public.users
 (
@@ -75,4 +71,4 @@ CREATE TABLE IF NOT EXISTS public.users
     friends bigint[],
     temp bigint NOT NULL DEFAULT 0,
     CONSTRAINT users_pkey PRIMARY KEY (guild_id, id)
-)
+);
