@@ -1,18 +1,39 @@
 import discord
 from discord.ext import commands
 import asyncpg
-import socket
+from dotenv import load_dotenv
+import os
 
+from pathlib import Path
+from asyncpg_trek import plan, execute, Direction
+from asyncpg_trek.asyncpg import AsyncpgBackend
+
+load_dotenv()
 
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     async def setup_hook(self):
-
-        self.db = await asyncpg.create_pool(dsn= f"postgres://kishore:9024155629@database-1.cfqhpmx56bge.ap-south-1.rds.amazonaws.com:5432/casino")
-        print("Connection to db DONE!")
         
+        MIGRATIONS_DIR = Path(__file__).parent / "migrations"
+        print(MIGRATIONS_DIR)
+        con = await asyncpg.connect(dsn= os.environ.get(f"DB"))
+        async def migrate(
+            conn: asyncpg.Connection,
+            target_revision: str,
+        ) -> None:
+            backend = AsyncpgBackend(conn)
+            async with backend.connect() as conn:
+                planned = await plan(conn, backend, MIGRATIONS_DIR, target_revision=target_revision, direction=Direction.up)
+                await execute(conn, backend, planned)
+        await migrate( conn=con ,target_revision ="V0_initial.sql")
+        await con.close()
+        
+        
+        self.db = await asyncpg.create_pool(dsn= os.environ.get(f"DB"))
+        print("Connection to db DONE!")
+
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
       

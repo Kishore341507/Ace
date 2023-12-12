@@ -1,5 +1,6 @@
 discord.py
 asyncpg
+asyncpg-trek
 easy_pil
 numerize
 beautifulsoup4

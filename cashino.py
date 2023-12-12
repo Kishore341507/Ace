@@ -13,7 +13,6 @@ async def on_ready():
 
 
 @client.command()
-@commands.guild_only()
 @commands.has_permissions(administrator=True)
 async def ping(ctx):
     ping = round(client.latency * 1000 , ndigits=2)
@@ -25,7 +24,6 @@ async def ping(ctx):
 
 
 @client.hybrid_command()
-@commands.guild_only()
 @commands.check(check_channel)
 async def help( ctx):
         await ctx.send("**Command List**\nhttps://tickap.com/ccommands\n\n**Support Server**\nhttps://discord.gg/WevmU9Wsba")
