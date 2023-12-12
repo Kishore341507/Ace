@@ -26,7 +26,7 @@ async def ping(ctx):
 @client.hybrid_command()
 @commands.check(check_channel)
 async def help( ctx):
-        await ctx.send("**Command List**\nhttps://tickap.com/ccommands\n\n**Support Server**\nhttps://discord.gg/WevmU9Wsba")
+        await ctx.send("**Command List** \nhttps://tickap.com/ccommands\n\n**Support Server**\nhttps://discord.gg/WevmU9Wsba")
 
 
 # async def load():
