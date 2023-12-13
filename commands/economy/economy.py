@@ -474,9 +474,9 @@ class Economy(commands.Cog):
                 await asyncio.sleep(random.randint(1,4))
                 if x == 1:
                   await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
-                  await msg.edit(content= f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin2} and you Won {coin(ctx.guild.id)} **{amount*2:,}** ')
+                  await msg.edit(content= f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you Won {coin(ctx.guild.id)} **{amount*2:,}** ')
                 else: 
-                  await msg.edit(content=f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin2} and you lost it all... :c ')    
+                  await msg.edit(content=f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you lost it all... :c ')    
            
     @flip.error
     @commands.guild_only()
