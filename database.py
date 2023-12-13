@@ -120,9 +120,7 @@ class SelectUsers(discord.ui.View):
         await interaction.response.send_message(f'{select.values[0]} Selected', ephemeral=True)
         self.value = select.values[0]
         self.stop()
-
-# coin1 = "<:oiionk:1006619821183602748>"
-# coin2 = "<:paodcoin2222:1006977275775954995>"
+        
 
 def coin( guild_id : int ) :
     try :

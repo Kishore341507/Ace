@@ -29,14 +29,19 @@ async def help( ctx):
         await ctx.send("**Command List** \nhttps://tickap.com/ccommands\n\n**Support Server**\nhttps://discord.gg/WevmU9Wsba")
 
 
-# async def load():
+async def load():
 
-    # Main Files
-    # await client.load_extension(f'commands.owner.owner')
+    #load Files 
+    for filename in os.listdir('./commands'):
+        if filename.endswith('.py'):
+            await client.load_extension( f'commands.{filename[:-3]}')
+        elif not filename.endswith('.py'):
+            filenametemp =  filename
+            for filename in os.listdir(f'./commands/{filenametemp}'):
+                if filename.endswith('.py'):
+                   await client.load_extension(f'commands.{filenametemp}.{filename[:-3]}') 
 
-
-
-# asyncio.run(load())
+asyncio.run(load())
 
 load_dotenv()
 client.run(os.environ.get("TOKEN"))
