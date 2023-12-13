@@ -1,17 +1,15 @@
 from http import client
 import discord
-from discord.ext import commands , tasks
+from discord.ext import commands 
 from database import *
 import asyncio
 from discord.ext.commands import BucketType, cooldown
 import random
-import math
 import typing
-from discord.ui import Button , View
+from discord.ui import View
 from datetime import datetime
-from discord import app_commands
-import json
-import time
+
+
 
 class Confirm(discord.ui.View):
     def __init__(self , user = None , role = None):
@@ -465,18 +463,18 @@ class Economy(commands.Cog):
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to coinflip that much')
         elif amount <= 0 or amount > 75000:
-                await ctx.send('You cannot flip 0 , less or more then 50000') 
+                await ctx.send('You cannot flip 0 , less or more then 75000') 
         else:   
-                await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-                coin_flip = 0.5
-                x = random.choices([1,2] , weights = [coin_flip ,(1- coin_flip)])[0]  
-                msg = await ctx.send(f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1007007819490406573>")
-                await asyncio.sleep(random.randint(1,4))
-                if x == 1:
-                  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
-                  await msg.edit(content= f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin2} and you Won {coin(ctx.guild.id)} **{amount*2:,}** ')
-                else: 
-                  await msg.edit(content=f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin2} and you lost it all... :c ')    
+            await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
+            coin_flip = 0.5
+            x = random.choices([1,2] , weights = [coin_flip ,(1- coin_flip)])[0]  
+            msg = await ctx.send(f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1007007819490406573>")
+            await asyncio.sleep(random.randint(1,4))
+            if x == 1:
+                await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
+                await msg.edit(content= f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you Won {coin(ctx.guild.id)} **{amount*2:,}** ')
+            else: 
+                await msg.edit(content=f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you lost it all... :c ')    
            
     @flip.error
     @commands.guild_only()
@@ -490,6 +488,7 @@ class Economy(commands.Cog):
             ecoembed.description = f"⌚ | You cannot flip coin for {min}min {sec}seconds."
             await ctx.send (embed = ecoembed)
             return
+       
 
 
 # ------------------------------------------------xxx--------------------------------------------------------------------------------

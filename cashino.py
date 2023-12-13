@@ -29,14 +29,16 @@ async def help( ctx):
         await ctx.send("**Command List** \nhttps://tickap.com/ccommands\n\n**Support Server**\nhttps://discord.gg/WevmU9Wsba")
 
 
-# async def load():
+async def load():
 
     # Main Files
-    # await client.load_extension(f'commands.owner.owner')
 
+    await client.load_extension(f'commands.economy.economy')
+    await client.load_extension(f'commands.economy.ecomanager')
+    await client.load_extension(f'commands.guild.guild')
+    await client.load_extension(f'commands.owner.owner')
 
-
-# asyncio.run(load())
+asyncio.run(load())
 
 load_dotenv()
 client.run(os.environ.get("TOKEN"))
