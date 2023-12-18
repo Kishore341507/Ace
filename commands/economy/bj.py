@@ -10,7 +10,7 @@ class BjButton(discord.ui.Button['bjview']):
     def __init__(self, x, label: str):
         super().__init__(style=x, label=label)
         if self.label == "Double Down":
-            self.disabled = True
+            self.disabled = True 
 
     async def callback(self, interaction: discord.Interaction):
         assert self.view is not None
