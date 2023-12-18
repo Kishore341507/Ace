@@ -461,232 +461,127 @@ class Economy(commands.Cog):
 #------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                                 LB
 
+    async def generate_lb_emb(self, guild , user , page, type):
+        last_page = math.ceil((await self.client.db.fetchval("SELECT COUNT(*) FROM users WHERE guild_id = $1" , guild.id))/10)
+        offset = (page-1)*10
+        
+        if type in ["total" ,"-total"]:
+            type = "total"
+            docs = await self.client.db.fetch("SELECT id , (bank + cash) AS total FROM users WHERE guild_id = $1 ORDER BY total DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank + cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+        elif  type in ["bank","-bank"]:
+            type = "bank"
+            docs = await self.client.db.fetch("SELECT id , bank FROM users WHERE guild_id = $1 ORDER BY bank DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+        elif type in ["cash" , "-cash"]:
+            type = "cash"
+            docs = await self.client.db.fetch("SELECT id , cash FROM users WHERE guild_id = $1 ORDER BY cash DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+                
+        elif type == "pvc":
+            type = "pvc"
+            docs = await self.client.db.fetch("SELECT id , pvc FROM users WHERE guild_id = $1 ORDER BY pvc DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (pvc) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+
+        dis =  ""   
+        for x in docs:
+            amount = x[type]
+            user = guild.get_member(x['id'])
+            if user is None:
+                continue
+            else :
+                 offset = offset+1     
+            v = f"**{offset}**. [{user}](https://tickap.com/user/{user.id}) **:** {pvc_coin(guild.id)[0] if type == 'pvc' else coin(guild.id) } {amount:,}\n"
+            dis = dis + v
+
+        embed = discord.Embed(description=dis, color=discord.Colour.blue())
+        title = f"{guild.name}'s Leaderboard" if type == "total" else f"{guild.name}'s Leaderboard for {type}"
+        embed.set_author(name=f"{title}", icon_url= guild.icon) 
+        embed.set_footer(
+                      text=f"Page {page}/{last_page} , Your leaderboard rank: {rank}")
+        return embed, last_page
+    
+    class leaderboardPanelView(View):
+        def __init__(self, user,message , page, last_page, type):
+            super().__init__(timeout=180)
+            self.user = user
+            self.message = message
+            self.current_page = page
+            self.last_page = last_page
+            self.type = type
+            
+            previous_pg_button = Button(label="Previous Page", style=discord.ButtonStyle.blurple, disabled=True if self.current_page <= 1 else False)
+            previous_pg_button.callback = self.lb_backwards_button
+            self.add_item(previous_pg_button)
+            
+            next_pg_button = Button(label="Next Page", style=discord.ButtonStyle.blurple, disabled=True if self.current_page >= self.last_page else False)
+            next_pg_button.callback = self.lb_forwards_button
+            self.add_item(next_pg_button)
+
+        async def interaction_check(self, interaction: discord.Interaction):
+            if self.message is None:
+                self.message = interaction.message
+            
+            if interaction.user == self.user:
+                return True
+            else:
+                await interaction.response.send_message( embed = discord.Embed(description="This is not your panel. You need to run the command yourself.", color="#2b2c31"), ephemeral=True)
+                return False
+
+        async def on_timeout(self):
+            if self.message is not None:
+                for item in self.children:
+                    item.disabled = True
+                await self.message.edit(content="**This message is now inactive.**", view=self)
+
+        async def lb_backwards_button(self,interaction: discord.Interaction):
+            
+            self.current_page -= 1
+
+            if self.current_page <= 1:
+                for item in self.children:
+                    if item.label == "Previous Page":
+                        item.disabled = True
+                
+            if self.current_page < self.last_page:
+                for item in self.children:
+                    if item.label == "Next Page":
+                        item.disabled = False
+            
+            embed, last_page = await rank.generate_lb_emb(self, interaction.guild , interaction.user , self.current_page, self.type)
+            await interaction.response.edit_message(embed=embed, view=self)
+
+        async def lb_forwards_button(self,interaction: discord.Interaction):          
+            
+            self.current_page += 1
+
+            if self.current_page > 1:
+                for item in self.children:
+                    if item.label == "Previous Page":
+                        item.disabled = False
+                
+            if self.current_page >= self.last_page:
+                for item in self.children:
+                    if item.label == "Next Page":
+                        item.disabled = True
+            
+            embed, last_page = await rank.generate_lb_emb(self,interaction.guild , interaction.user , self.current_page, self.type)
+            await interaction.response.edit_message(embed=embed, view=self)
+
+    
     @commands.hybrid_command(aliases=["lb"])
     @commands.guild_only()
     @commands.check(check_channel_pvc)
     @cooldown(3, 60, BucketType.user)
     async def leaderboard(self , ctx ,page: typing.Optional[int] = 1, type1 : str = "bank" ):
-      i=0
-
-      view = None 
-      if client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id and ( client.data[ctx.guild.id]['channels'] != None and ctx.channel.id not in client.data[ctx.guild.id]['channels'] ):
-        type1 = 'pvc'
- 
-      if  type1 == "bank" or type1 == "-bank":
-        docs = await client.db.fetch("SELECT id , bank FROM users WHERE guild_id = $1 ORDER BY bank DESC" , ctx.guild.id)
-        type2 = "bank"
-        rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , ctx.guild.id ,  ctx.author.id)
+        if self.client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id and ( self.client.data[ctx.guild.id]['channels'] != None and ctx.channel.id not in self.client.data[ctx.guild.id]['channels'] ):
+            type = 'pvc'
       
-      elif type1 == "cash" or type1 == "-cash":
-        docs = await client.db.fetch("SELECT id , cash FROM users WHERE guild_id = $1 ORDER BY cash DESC" , ctx.guild.id)
-        type2 = "cash"
-        rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , ctx.guild.id ,  ctx.author.id)
-      
-    #   elif type1 == "pvc" or type1 == client.data[ctx.guild.id]['pvc_name'].lower() :
-      elif type1 == "pvc"  :
-        docs = await client.db.fetch("SELECT id , pvc FROM users WHERE guild_id = $1 ORDER BY pvc DESC" , ctx.guild.id)
-        type2 = "pvc"
-        rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (pvc) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , ctx.guild.id ,  ctx.author.id)
-
-
-
-    # view = Lbcash(timeout=240 , page = page , ctx = ctx ) 
-    
-    #   elif type1 == "share":
-    #     lb_data = economy.find({"id" :{ "$gt" : 0 }}).sort("share" , -1)
-    #     docs = await lb_data.to_list(length = 500000)
-    #     type2 = "share"
-        # view = Lbcash(timeout=240 , page = page , ctx = ctx ) 
-  
-    #   dis =  f"Leaderboard for **{pvc_coin(ctx.guild.id)[1] if type1=='pvc' or type1 == client.data[ctx.guild.id]['pvc_name'].lower()  else type2 }** \n\n"                  
-      dis =  f"Leaderboard for **{pvc_coin(ctx.guild.id)[1] if type1=='pvc' else type2 }** \n\n"                  
-      for x in docs:
-            amount = int(x[type2])
-            user = ctx.guild.get_member(x['id'])
-            if user is None :
-                 continue 
-            else :
-                i = i+1    
-            if i == page*10 + 1:
-                break
-            if i <= (page-1)*10:
-                continue
-            # v = f"**{i}**. [{user}](https://tickap.com/user/{user.id}) **:** {pvc_coin(ctx.guild.id)[0] if type1 == 'pvc' or type1 == client.data[ctx.guild.id]['pvc_name'].lower() else coin(ctx.guild.id) } {amount:,}\n"
-            v = f"**{i}**. [{user}](https://tickap.com/user/{user.id}) **:** {pvc_coin(ctx.guild.id)[0] if type1 == 'pvc' else coin(ctx.guild.id) } {amount:,}\n"
-            dis = dis + v
-      embed = discord.Embed(description=dis, color=discord.Colour.blue())
-      embed.set_author(name=f"{ctx.guild.name} Leaderboard" , icon_url= ctx.guild.icon) 
-      embed.set_footer(
-                text=f"Page {page} , Your leaderboard rank: {rank}")
-      await ctx.send(embed=embed , view = view)
-    
-    # @leaderboard.error
-    # async def er(self , ctx , error ):
-    #     await ctx.send(error)
-    
-# ------------------------------------------------xxx--------------------------------------------------------------------------------
-#                                            COINflip COMMAND 
-
-    @commands.hybrid_command(aliases=["cf"])
-    @commands.guild_only()
-    @commands.check(check_channel)
-    @cooldown(2, 60, BucketType.user)
-    async def flip(self , ctx , amount : amountconverter  ,  side : typing.Literal[ 'head', 'tail' , 'h','t','H','T' ] = "head"): 
-        user = ctx.author
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        try:
-            amount = int(amount)
-        except ValueError:
-            if amount == "all":
-                amount = bal["cash"]
-                if amount > 75000:
-                    amount=75000  
-            elif amount == "half":
-                amount = int(0.5 * bal["cash"])
-                if amount > 75000:
-                    amount=75000        
-        if bal is None:
-                await open_account( ctx.guild.id , user.id)
-                bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        if amount > bal['cash']:
-                await ctx.send('You do not have enough money to coinflip that much')
-        elif amount <= 0 or amount > 75000:
-                await ctx.send('You cannot flip 0 , less or more then 50000') 
-        else:   
-                await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-                coin_flip = 0.5
-                x = random.choices([1,2] , weights = [coin_flip ,(1- coin_flip)])[0]  
-                msg = await ctx.send(f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1007007819490406573>")
-                await asyncio.sleep(random.randint(1,4))
-                if x == 1:
-                  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
-                  await msg.edit(content= f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you Won {coin(ctx.guild.id)} **{amount*2:,}** ')
-                else: 
-                  await msg.edit(content=f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you lost it all... :c ')    
-           
-    @flip.error
-    @commands.guild_only()
-    @commands.check(check_channel)
-    async def flip_error(self,ctx , error):
-        ecoembed = discord.Embed(color= 0xF90651)
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
-        if isinstance(error, commands.CommandOnCooldown):
-            sec = int(error.retry_after)
-            min , sec = divmod(sec, 60)
-            ecoembed.description = f"⌚ | You cannot flip coin for {min}min {sec}seconds."
-            await ctx.send (embed = ecoembed)
-            return
-
-#------------------------------------------------xxx---------------------------------------------------------------------------------------------------------------------
-#                                            sloth Command
-
-
-    @commands.hybrid_command(aliases=["st"])
-    @commands.guild_only()
-    @commands.check(check_channel)
-    @cooldown(1, 3, BucketType.user)
-    async def slot( self , ctx , amount : amountconverter ):
-        ecoembed = discord.Embed(color=  0x08FC08)
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
-        all = ctx.guild.emojis
-        if len(all) < 3 :
-            all =  [  *all ,  "😉" , "🙂" , "😐" ]
-        emoji = random.choices(all , k=3)        
-        first = random.choice(emoji)
-        second = random.choice(emoji)
-        third = random.choice(emoji)
-        outupt = f"{first} | {second} | {third}"
-        
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
-        
-        st_amount = 50000
-        
-        if bal is None:
-            await open_account( ctx.guild.id ,ctx.author.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
-        try:
-            amount = int(amount)    
-        except ValueError:
-            if amount == "all":
-                amount = bal["cash"]
-                if amount > st_amount:
-                    amount=st_amount
-            elif amount == "half":
-                amount = int(0.5 * bal["cash"])
-                if amount > st_amount:
-                    amount=st_amount          
-        if amount > bal['cash']:
-                await ctx.send('You do not have enough money to slots that much')
-        elif amount <= 0 or amount > st_amount:
-                await ctx.send(f'You cannot slot 0 , less or more then {st_amount}') 
-        else :
-                if first == second == third:
-                    ecoembed.description=f"you won {coin(ctx.guild.id)} {2*amount}\n\n{outupt}" 
-                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-                    await ctx.send(embed=ecoembed)
-                elif first == second or second  == third:
-                    ecoembed.description=f"you won {coin(ctx.guild.id)} {int(1.7*amount)} \n\n{outupt}"
-                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , (int(0.7*amount)) , ctx.author.id , ctx.guild.id) 
-                    await ctx.send(embed=ecoembed)
-                else:
-                    ecoembed.description=f"you lost {coin(ctx.guild.id)} {amount}\n\n{outupt}" 
-                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-                    ecoembed.color =  discord.Color.red()
-                    await ctx.send(embed=ecoembed)
-                     
-
-
-#------------------------------------------------xxx--------------------------------------------------------------------------------
-#                                               roll
-
-    @commands.command()
-    @commands.guild_only()
-    @commands.check(check_channel)
-    @cooldown(2, 5, BucketType.user)
-    async def roll(self , ctx ,amount : amountconverter ,  rang:typing.Literal["odd" , "even" , 1 , 2 , 3 ,4, 5, 6] = "even"):
-        ecoembed = discord.Embed(color= discord.Color.green())
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
-        user = ctx.author
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        try:
-            amount = int(amount)
-        except ValueError:
-            if amount == "all":
-                amount = bal["cash"]
-                if amount > 50000:
-                    amount=50000  
-            elif amount == "half":
-                amount = int(0.5 * bal["cash"])
-                if amount > 50000:
-                    amount=50000     
-        if bal is None:
-                await open_account( ctx.guild.id , user.id)
-                bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        if amount > bal['cash']:
-                await ctx.send('You do not have enough money to roll that much')
-        elif amount <= 0 or amount > 50000:
-                await ctx.send('You cannot roll 0 , less or more then 50000') 
-        else:
-            x = random.randint(1, 6)
-            if rang == "even" and x in [2,4,6]:
-                await self.client.db.execute('UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3'  , amount ,  ctx.author.id , ctx.guild.id) 
-                ecoembed.description= f"You win {coin(ctx.guild.id)} {2 * amount :,}\n:game_die: You rolled **{x}**"
-                await ctx.send(embed = ecoembed)
-            elif rang == "odd" and x in [1,3,5]:    
-                await self.client.db.execute('UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3'  , amount ,  ctx.author.id , ctx.guild.id) 
-                ecoembed.description= f"You win {coin(ctx.guild.id)} {2 * amount :,}\n:game_die: You rolled **{x}**"
-                await ctx.send(embed = ecoembed)
-            elif rang in [1,2,3,4,5,6] and x == rang :
-                await self.client.db.execute('UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3'  , 4*amount ,  ctx.author.id , ctx.guild.id) 
-                ecoembed.description= f"You win {coin(ctx.guild.id)} {5 * amount :,}\n:game_die: You rolled **{x}**"
-                await ctx.send(embed = ecoembed)
-            else:
-                await self.client.db.execute('UPDATE users SET cash = cash - $1  WHERE id = $2 AND guild_id = $3'  , amount ,  ctx.author.id , ctx.guild.id) 
-                ecoembed.description= f"You lose {coin(ctx.guild.id)}{amount: ,}\n:game_die: You rolled **{x}**"
-                ecoembed.color = discord.Color.red()
-                await ctx.send(embed = ecoembed)
-
+        embed, last_page = await self.generate_lb_emb(ctx, page, type)
+        if not embed.description:
+            page = last_page
+            embed, last_page = await self.generate_lb_emb(ctx, page, type)
+        await ctx.send(embed=embed , view = self.leaderboardPanelView(ctx.author, page, last_page, type, None))
 
 async def setup(client):
    await client.add_cog(Economy(client))                       
