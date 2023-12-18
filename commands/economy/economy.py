@@ -2,12 +2,14 @@ from http import client
 import discord
 from discord.ext import commands 
 from database import *
-import asyncio
+from discord.ui import Button, View
 from discord.ext.commands import BucketType, cooldown
 import random
 import typing
 from datetime import datetime
 from comp.ui import *
+import math
+
 
 class Confirm(discord.ui.View):
     def __init__(self , user = None , role = None):
@@ -462,26 +464,26 @@ class Economy(commands.Cog):
 #                                                 LB
 
     async def generate_lb_emb(self, guild , user , page, type):
-        last_page = math.ceil((await self.client.db.fetchval("SELECT COUNT(*) FROM users WHERE guild_id = $1" , guild.id))/10)
+        last_page = int(math.ceil(int(await client.db.fetchval("SELECT COUNT(*) FROM users WHERE guild_id = $1" , guild.id))/10))
         offset = (page-1)*10
         
         if type in ["total" ,"-total"]:
             type = "total"
-            docs = await self.client.db.fetch("SELECT id , (bank + cash) AS total FROM users WHERE guild_id = $1 ORDER BY total DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
-            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank + cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+            docs = await client.db.fetch("SELECT id , (bank + cash) AS total FROM users WHERE guild_id = $1 ORDER BY total DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank + cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
         elif  type in ["bank","-bank"]:
             type = "bank"
-            docs = await self.client.db.fetch("SELECT id , bank FROM users WHERE guild_id = $1 ORDER BY bank DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
-            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+            docs = await client.db.fetch("SELECT id , bank FROM users WHERE guild_id = $1 ORDER BY bank DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
         elif type in ["cash" , "-cash"]:
             type = "cash"
-            docs = await self.client.db.fetch("SELECT id , cash FROM users WHERE guild_id = $1 ORDER BY cash DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
-            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+            docs = await client.db.fetch("SELECT id , cash FROM users WHERE guild_id = $1 ORDER BY cash DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
                 
         elif type == "pvc":
             type = "pvc"
-            docs = await self.client.db.fetch("SELECT id , pvc FROM users WHERE guild_id = $1 ORDER BY pvc DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
-            rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (pvc) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+            docs = await client.db.fetch("SELECT id , pvc FROM users WHERE guild_id = $1 ORDER BY pvc DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (pvc) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
 
         dis =  ""   
         for x in docs:
@@ -509,7 +511,7 @@ class Economy(commands.Cog):
             self.current_page = page
             self.last_page = last_page
             self.type = type
-            
+        
             previous_pg_button = Button(label="Previous Page", style=discord.ButtonStyle.blurple, disabled=True if self.current_page <= 1 else False)
             previous_pg_button.callback = self.lb_backwards_button
             self.add_item(previous_pg_button)
@@ -525,7 +527,7 @@ class Economy(commands.Cog):
             if interaction.user == self.user:
                 return True
             else:
-                await interaction.response.send_message( embed = discord.Embed(description="This is not your panel. You need to run the command yourself.", color="#2b2c31"), ephemeral=True)
+                await interaction.response.send_message( embed = discord.Embed(description="This is not your panel. You need to run the command yourself.", color=0x2b2c31), ephemeral=True)
                 return False
 
         async def on_timeout(self):
@@ -548,7 +550,7 @@ class Economy(commands.Cog):
                     if item.label == "Next Page":
                         item.disabled = False
             
-            embed, last_page = await rank.generate_lb_emb(self, interaction.guild , interaction.user , self.current_page, self.type)
+            embed, last_page = await Economy.generate_lb_emb(self, interaction.guild , interaction.user , self.current_page, self.type)
             await interaction.response.edit_message(embed=embed, view=self)
 
         async def lb_forwards_button(self,interaction: discord.Interaction):          
@@ -565,7 +567,7 @@ class Economy(commands.Cog):
                     if item.label == "Next Page":
                         item.disabled = True
             
-            embed, last_page = await rank.generate_lb_emb(self,interaction.guild , interaction.user , self.current_page, self.type)
+            embed, last_page = await Economy.generate_lb_emb(self,interaction.guild , interaction.user , self.current_page, self.type)
             await interaction.response.edit_message(embed=embed, view=self)
 
     
@@ -573,15 +575,15 @@ class Economy(commands.Cog):
     @commands.guild_only()
     @commands.check(check_channel_pvc)
     @cooldown(3, 60, BucketType.user)
-    async def leaderboard(self , ctx ,page: typing.Optional[int] = 1, type1 : str = "bank" ):
+    async def leaderboard(self , ctx ,page: typing.Optional[int] = 1, type : str = "total" ):
         if self.client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id and ( self.client.data[ctx.guild.id]['channels'] != None and ctx.channel.id not in self.client.data[ctx.guild.id]['channels'] ):
             type = 'pvc'
       
-        embed, last_page = await self.generate_lb_emb(ctx, page, type)
+        embed, last_page = await self.generate_lb_emb(ctx.guild , ctx.author, page, type)
         if not embed.description:
             page = last_page
-            embed, last_page = await self.generate_lb_emb(ctx, page, type)
-        await ctx.send(embed=embed , view = self.leaderboardPanelView(ctx.author, page, last_page, type, None))
+            embed, last_page = await self.generate_lb_emb(ctx.guild , ctx.author, page, type)
+        await ctx.send(embed=embed , view = self.leaderboardPanelView(ctx.author,None, page, last_page, type))
 
 async def setup(client):
    await client.add_cog(Economy(client))                       

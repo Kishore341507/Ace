@@ -22,13 +22,6 @@ async def ping(ctx):
     db_ping = round( (time2 - time1) * 1000 , ndigits=2)
     await ctx.reply(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`')
 
-
-@client.hybrid_command()
-@commands.check()
-async def help( ctx):
-        await ctx.send("**Command List** \nhttps://tickap.com/ccommands\n\n**Support Server**\nhttps://discord.gg/WevmU9Wsba")
-
-
 async def load():
 
     #load Files 
