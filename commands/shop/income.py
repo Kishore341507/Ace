@@ -1,10 +1,7 @@
 import discord
 from discord.ext import commands
 from database import *
-import asyncio
 from discord.ext.commands import BucketType, cooldown
-import random
-import typing
 import time 
 
 class income(commands.Cog):
