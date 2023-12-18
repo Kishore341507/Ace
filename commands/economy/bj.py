@@ -3,7 +3,6 @@ from discord.ext import commands
 from database import *
 import random
 from discord.ext.commands import BucketType, cooldown
-import traceback
 
 
 class BjButton(discord.ui.Button['bjview']):

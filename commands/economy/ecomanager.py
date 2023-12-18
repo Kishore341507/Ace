@@ -1,18 +1,12 @@
-# from enum import _EnumMemberT
-from operator import truediv
 import discord
 from discord.ext import commands
 from database import *
-import asyncio
-from discord.ext.commands import BucketType, cooldown
-import random
 import typing
-from easy_pil import Editor, Canvas, load_image_async, Font
-from numerize import numerize
-from discord.ui import Button, View, Select, TextInput
+from easy_pil import Editor, Font
+from discord.ui import Button, View
 import re
 from discord import app_commands
-from easy_pil import Editor, Canvas, load_image_async, Font
+from easy_pil import Editor, Font
 
 time_regex = re.compile(r"(\d{1,5}(?:[.,]?\d{1,5})?)([smhd])")
 time_dict = {"h":3600, "s":1, "m":60, "d":86400}
