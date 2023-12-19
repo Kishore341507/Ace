@@ -155,7 +155,7 @@ class Economy(commands.Cog):
         user = ctx.author
         ecoembed = discord.Embed(color= 0xF90651 )
         ecoembed.set_author(name = user , icon_url= user.display_avatar.url)
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2' , user.id , ctx.guild.id)
         if bal is None:
                 await open_account( ctx.guild.id , user.id)
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)

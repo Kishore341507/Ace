@@ -120,7 +120,6 @@ class SelectUsers(discord.ui.View):
         await interaction.response.send_message(f'{select.values[0]} Selected', ephemeral=True)
         self.value = select.values[0]
         self.stop()
-        
 
 def coin( guild_id : int ) :
     try :
