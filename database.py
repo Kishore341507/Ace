@@ -16,25 +16,13 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         
-        # MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-        # print(MIGRATIONS_DIR)
-        # con = await asyncpg.connect(dsn= os.environ.get(f"DB"))
-        # async def migrate(
-        #     conn: asyncpg.Connection,
-        #     target_revision: str,
-        # ) -> None:
-        #     backend = AsyncpgBackend(conn)
-        #     async with backend.connect() as conn:
-        #         planned = await plan(backend= backend, directory= MIGRATIONS_DIR, target_revision=target_revision, direction=Direction.up)
-        #         await execute(backend, planned)
-        # await migrate( conn=con ,target_revision ="V0")
-        # await con.close()
-        
         self.db = await asyncpg.create_pool(dsn= os.environ.get(f"DB"))
         print("Connection to db DONE!")
  
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
+
+defult_prefix = ","
 
 async def get_prefix(client , message):  
     try :
@@ -42,7 +30,7 @@ async def get_prefix(client , message):
         if not prefix :
             raise Exception
     except Exception:
-        prefix = ","
+        prefix = defult_prefix
     finally :
         return commands.when_mentioned_or(prefix)(client , message)
 
@@ -64,7 +52,6 @@ async def open_account( guild_id : int , id : int):
 
 class amountconverter(commands.Converter):
     async def convert(self , ctx , argument):
-    
         if argument[-2] == "e":
             return str(int(argument[:-2]) * (10** int(argument[-1])))
         else:

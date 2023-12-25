@@ -7,10 +7,32 @@ from datetime import datetime
 # import traceback
 import typing
 
+class SelectUer(discord.ui.View):
+    def __init__(self , user = None , role = None):
+        super().__init__()
+        self.value = None
+        self.user = user
+        self.role = role
+    
+    @discord.ui.select( cls = discord.ui.UserSelect , placeholder = "Select A User" )
+    async def selectuser(self, interaction , select) :
+        if self.user and self.user != interaction.user :
+            await interaction.response.send_message('Not your interaction', ephemeral=True)
+            return
+        if self.role and self.role not in interaction.user.roles :
+            await interaction.response.send_message('Not your interaction', ephemeral=True)
+            return
+        await interaction.response.send_message(f'{select.values[0]} Selected', ephemeral=True)
+        self.value = select.values[0]
+        self.stop()
+
 class PVC_COMMANDS(commands.Cog):
 
     def __init__(self , client):
         self.client = client
+    
+    async def cog_load(self) -> None:
+        self.client.add_view(PVC_COMMANDS.PanelView())
     
     async def check_channel(ctx) ->bool : 
         return (client.data[ctx.guild.id]['pvc']) and (client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id or client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels']) 
@@ -375,7 +397,7 @@ class PVC_COMMANDS(commands.Cog):
                     time = f"🛺 PAYG Enabled"
                 
                 await interaction.response.edit_message(embed=embed )
-            
+
         auto = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='🛺' ) 
         auto.callback = update_auto
         items.append(auto)
@@ -416,7 +438,6 @@ class PVC_COMMANDS(commands.Cog):
                 if interaction.user != ctx.author:
                     await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
                     return
-                print(ctx.guild.get_channel(info['vcid']).permissions_for(ctx.guild.default_role).connect)
                 if ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).connect :
                     overwrite = ctx.guild.get_channel(info['vcid']).overwrites_for(ctx.guild.default_role)
                     overwrite.update(connect = False  , view_channel = None )
@@ -488,7 +509,218 @@ class PVC_COMMANDS(commands.Cog):
          
         await ctx.send(embed = pvcinfoembed() , view = view)
         
-    
+    class PanelView(discord.ui.View):
+        def __init__(self):
+            super().__init__(timeout=None)
+        
+
+        @discord.ui.button(emoji='<:info:1188641528554455070>', custom_id="pvc:info")
+        async def info(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+
+            vc = interaction.guild.get_channel(info['vcid'])  
+            embed=discord.Embed (title= vc.name , color=0x2b2c31) 
+            time = f"VC End <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+            if info['auto'] and info['duration'] > 600 :
+                time = f"🛺 PAYG Enable <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+            elif info['auto'] :
+                time = f"🛺 PAYG Enabled"
+
+            embed.description = f"VC Owner : {interaction.guild.get_member(info['id']).mention}\n{time}" 
+            text = " "
+            i = 1
+            for  j in  vc.overwrites:
+                if type(j) == discord.Member and not j.bot :
+                    text  += f"{i}. {j.mention}\n"
+                    i += 1
+            embed.add_field(name = "Members" , value= text)  
+            await interaction.response.send_message(embed = embed , ephemeral=True)        
+        
+        @discord.ui.button(emoji="<:add:1188641489392238662>", custom_id="pvc:add-user")
+        async def add_user(self,  interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+            
+            view = discord.ui.View()
+            adduser = discord.ui.UserSelect(placeholder="Select Members You Want To ADD" , max_values=25)
+            async def callback(interaction):
+                data = adduser.values
+                if len(data) == 0 :
+                    await interaction.response.defer()
+                    return
+                overwrites = interaction.guild.get_channel(info['vcid']).overwrites
+                for member in data :
+                    if member.bot :
+                        continue
+                    overwrites[member] = discord.PermissionOverwrite(connect=True , view_channel = True)
+                if overwrites != interaction.guild.get_channel(info['vcid']).overwrites :
+                    await interaction.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
+                embed = bembed()
+                embed.description = "`✅` " +"  ".join([user.mention for user in data]) + " added in PVC"
+                await interaction.response.edit_message(embed=embed )
+            adduser.callback = callback
+            view.add_item(adduser)
+            await interaction.response.send_message(view=view , ephemeral=True)
+            
+        @discord.ui.button(emoji= '<:remove:1188641493422977085>', custom_id="pvc:remove-user")
+        async def remove_user(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+        
+            view = discord.ui.View()
+            removeuser = discord.ui.UserSelect(placeholder="Select Members You Want To Remove" , max_values=25)
+            async def callback(interaction):
+                data = removeuser.values
+                if len(data) == 0 :
+                    await interaction.response.defer()
+                    return
+                overwrites = interaction.guild.get_channel(info['vcid']).overwrites
+                for member in data :
+                    try :
+                        del overwrites[member]
+                        if member.voice and member.voice.channel ==  interaction.guild.get_channel(info['vcid']) :
+                            await member.move_to(None)
+                    except : pass
+                if overwrites != interaction.guild.get_channel(info['vcid']).overwrites :
+                    await interaction.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
+                embed = bembed()
+                embed.description = "`✅` " +"  ".join([user.mention for user in data]) + " Removed From PVC"
+                await interaction.response.edit_message(embed=embed )
+            removeuser.callback = callback
+            view.add_item(removeuser)
+            await interaction.response.send_message(view=view , ephemeral=True)
+        
+        @discord.ui.button(emoji= '👁️', custom_id="pvc:hide-unhide")
+        async def hide(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+            
+            if interaction.guild.get_channel(info['vcid']) and interaction.guild.get_channel(info['vcid']).permissions_for( interaction.guild.default_role).view_channel :
+                await interaction.guild.get_channel(info['vcid']).set_permissions(interaction.guild.default_role , view_channel = False , connect = False , stream = True)
+                await interaction.response.send_message( embed = bembed("VC is Hidden Now") , ephemeral = True)
+            else  :
+                await interaction.guild.get_channel(info['vcid']).set_permissions(interaction.guild.default_role , view_channel = None , connect = False , stream = True)
+                await interaction.response.send_message( embed = bembed(f"VC is Visible Now") , ephemeral = True )
+
+
+        @discord.ui.button(emoji= '<:users:1188641484895961228>', custom_id="pvc:friends" , row=1)
+        async def friends(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+
+            bal = await client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            view = discord.ui.View()
+            friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] ] if bal['friends'] else None )
+            async def callback(interaction):
+                data = [ member.id for member in friend.values if not member.bot ]
+                await client.db.execute( "UPDATE users SET friends = $1 WHERE id = $2 AND guild_id = $3" , data , interaction.user.id , interaction.guild.id )
+                temp = "\n- "+'\n- '.join( [member.mention for member in friend.values if not member.bot ] )
+                embed = bembed(f"✅ FriendList Updated\n{temp}")
+                await interaction.response.edit_message(embed=embed , view = view )
+                if info and interaction.guild.get_channel(info['vcid']) :
+                    overwrites = interaction.guild.get_channel(info['vcid']).overwrites
+                    for member in friend.values :
+                        if member.bot :
+                            continue
+                        overwrites[member] = discord.PermissionOverwrite(connect=True , view_channel = True)
+                    if overwrites != interaction.guild.get_channel(info['vcid']).overwrites :
+                        await interaction.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
+                    
+            friend.callback = callback
+            view.add_item(friend)
+            await interaction.response.send_message(view=view , ephemeral=True)
+
+        @discord.ui.button(emoji= '🛺', custom_id="pvc:auto" , row=1)
+        async def auto(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+            embed = bembed()
+            time = f"VC End <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+            
+            if info['auto'] :
+                await client.db.execute('UPDATE pvcs SET auto = $1 WHERE id = $2' , False , interaction.user.id)
+                embed.description = f"🛺 PAYG Disabled \n\n{time}"
+                await interaction.response.send_message(embed=embed , ephemeral=True)
+            else : 
+                await client.db.execute('UPDATE pvcs SET auto = $1 WHERE id = $2' , True , interaction.user.id)
+                if info['duration'] > 600 :
+                    time = f"🛺 PAYG Enable <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
+                else :
+                    time = f"🛺 PAYG Enabled"
+                embed.description = f"{time}"
+                await interaction.response.send_message(embed=embed , ephemeral=True )
+
+        @discord.ui.button(emoji= '👑', custom_id="pvc:transfer-ownership", row=1)
+        async def transfer_ownership(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+            if info['auto'] :
+                await interaction.response.send_message(embed = bembed("You Cant Tansfer A PAYG mode PVC to Someone"), ephemeral = True)
+                return
+            view = discord.ui.View()
+            newowner = discord.ui.UserSelect(placeholder="Select User You Want To Transfer PVC" )
+            async def callback(interaction):
+                data = newowner.values[0]
+                if len(data) == 0 or data.bot or data.id == info['id'] :
+                    await interaction.response.defer()
+                    return
+                info2 = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ',data.id , interaction.guild.id)
+                if info2 != None :
+                    await interaction.response.send_message( embed = bembed("User Already have a PVC") , ephemeral = True)
+                    return
+                
+                await client.db.execute("UPDATE pvcs SET id = $1 WHERE id = $2 AND guild_id = $3" , data.id , interaction.author.id , interaction.guild.id )
+                await interaction.response.send_message( embed = bembed(f"✅ Pvc Ownership tranferd to {data.mention}") , view = None , ephemeral = True)
+            newowner.callback = callback
+            view.add_item(newowner)
+            await interaction.response.send_message(view=view , ephemeral=True)
+ 
+
+
+        
+        @discord.ui.button(emoji= '<:bin:1188639295423139950>', custom_id="pvc:delete", row=1)
+        async def delete(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+            
+            confirm = Confirm(interaction.user)
+            await interaction.response.send_message( embed = bembed(f"Want To Delete Your PVC ? will get {pvc_coin(interaction.guild.id)[0]} {int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) : ,} back ") , view = confirm , ephemeral = True)
+            await confirm.wait()
+            if confirm.value :
+                try                :
+                   await client.db.execute("DELETE FROM pvcs WHERE vcid = $1" , info['vcid'])
+                   await interaction.guild.get_channel(info['vcid']).delete()
+                except :
+                    pass
+                await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) , interaction.user.id , interaction.guild.id )
+
+    @commands.hybrid_command(aliases = ['panel'])
+    @commands.guild_only()
+    @cooldown(1, 10, BucketType.guild)
+    @commands.check(check_perms)
+    async def pvcpanel(self , ctx ):
+        embed = bembed()
+
+        embed.set_author(name='PVC Panel', icon_url=ctx.guild.icon)
+        embed.title = "Click on the buttons to perform actions\n"
+        embed.add_field(name=" " , value="<:info:1188641528554455070> : Pvc Information\n\n<:add:1188641489392238662> : Add User\n\n<:remove:1188641493422977085> : Remove User\n\n👁️ : Hide/Unhide" )
+        embed.add_field(name=" " , value="<:users:1188641484895961228> : Add/Remove Friends\n\n🛺 : Auto Mode\n\n👑 : Transfer Ownership\n\n<:bin:1188639295423139950> : Delete PVC" )
+        view = PVC_COMMANDS.PanelView()
+        await ctx.send(embed = embed , view = view)
     
     
     # @commands.hybrid_command()

@@ -583,7 +583,9 @@ class Economy(commands.Cog):
         if not embed.description:
             page = last_page
             embed, last_page = await self.generate_lb_emb(ctx.guild , ctx.author, page, type)
-        await ctx.send(embed=embed , view = self.leaderboardPanelView(ctx.author,None, page, last_page, type))
+        view = self.leaderboardPanelView(ctx.author,None, page, last_page, type)
+        message = await ctx.send(embed=embed , view = view)
+        view.message = message
 
 async def setup(client):
    await client.add_cog(Economy(client))                       

@@ -461,465 +461,465 @@ class EcoManager(commands.Cog):
 
     # Manage settings Here !!!!!!!!!!!!!!!!!!
 
-    @commands.hybrid_command(aliases= ["prefix" , "config" , "start"])
-    @commands.guild_only()
-    @commands.check(check_perms)
-    async def setup(self, ctx, prefix: typing.Optional[str], coin_emoji : typing.Optional[str]):
-        if prefix and len(prefix) != 1:
-            await ctx.send("The length of the prefix should be equal to 1.")
-            return
+    # @commands.hybrid_command(aliases= ["prefix" , "config" , "start"])
+    # @commands.guild_only()
+    # @commands.check(check_perms)
+    # async def setup(self, ctx, prefix: typing.Optional[str], coin_emoji : typing.Optional[str]):
+    #     if prefix and len(prefix) != 1:
+    #         await ctx.send("The length of the prefix should be equal to 1.")
+    #         return
 
-        if prefix and len(prefix) == 1:
-            client.data[ctx.guild.id]["prefix"] = prefix
-            await client.db.execute('UPDATE guilds SET prefix = $1 WHERE id = $2', prefix, ctx.guild.id)
-        if coin_emoji:
-            client.data[ctx.guild.id]["coin"] = coin_emoji
-            await client.db.execute('UPDATE guilds SET coin = $1 WHERE id = $2', coin_emoji, ctx.guild.id)
+    #     if prefix and len(prefix) == 1:
+    #         client.data[ctx.guild.id]["prefix"] = prefix
+    #         await client.db.execute('UPDATE guilds SET prefix = $1 WHERE id = $2', prefix, ctx.guild.id)
+    #     if coin_emoji:
+    #         client.data[ctx.guild.id]["coin"] = coin_emoji
+    #         await client.db.execute('UPDATE guilds SET coin = $1 WHERE id = $2', coin_emoji, ctx.guild.id)
 
-        def setupEmbed():
-            embed = discord.Embed(title="Bot SetUp")
-            embed.description = f"Prefix - ` {client.data[ctx.guild.id]['prefix'] or ','} `\nCoin - {coin(ctx.guild.id)}"
-            value = ''
-            if client.data[ctx.guild.id]["channels"] and len(client.data[ctx.guild.id]["channels"]) > 0:
-                for channel in list(client.data[ctx.guild.id]["channels"]):
-                    if ctx.guild.get_channel(channel):
-                        value += f"{ctx.guild.get_channel(channel).mention}\n"
-                    else:
-                        client.data[ctx.guild.id]["channels"].remove(channel)
-            else:
-                client.data[ctx.guild.id]["channels"] = None
-                value = "Active In All channels"
-            embed.add_field(name='Channel(s)', value=value, inline=False)
-            value = ''
-            if client.data[ctx.guild.id]["manager"] and ctx.guild.get_role(client.data[ctx.guild.id]["manager"]):
-                value = ctx.guild.get_role(
-                    client.data[ctx.guild.id]["manager"]).mention
-            else:
-                client.data[ctx.guild.id]["manager"] = None
-                value = "No Manager Role"
-            embed.add_field(name='Manager', value=value, inline=False)
-            value = ''
-            if client.data[ctx.guild.id]["am_channels"] and len(client.data[ctx.guild.id]["am_channels"]) > 0:
-                for channel in list(client.data[ctx.guild.id]["am_channels"]):
-                    if ctx.guild.get_channel(channel):
-                        value += f"{ctx.guild.get_channel(channel).mention}\n"
-                    else:
-                        client.data[ctx.guild.id]["am_channels"].remove(
-                            channel)
-            else:
-                client.data[ctx.guild.id]["am_channels"] = None
-                value = "Active In All channels"
-            value += f"\n\nAuto Money(AM) Cash/min : **0-{client.data[ctx.guild.id]['am_cash']}**\nAuto Money(AM) pvc/min : **0-{client.data[ctx.guild.id]['am_pvc']}**"
-            embed.add_field(name='Auto Money Channel(s)',
-                            value=value, inline=False)
-            return embed
+    #     def setupEmbed():
+    #         embed = discord.Embed(title="Bot SetUp")
+    #         embed.description = f"Prefix - ` {client.data[ctx.guild.id]['prefix'] or ','} `\nCoin - {coin(ctx.guild.id)}"
+    #         value = ''
+    #         if client.data[ctx.guild.id]["channels"] and len(client.data[ctx.guild.id]["channels"]) > 0:
+    #             for channel in list(client.data[ctx.guild.id]["channels"]):
+    #                 if ctx.guild.get_channel(channel):
+    #                     value += f"{ctx.guild.get_channel(channel).mention}\n"
+    #                 else:
+    #                     client.data[ctx.guild.id]["channels"].remove(channel)
+    #         else:
+    #             client.data[ctx.guild.id]["channels"] = None
+    #             value = "Active In All channels"
+    #         embed.add_field(name='Channel(s)', value=value, inline=False)
+    #         value = ''
+    #         if client.data[ctx.guild.id]["manager"] and ctx.guild.get_role(client.data[ctx.guild.id]["manager"]):
+    #             value = ctx.guild.get_role(
+    #                 client.data[ctx.guild.id]["manager"]).mention
+    #         else:
+    #             client.data[ctx.guild.id]["manager"] = None
+    #             value = "No Manager Role"
+    #         embed.add_field(name='Manager', value=value, inline=False)
+    #         value = ''
+    #         if client.data[ctx.guild.id]["am_channels"] and len(client.data[ctx.guild.id]["am_channels"]) > 0:
+    #             for channel in list(client.data[ctx.guild.id]["am_channels"]):
+    #                 if ctx.guild.get_channel(channel):
+    #                     value += f"{ctx.guild.get_channel(channel).mention}\n"
+    #                 else:
+    #                     client.data[ctx.guild.id]["am_channels"].remove(
+    #                         channel)
+    #         else:
+    #             client.data[ctx.guild.id]["am_channels"] = None
+    #             value = "Active In All channels"
+    #         value += f"\n\nAuto Money(AM) Cash/min : **0-{client.data[ctx.guild.id]['am_cash']}**\nAuto Money(AM) pvc/min : **0-{client.data[ctx.guild.id]['am_pvc']}**"
+    #         embed.add_field(name='Auto Money Channel(s)',
+    #                         value=value, inline=False)
+    #         return embed
 
-        view = View()
+    #     view = View()
 
-        async def update_channels(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            data = channels.values
-            if len(data) == 0:
-                await client.db.execute('UPDATE guilds SET channels = $1 WHERE id = $2', None, ctx.guild.id)
-                client.data[ctx.guild.id]["channels"] = None
-            else:
-                await client.db.execute('UPDATE guilds SET channels = $1 WHERE id = $2', [item.id for item in data], ctx.guild.id)
-                client.data[ctx.guild.id]["channels"] = [
-                    item.id for item in data]
-            await interaction.response.edit_message(embed=setupEmbed())
+    #     async def update_channels(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         data = channels.values
+    #         if len(data) == 0:
+    #             await client.db.execute('UPDATE guilds SET channels = $1 WHERE id = $2', None, ctx.guild.id)
+    #             client.data[ctx.guild.id]["channels"] = None
+    #         else:
+    #             await client.db.execute('UPDATE guilds SET channels = $1 WHERE id = $2', [item.id for item in data], ctx.guild.id)
+    #             client.data[ctx.guild.id]["channels"] = [
+    #                 item.id for item in data]
+    #         await interaction.response.edit_message(embed=setupEmbed())
 
-        channels = discord.ui.ChannelSelect(channel_types=[
-                                            discord.ChannelType.text], placeholder="Casino command channels", min_values=0, max_values=10)
-        channels.callback = update_channels
-        view.add_item(channels)
+    #     channels = discord.ui.ChannelSelect(channel_types=[
+    #                                         discord.ChannelType.text], placeholder="Casino command channels", min_values=0, max_values=10)
+    #     channels.callback = update_channels
+    #     view.add_item(channels)
 
-        async def update_manager(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            data = manager.values
-            if len(data) == 0:
-                await client.db.execute('UPDATE guilds SET manager = $1 WHERE id = $2', None, ctx.guild.id)
-                client.data[ctx.guild.id]["manager"] = None
-            else:
-                await client.db.execute('UPDATE guilds SET manager = $1 WHERE id = $2', data[0].id, ctx.guild.id)
-                client.data[ctx.guild.id]["manager"] = data[0].id
-            await interaction.response.edit_message(embed=setupEmbed())
+    #     async def update_manager(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         data = manager.values
+    #         if len(data) == 0:
+    #             await client.db.execute('UPDATE guilds SET manager = $1 WHERE id = $2', None, ctx.guild.id)
+    #             client.data[ctx.guild.id]["manager"] = None
+    #         else:
+    #             await client.db.execute('UPDATE guilds SET manager = $1 WHERE id = $2', data[0].id, ctx.guild.id)
+    #             client.data[ctx.guild.id]["manager"] = data[0].id
+    #         await interaction.response.edit_message(embed=setupEmbed())
 
-        manager = discord.ui.RoleSelect(
-            placeholder="Casino Manager Role", min_values=0, max_values=1)
-        manager.callback = update_manager
-        view.add_item(manager)
+    #     manager = discord.ui.RoleSelect(
+    #         placeholder="Casino Manager Role", min_values=0, max_values=1)
+    #     manager.callback = update_manager
+    #     view.add_item(manager)
 
-        async def update_am_channels(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            data = am_channels.values
-            if len(data) == 0:
-                await client.db.execute('UPDATE guilds SET am_channels = $1 WHERE id = $2', None, ctx.guild.id)
-                client.data[ctx.guild.id]["am_channels"] = None
-            else:
-                await client.db.execute('UPDATE guilds SET am_channels = $1 WHERE id = $2', [item.id for item in data], ctx.guild.id)
-                client.data[ctx.guild.id]["am_channels"] = [
-                    item.id for item in data]
-            await interaction.response.edit_message(embed=setupEmbed())
+    #     async def update_am_channels(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         data = am_channels.values
+    #         if len(data) == 0:
+    #             await client.db.execute('UPDATE guilds SET am_channels = $1 WHERE id = $2', None, ctx.guild.id)
+    #             client.data[ctx.guild.id]["am_channels"] = None
+    #         else:
+    #             await client.db.execute('UPDATE guilds SET am_channels = $1 WHERE id = $2', [item.id for item in data], ctx.guild.id)
+    #             client.data[ctx.guild.id]["am_channels"] = [
+    #                 item.id for item in data]
+    #         await interaction.response.edit_message(embed=setupEmbed())
 
-        am_channels = discord.ui.ChannelSelect(channel_types=[
-                                               discord.ChannelType.text], placeholder="Auto Money channels", min_values=0, max_values=10)
-        am_channels.callback = update_am_channels
-        view.add_item(am_channels)
+    #     am_channels = discord.ui.ChannelSelect(channel_types=[
+    #                                            discord.ChannelType.text], placeholder="Auto Money channels", min_values=0, max_values=10)
+    #     am_channels.callback = update_am_channels
+    #     view.add_item(am_channels)
 
-        am_cash = Button(style=discord.ButtonStyle.grey, label="AM Cash")
+    #     am_cash = Button(style=discord.ButtonStyle.grey, label="AM Cash")
 
-        async def update_am_cash(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("Auto Money Cash !",
-                                "Input should be in Numbers")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                try:
-                    value = int(modal.value)
-                    client.data[ctx.guild.id]['am_cash'] = value
-                    await client.db.execute('UPDATE guilds SET am_cash = $1 WHERE id = $2', value, ctx.guild.id)
-                    await interaction.message.edit(embed=setupEmbed())
-                except Exception as e:
-                    await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        am_cash.callback = update_am_cash
-        view.add_item(am_cash)
+    #     async def update_am_cash(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("Auto Money Cash !",
+    #                             "Input should be in Numbers")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             try:
+    #                 value = int(modal.value)
+    #                 client.data[ctx.guild.id]['am_cash'] = value
+    #                 await client.db.execute('UPDATE guilds SET am_cash = $1 WHERE id = $2', value, ctx.guild.id)
+    #                 await interaction.message.edit(embed=setupEmbed())
+    #             except Exception as e:
+    #                 await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     am_cash.callback = update_am_cash
+    #     view.add_item(am_cash)
 
-        am_pvc = Button(style=discord.ButtonStyle.grey, label="AM Pvc")
+    #     am_pvc = Button(style=discord.ButtonStyle.grey, label="AM Pvc")
 
-        async def update_am_pvc(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("Auto Money Pvc !",
-                                "Input should be in Numbers")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                try:
-                    value = int(modal.value)
-                    client.data[ctx.guild.id]['am_pvc'] = value
-                    await client.db.execute('UPDATE guilds SET am_pvc = $1 WHERE id = $2', value, ctx.guild.id)
-                    await interaction.message.edit(embed=setupEmbed())
-                except Exception as e:
-                    await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        am_pvc.callback = update_am_pvc
-        view.add_item(am_pvc)
+    #     async def update_am_pvc(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("Auto Money Pvc !",
+    #                             "Input should be in Numbers")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             try:
+    #                 value = int(modal.value)
+    #                 client.data[ctx.guild.id]['am_pvc'] = value
+    #                 await client.db.execute('UPDATE guilds SET am_pvc = $1 WHERE id = $2', value, ctx.guild.id)
+    #                 await interaction.message.edit(embed=setupEmbed())
+    #             except Exception as e:
+    #                 await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     am_pvc.callback = update_am_pvc
+    #     view.add_item(am_pvc)
 
-        reset = Button(style=discord.ButtonStyle.blurple,
-                       label="Reset Prefix/coin")
+    #     reset = Button(style=discord.ButtonStyle.blurple,
+    #                    label="Reset Prefix/coin")
 
-        async def update_reset(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            await client.db.execute('UPDATE guilds SET prefix = $1 , coin = $1 WHERE id = $2', None, ctx.guild.id)
-            client.data[ctx.guild.id]["prefix"] = None
-            client.data[ctx.guild.id]["coin"] = None
+    #     async def update_reset(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         await client.db.execute('UPDATE guilds SET prefix = $1 , coin = $1 WHERE id = $2', None, ctx.guild.id)
+    #         client.data[ctx.guild.id]["prefix"] = None
+    #         client.data[ctx.guild.id]["coin"] = None
 
-            await interaction.response.edit_message(embed=setupEmbed())
-        reset.callback = update_reset
-        view.add_item(reset)
-        prefix1 = Button(style=discord.ButtonStyle.grey, label="Prefix", row=4)
+    #         await interaction.response.edit_message(embed=setupEmbed())
+    #     reset.callback = update_reset
+    #     view.add_item(reset)
+    #     prefix1 = Button(style=discord.ButtonStyle.grey, label="Prefix", row=4)
 
-        async def update_prefix1(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput(
-                "Enter Prefix", "The length of input should be 1")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value and len(modal.value) == 1:
-                client.data[ctx.guild.id]["prefix"] = modal.value
-                await client.db.execute('UPDATE guilds SET prefix = $1 WHERE id = $2', modal.value, ctx.guild.id)
-                await interaction.message.edit(embed=setupEmbed())
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        prefix1.callback = update_prefix1
-        view.add_item(prefix1)
-        coinx = Button(style=discord.ButtonStyle.grey, label="Coin", row=4)
+    #     async def update_prefix1(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput(
+    #             "Enter Prefix", "The length of input should be 1")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value and len(modal.value) == 1:
+    #             client.data[ctx.guild.id]["prefix"] = modal.value
+    #             await client.db.execute('UPDATE guilds SET prefix = $1 WHERE id = $2', modal.value, ctx.guild.id)
+    #             await interaction.message.edit(embed=setupEmbed())
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     prefix1.callback = update_prefix1
+    #     view.add_item(prefix1)
+    #     coinx = Button(style=discord.ButtonStyle.grey, label="Coin", row=4)
 
-        async def update_coinx(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("Paste Coin", "Paste you coin")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                client.data[ctx.guild.id]["coin"] = modal.value
-                await client.db.execute('UPDATE guilds SET coin = $1 WHERE id = $2', modal.value, ctx.guild.id)
-                await interaction.message.edit(embed=setupEmbed())
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        coinx.callback = update_coinx
-        view.add_item(coinx)
-        done = Button(style=discord.ButtonStyle.green, label="Done",  row=4)
+    #     async def update_coinx(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("Paste Coin", "Paste you coin")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             client.data[ctx.guild.id]["coin"] = modal.value
+    #             await client.db.execute('UPDATE guilds SET coin = $1 WHERE id = $2', modal.value, ctx.guild.id)
+    #             await interaction.message.edit(embed=setupEmbed())
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     coinx.callback = update_coinx
+    #     view.add_item(coinx)
+    #     done = Button(style=discord.ButtonStyle.green, label="Done",  row=4)
 
-        async def update_done(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            await interaction.response.edit_message(view=None)
-        done.callback = update_done
-        view.add_item(done)
-        await ctx.send(embed=setupEmbed(), view=view)
+    #     async def update_done(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         await interaction.response.edit_message(view=None)
+    #     done.callback = update_done
+    #     view.add_item(done)
+    #     await ctx.send(embed=setupEmbed(), view=view)
 
-    @commands.hybrid_command(aliases= ["pvcsetup"])
-    @commands.guild_only()
-    @commands.check(check_perms)
-    async def setuppvc(self, ctx): 
+    # @commands.hybrid_command(aliases= ["pvcsetup"])
+    # @commands.guild_only()
+    # @commands.check(check_perms)
+    # async def setuppvc(self, ctx): 
 
-        def setuppvcEmbed():
-            embed = discord.Embed(title="Pvc SetUp")
-            embed.description = f"{'`🟢`' if client.data[ctx.guild.id]['pvc'] else '`🔴`' } : PVC Status\nCoin : {pvc_coin(ctx.guild.id)[0]}\nCoin Name : {pvc_coin(ctx.guild.id)[1]}\n\nRate/hr : **{client.data[ctx.guild.id]['rate']}**\n\nMin Time : **{client.data[ctx.guild.id]['pvc_min']}** Hrs\nMax Time : **{client.data[ctx.guild.id]['pvc_max']}** Hrs\n(0 mean No limit)"
+    #     def setuppvcEmbed():
+    #         embed = discord.Embed(title="Pvc SetUp")
+    #         embed.description = f"{'`🟢`' if client.data[ctx.guild.id]['pvc'] else '`🔴`' } : PVC Status\nCoin : {pvc_coin(ctx.guild.id)[0]}\nCoin Name : {pvc_coin(ctx.guild.id)[1]}\n\nRate/hr : **{client.data[ctx.guild.id]['rate']}**\n\nMin Time : **{client.data[ctx.guild.id]['pvc_min']}** Hrs\nMax Time : **{client.data[ctx.guild.id]['pvc_max']}** Hrs\n(0 mean No limit)"
 
-            value = ''
-            if client.data[ctx.guild.id]["pvc_channel"] and ctx.guild.get_channel(client.data[ctx.guild.id]["pvc_channel"]):
-                value = ctx.guild.get_channel(
-                    client.data[ctx.guild.id]["pvc_channel"]).mention
-            else:
-                client.data[ctx.guild.id]["pvc_channel"] = None
-                value = "No seprate Channel For PVC"
-            embed.add_field(name='PVC Channel', value=value, inline=False)
+    #         value = ''
+    #         if client.data[ctx.guild.id]["pvc_channel"] and ctx.guild.get_channel(client.data[ctx.guild.id]["pvc_channel"]):
+    #             value = ctx.guild.get_channel(
+    #                 client.data[ctx.guild.id]["pvc_channel"]).mention
+    #         else:
+    #             client.data[ctx.guild.id]["pvc_channel"] = None
+    #             value = "No seprate Channel For PVC"
+    #         embed.add_field(name='PVC Channel', value=value, inline=False)
             
-            value = ''
-            if client.data[ctx.guild.id]["pvc_vc"] and ctx.guild.get_channel(client.data[ctx.guild.id]["pvc_vc"]):
-                value = ctx.guild.get_channel(
-                    client.data[ctx.guild.id]["pvc_vc"]).mention
-            else:
-                client.data[ctx.guild.id]["pvc_vc"] = None
-                value = "No vc For PVC"
-            embed.add_field(name='PVC vc', value=value, inline=False)
+    #         value = ''
+    #         if client.data[ctx.guild.id]["pvc_vc"] and ctx.guild.get_channel(client.data[ctx.guild.id]["pvc_vc"]):
+    #             value = ctx.guild.get_channel(
+    #                 client.data[ctx.guild.id]["pvc_vc"]).mention
+    #         else:
+    #             client.data[ctx.guild.id]["pvc_vc"] = None
+    #             value = "No vc For PVC"
+    #         embed.add_field(name='PVC vc', value=value, inline=False)
 
-            value = ''
-            if client.data[ctx.guild.id]["pvc_category"] and ctx.guild.get_channel(client.data[ctx.guild.id]["pvc_category"]):
-                value = ctx.guild.get_channel(
-                    client.data[ctx.guild.id]["pvc_category"]).mention
-            else:
-                client.data[ctx.guild.id]["pvc_category"] = None
-                value = "No Category"
+    #         value = ''
+    #         if client.data[ctx.guild.id]["pvc_category"] and ctx.guild.get_channel(client.data[ctx.guild.id]["pvc_category"]):
+    #             value = ctx.guild.get_channel(
+    #                 client.data[ctx.guild.id]["pvc_category"]).mention
+    #         else:
+    #             client.data[ctx.guild.id]["pvc_category"] = None
+    #             value = "No Category"
 
-            embed.add_field(name='PVC Category',
-                            value=value, inline=False)
-            return embed
+    #         embed.add_field(name='PVC Category',
+    #                         value=value, inline=False)
+    #         return embed
 
-        view = View()
+    #     view = View()
 
-        async def update_pvc_channel(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            data = pvc_channel.values
-            if len(data) == 0:
-                await client.db.execute('UPDATE guilds SET pvc_channel = $1 WHERE id = $2', None, ctx.guild.id)
-                client.data[ctx.guild.id]["pvc_channel"] = None
-            else:
-                await client.db.execute('UPDATE guilds SET pvc_channel = $1 WHERE id = $2', data[0].id, ctx.guild.id)
-                client.data[ctx.guild.id]["pvc_channel"] = data[0].id
-            await interaction.response.edit_message(embed=setuppvcEmbed())
+    #     async def update_pvc_channel(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         data = pvc_channel.values
+    #         if len(data) == 0:
+    #             await client.db.execute('UPDATE guilds SET pvc_channel = $1 WHERE id = $2', None, ctx.guild.id)
+    #             client.data[ctx.guild.id]["pvc_channel"] = None
+    #         else:
+    #             await client.db.execute('UPDATE guilds SET pvc_channel = $1 WHERE id = $2', data[0].id, ctx.guild.id)
+    #             client.data[ctx.guild.id]["pvc_channel"] = data[0].id
+    #         await interaction.response.edit_message(embed=setuppvcEmbed())
 
-        pvc_channel = discord.ui.ChannelSelect(channel_types=[
-            discord.ChannelType.text], placeholder="PVC command channel", min_values=0, max_values=1)
-        pvc_channel.callback = update_pvc_channel
-        view.add_item(pvc_channel)
+    #     pvc_channel = discord.ui.ChannelSelect(channel_types=[
+    #         discord.ChannelType.text], placeholder="PVC command channel", min_values=0, max_values=1)
+    #     pvc_channel.callback = update_pvc_channel
+    #     view.add_item(pvc_channel)
         
-        async def update_pvc_vc(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            data = pvc_vc.values
-            if len(data) == 0:
-                await client.db.execute('UPDATE guilds SET pvc_vc = $1 WHERE id = $2', None, ctx.guild.id)
-                client.data[ctx.guild.id]["pvc_vc"] = None
-            else:
-                await client.db.execute('UPDATE guilds SET pvc_vc = $1 WHERE id = $2', data[0].id, ctx.guild.id)
-                client.data[ctx.guild.id]["pvc_vc"] = data[0].id
-            await interaction.response.edit_message(embed=setuppvcEmbed())
+    #     async def update_pvc_vc(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         data = pvc_vc.values
+    #         if len(data) == 0:
+    #             await client.db.execute('UPDATE guilds SET pvc_vc = $1 WHERE id = $2', None, ctx.guild.id)
+    #             client.data[ctx.guild.id]["pvc_vc"] = None
+    #         else:
+    #             await client.db.execute('UPDATE guilds SET pvc_vc = $1 WHERE id = $2', data[0].id, ctx.guild.id)
+    #             client.data[ctx.guild.id]["pvc_vc"] = data[0].id
+    #         await interaction.response.edit_message(embed=setuppvcEmbed())
 
-        pvc_vc = discord.ui.ChannelSelect(channel_types=[
-            discord.ChannelType.voice], placeholder="PVC voice channel", min_values=0, max_values=1)
-        pvc_vc.callback = update_pvc_vc
-        view.add_item(pvc_vc)
+    #     pvc_vc = discord.ui.ChannelSelect(channel_types=[
+    #         discord.ChannelType.voice], placeholder="PVC voice channel", min_values=0, max_values=1)
+    #     pvc_vc.callback = update_pvc_vc
+    #     view.add_item(pvc_vc)
 
-        async def update_pvc_category(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            data = pvc_category.values
-            if len(data) == 0:
-                await client.db.execute('UPDATE guilds SET pvc_category = $1 WHERE id = $2', None, ctx.guild.id)
-                client.data[ctx.guild.id]["pvc_category"] = None
-            else:
-                await client.db.execute('UPDATE guilds SET pvc_category = $1 WHERE id = $2', data[0].id, ctx.guild.id)
-                client.data[ctx.guild.id]["pvc_category"] = data[0].id
-            await interaction.response.edit_message(embed=setuppvcEmbed())
+    #     async def update_pvc_category(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         data = pvc_category.values
+    #         if len(data) == 0:
+    #             await client.db.execute('UPDATE guilds SET pvc_category = $1 WHERE id = $2', None, ctx.guild.id)
+    #             client.data[ctx.guild.id]["pvc_category"] = None
+    #         else:
+    #             await client.db.execute('UPDATE guilds SET pvc_category = $1 WHERE id = $2', data[0].id, ctx.guild.id)
+    #             client.data[ctx.guild.id]["pvc_category"] = data[0].id
+    #         await interaction.response.edit_message(embed=setuppvcEmbed())
 
-        pvc_category = discord.ui.ChannelSelect(channel_types=[
-            discord.ChannelType.category], placeholder="PVC's Category", min_values=0, max_values=1)
-        pvc_category.callback = update_pvc_category
-        view.add_item(pvc_category)
+    #     pvc_category = discord.ui.ChannelSelect(channel_types=[
+    #         discord.ChannelType.category], placeholder="PVC's Category", min_values=0, max_values=1)
+    #     pvc_category.callback = update_pvc_category
+    #     view.add_item(pvc_category)
 
-        pvc = Button(style=discord.ButtonStyle.danger if client.data[ctx.guild.id]['pvc']
-                     else discord.ButtonStyle.green, label=f"{'Pvc : OFF' if client.data[ctx.guild.id]['pvc'] else 'Pvc : ON'}")
+    #     pvc = Button(style=discord.ButtonStyle.danger if client.data[ctx.guild.id]['pvc']
+    #                  else discord.ButtonStyle.green, label=f"{'Pvc : OFF' if client.data[ctx.guild.id]['pvc'] else 'Pvc : ON'}")
 
-        async def update_pvc(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            if client.data[ctx.guild.id]['pvc']:
-                await client.db.execute('UPDATE guilds SET pvc = $1 WHERE id = $2', False, ctx.guild.id)
-                client.data[ctx.guild.id]['pvc'] = False
-                pvc.style = discord.ButtonStyle.green
-                pvc.label = 'Pvc : ON'
-            else:
-                await client.db.execute('UPDATE guilds SET pvc = $1 WHERE id = $2', True, ctx.guild.id)
-                client.data[ctx.guild.id]['pvc'] = True
-                pvc.style = discord.ButtonStyle.danger
-                pvc.label = 'Pvc : OFF'
+    #     async def update_pvc(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         if client.data[ctx.guild.id]['pvc']:
+    #             await client.db.execute('UPDATE guilds SET pvc = $1 WHERE id = $2', False, ctx.guild.id)
+    #             client.data[ctx.guild.id]['pvc'] = False
+    #             pvc.style = discord.ButtonStyle.green
+    #             pvc.label = 'Pvc : ON'
+    #         else:
+    #             await client.db.execute('UPDATE guilds SET pvc = $1 WHERE id = $2', True, ctx.guild.id)
+    #             client.data[ctx.guild.id]['pvc'] = True
+    #             pvc.style = discord.ButtonStyle.danger
+    #             pvc.label = 'Pvc : OFF'
 
-            await interaction.response.edit_message(embed=setuppvcEmbed(), view=view)
+    #         await interaction.response.edit_message(embed=setuppvcEmbed(), view=view)
 
-        pvc.callback = update_pvc
-        view.add_item(pvc)
+    #     pvc.callback = update_pvc
+    #     view.add_item(pvc)
 
-        rate = Button(style=discord.ButtonStyle.grey, label="rate")
-        async def update_rate(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("Rate/hr Fro Pvc",
-                                "Input should be in Numbers")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                try:
-                    value = int(modal.value)
-                    client.data[ctx.guild.id]['rate'] = value
-                    await client.db.execute('UPDATE guilds SET rate = $1 WHERE id = $2', value, ctx.guild.id)
-                    await interaction.message.edit(embed=setuppvcEmbed())
-                except Exception as e:
-                    await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        rate.callback = update_rate
-        view.add_item(rate)
+    #     rate = Button(style=discord.ButtonStyle.grey, label="rate")
+    #     async def update_rate(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("Rate/hr Fro Pvc",
+    #                             "Input should be in Numbers")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             try:
+    #                 value = int(modal.value)
+    #                 client.data[ctx.guild.id]['rate'] = value
+    #                 await client.db.execute('UPDATE guilds SET rate = $1 WHERE id = $2', value, ctx.guild.id)
+    #                 await interaction.message.edit(embed=setuppvcEmbed())
+    #             except Exception as e:
+    #                 await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     rate.callback = update_rate
+    #     view.add_item(rate)
         
-        pvc_coin_btn = Button(style=discord.ButtonStyle.grey, label="coin")
+    #     pvc_coin_btn = Button(style=discord.ButtonStyle.grey, label="coin")
 
-        async def update_pvc_coin(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("PVC Coin",
-                                "Paste a emoji")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                try:
-                    value = modal.value
-                    client.data[ctx.guild.id]['pvc_coin'] = value
-                    await client.db.execute('UPDATE guilds SET pvc_coin = $1 WHERE id = $2', value, ctx.guild.id)
-                    await interaction.message.edit(embed=setuppvcEmbed())
-                except Exception as e:
-                    await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        pvc_coin_btn.callback = update_pvc_coin
-        view.add_item(pvc_coin_btn)
+    #     async def update_pvc_coin(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("PVC Coin",
+    #                             "Paste a emoji")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             try:
+    #                 value = modal.value
+    #                 client.data[ctx.guild.id]['pvc_coin'] = value
+    #                 await client.db.execute('UPDATE guilds SET pvc_coin = $1 WHERE id = $2', value, ctx.guild.id)
+    #                 await interaction.message.edit(embed=setuppvcEmbed())
+    #             except Exception as e:
+    #                 await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     pvc_coin_btn.callback = update_pvc_coin
+    #     view.add_item(pvc_coin_btn)
         
-        pvc_name = Button(style=discord.ButtonStyle.grey, label="Coin Name")
+    #     pvc_name = Button(style=discord.ButtonStyle.grey, label="Coin Name")
 
-        async def update_pvc_name(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("PVC Coin Name",
-                                "Enter The Coin Name")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                try:
-                    value = modal.value
-                    client.data[ctx.guild.id]['pvc_name'] = value
-                    await client.db.execute('UPDATE guilds SET pvc_name = $1 WHERE id = $2', value, ctx.guild.id)
-                    await interaction.message.edit(embed=setuppvcEmbed())
-                except Exception as e:
-                    await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        pvc_name.callback = update_pvc_name
-        view.add_item(pvc_name)
+    #     async def update_pvc_name(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("PVC Coin Name",
+    #                             "Enter The Coin Name")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             try:
+    #                 value = modal.value
+    #                 client.data[ctx.guild.id]['pvc_name'] = value
+    #                 await client.db.execute('UPDATE guilds SET pvc_name = $1 WHERE id = $2', value, ctx.guild.id)
+    #                 await interaction.message.edit(embed=setuppvcEmbed())
+    #             except Exception as e:
+    #                 await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     pvc_name.callback = update_pvc_name
+    #     view.add_item(pvc_name)
 
-        min_time = Button(style=discord.ButtonStyle.grey, label="Min Time")
+    #     min_time = Button(style=discord.ButtonStyle.grey, label="Min Time")
 
-        async def update_min_time(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("Min Amount Of Time For PVC ? (in Hrs)",
-                                "Input should be in Numbers")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                try:
-                    value = int(modal.value)
-                    client.data[ctx.guild.id]['pvc_min'] = value
-                    await client.db.execute('UPDATE guilds SET pvc_min = $1 WHERE id = $2', value, ctx.guild.id)
-                    await interaction.message.edit(embed=setuppvcEmbed())
-                except Exception as e:
-                    await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        min_time.callback = update_min_time
-        view.add_item(min_time)
+    #     async def update_min_time(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("Min Amount Of Time For PVC ? (in Hrs)",
+    #                             "Input should be in Numbers")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             try:
+    #                 value = int(modal.value)
+    #                 client.data[ctx.guild.id]['pvc_min'] = value
+    #                 await client.db.execute('UPDATE guilds SET pvc_min = $1 WHERE id = $2', value, ctx.guild.id)
+    #                 await interaction.message.edit(embed=setuppvcEmbed())
+    #             except Exception as e:
+    #                 await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     min_time.callback = update_min_time
+    #     view.add_item(min_time)
         
-        max_time = Button(style=discord.ButtonStyle.grey, label="Max Time")
+    #     max_time = Button(style=discord.ButtonStyle.grey, label="Max Time")
 
-        async def update_max_time(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            modal = SingleInput("Max Amount Of Time For PVC ? (in Hrs)",
-                                "Input should be in Numbers")
-            await interaction.response.send_modal(modal)
-            await modal.wait()
-            if modal.value:
-                try:
-                    value = int(modal.value)
-                    client.data[ctx.guild.id]['pvc_max'] = value
-                    await client.db.execute('UPDATE guilds SET pvc_max = $1 WHERE id = $2', value, ctx.guild.id)
-                    await interaction.message.edit(embed=setuppvcEmbed())
-                except Exception as e:
-                    await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
-            else:
-                await interaction.followup.send("No input", ephemeral=True)
-        max_time.callback = update_max_time
-        view.add_item(max_time)
+    #     async def update_max_time(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         modal = SingleInput("Max Amount Of Time For PVC ? (in Hrs)",
+    #                             "Input should be in Numbers")
+    #         await interaction.response.send_modal(modal)
+    #         await modal.wait()
+    #         if modal.value:
+    #             try:
+    #                 value = int(modal.value)
+    #                 client.data[ctx.guild.id]['pvc_max'] = value
+    #                 await client.db.execute('UPDATE guilds SET pvc_max = $1 WHERE id = $2', value, ctx.guild.id)
+    #                 await interaction.message.edit(embed=setuppvcEmbed())
+    #             except Exception as e:
+    #                 await interaction.followup.send(f"Invalid Input {e}", ephemeral=True)
+    #         else:
+    #             await interaction.followup.send("No input", ephemeral=True)
+    #     max_time.callback = update_max_time
+    #     view.add_item(max_time)
 
-        done = Button(style=discord.ButtonStyle.blurple, label="Done")
+    #     done = Button(style=discord.ButtonStyle.blurple, label="Done")
 
-        async def update_done(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Not Your Interaction")
-                return
-            await interaction.response.edit_message(view=None)
-        done.callback = update_done
-        view.add_item(done)
-        await ctx.send(embed=setuppvcEmbed(), view=view)
+    #     async def update_done(interaction):
+    #         if interaction.user != ctx.author:
+    #             await interaction.response.send_message("Not Your Interaction")
+    #             return
+    #         await interaction.response.edit_message(view=None)
+    #     done.callback = update_done
+    #     view.add_item(done)
+    #     await ctx.send(embed=setuppvcEmbed(), view=view)
 
     @commands.hybrid_command()
     @commands.guild_only()
