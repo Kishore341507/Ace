@@ -6,7 +6,7 @@ import typing
 from discord.ui import Button, View
 from discord import app_commands
 
-
+ 
 class SingleInput(discord.ui.Modal, title='...'):
     def __init__(self, question, placeholder):
         super().__init__()
