@@ -2,6 +2,7 @@
 *.env
 .env
 
+
 # Ignore .json files
 *.json
 
