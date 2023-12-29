@@ -3,10 +3,7 @@ from discord.ext import commands
 import asyncpg
 from dotenv import load_dotenv
 import os
-
-from pathlib import Path
-from asyncpg_trek import plan, execute, Direction
-from asyncpg_trek.asyncpg import AsyncpgBackend
+import json
 
 load_dotenv()
 
@@ -16,13 +13,18 @@ class MyBot(commands.Bot):
 
     async def setup_hook(self):
         
-        self.db = await asyncpg.create_pool(dsn= os.environ.get(f"DB"))
+        async def _setup_connection(con):
+                    await con.set_type_codec('jsonb', schema='pg_catalog',
+                                            encoder= json.dumps , decoder=json.loads)
+        
+        self.db = await asyncpg.create_pool(dsn= os.environ.get(f"DB") , init=_setup_connection )
         print("Connection to db DONE!")
  
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
 
 defult_prefix = ","
+
 
 async def get_prefix(client , message):  
     try :
@@ -39,6 +41,28 @@ intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 client = MyBot(command_prefix= get_prefix , strip_after_prefix =True, case_insensitive=True, intents=intents , help_command= None)
+
+defult_economy = { 
+                "work" : {
+                    "max" : 5000 ,"min" : 1000,"cooldown" : 600},
+                "crime" : {
+                    "max" : 5000 ,"cooldown" : 600 ,},
+                "rob" : {
+                    "cooldown" : 600 ,"percent" : 0.8,}    }
+
+defult_games = { 
+            "bj" : {
+                "max" : 50000 ,"min" : 1000},
+            "slots" : {
+                "max" : 50000 ,"min" : 1000,"2" : 1.5,"3" : 2},
+            "roulette" : {
+                "max" : 50000 ,"min" : 1000,},
+            "coinflip" : {
+                "max" : 50000 ,"min" : 1000,},
+            "russian-roulette" : {
+                "max" : 50000 ,"min" : 1000,},
+            "roll" : {
+                "max" : 50000 ,"min" : 1000,}   }
 
 
 def check_perms(ctx) -> bool:
