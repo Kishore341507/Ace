@@ -51,6 +51,14 @@ class Economy(commands.Cog):
     async def check_channel_pvc(ctx) ->bool : 
         return client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels'] or client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id
     
+    #used in Work , Crime and Rob command
+    
+    def cooldown_funtion(ctx):
+        if client.data[ctx.guild.id]['economy'] :
+            return commands.Cooldown(1, client.data[ctx.guild.id]['economy'][str(ctx.command.name)]['cooldown'])
+        else :
+            return commands.Cooldown(1, defult_economy[str(ctx.command.name)]['cooldown'])
+    
 #------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                            AUTOCOINS     
 
@@ -220,16 +228,17 @@ class Economy(commands.Cog):
 # ------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                               WORK COMMAND 
 
+        
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @commands.cooldown(1 , 600 ,BucketType.member )
-    # @commands.dynamic_cooldown( cooldown_funtion , type = BucketType.member)
+    @commands.dynamic_cooldown( cooldown_funtion , type = BucketType.member)
     async def work(self , ctx):
         ecoembed = discord.Embed(color=  0x08FC08)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
-        work_amount = 15000
-        amount = (random.randint(0, work_amount))    
+        
+        amount = (random.randint( client.data[ctx.guild.id]['economy']['work']['min'] if client.data[ctx.guild.id]['economy'] else defult_economy['work']['min'] , client.data[ctx.guild.id]['economy']['work']['max'] if client.data[ctx.guild.id]['economy'] else defult_economy['work']['max'])) 
+           
         x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
         if "0" in x :
             await open_account( ctx.guild.id , ctx.author.id)
@@ -249,8 +258,7 @@ class Economy(commands.Cog):
             ecoembed.description = f"⌚ | why to much work rest for {min}min {sec}seconds."
             await ctx.send (embed = ecoembed)
             return    
-        else :
-            await ctx.send(error)
+        
 
 # ------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                               crime COMMAND 
@@ -258,12 +266,12 @@ class Economy(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(1, 600, BucketType.member)
+    @commands.dynamic_cooldown( cooldown_funtion , type= BucketType.member )
     async def crime(self , ctx):
         ecoembed = discord.Embed()
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
-        work_amount = 15000   
-        amount = (random.randint(-int(work_amount/2) , work_amount))    
+        crime_amount = client.data[ctx.guild.id]['economy']['crime']['max'] if client.data[ctx.guild.id]['economy'] else defult_economy['crime']['max']   
+        amount = (random.randint(-int(crime_amount/2) , crime_amount))    
         x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
         if "0" in x :
             await open_account( ctx.guild.id , ctx.author.id)
@@ -309,7 +317,7 @@ class Economy(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(1, 600 , BucketType.user)
+    @commands.dynamic_cooldown( cooldown_funtion , BucketType.member  )
     async def rob(self, ctx, user:   discord.Member):
         ecoembed = discord.Embed(color= 0xF90651)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
@@ -317,10 +325,6 @@ class Economy(commands.Cog):
             await ctx.send('Trying to rob yourself?')
             ctx.command.reset_cooldown(ctx)
             return
-        # elif user is client.user:
-        #     await ctx.send('Trying to rob ME?')     
-        #     ctx.command.reset_cooldown(ctx)
-        #     return
         else:
             user_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
             member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
@@ -334,7 +338,7 @@ class Economy(commands.Cog):
             mem_total = member_bal["bank"] + member_bal["cash"]
             user_cash = user_bal["cash"]
 
-            rob_amount = 0.8
+            rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else defult_economy['rob']['percent'] 
             if mem_total < 5000:
                 if user_cash < 1000:
                     await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , int(mem_total * rob_amount)  , ctx.author.id , ctx.guild.id) 
