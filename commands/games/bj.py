@@ -203,7 +203,7 @@ class Bj(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return
         elif amount <= _min or amount > bj_amount:
-            await ctx.send(f'You cannot BJ 0 , less or more then {bj_amount}')
+            await ctx.send(f'You cannot BJ 0 , less or more than {bj_amount}')
             ctx.command.reset_cooldown(ctx)
             return
 
@@ -263,7 +263,7 @@ class Bj(commands.Cog):
 
         # embed
         embed = discord.Embed(
-            description="`hit` - take another card\n`stand` - end the game\n`double down` - double your bet, hit once, then stand", color=0xebd691)
+            description="`hit` - take another card\n`stand` - end the game\n`double down` - double your bet, hit once, than stand", color=0xebd691)
         embed.set_author(
             name=ctx.author, icon_url=ctx.author.display_avatar.url)
         embed.add_field(name=f"**Your Hand**",
