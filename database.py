@@ -51,18 +51,18 @@ defult_economy = {
                     "cooldown" : 600 ,"percent" : 0.8,}    }
 
 defult_games = { 
-            "bj" : {
-                "max" : 50000 ,"min" : 1000},
+            "blackjack" : {
+                "max" : 50000 ,"min" : 0},
             "slots" : {
-                "max" : 50000 ,"min" : 1000,"2" : 1.5,"3" : 2},
+                "max" : 50000 ,"min" : 0,"2" : 1.5,"3" : 2},
             "roulette" : {
-                "max" : 50000 ,"min" : 1000,},
+                "max" : 50000 ,"min" : 0,},
             "coinflip" : {
-                "max" : 50000 ,"min" : 1000,},
+                "max" : 50000 ,"min" : 0,},
             "russian-roulette" : {
-                "max" : 50000 ,"min" : 1000,},
+                "max" : 100000 ,"min" : 0,},
             "roll" : {
-                "max" : 50000 ,"min" : 1000,}   }
+                "max" : 50000 ,"min" : 0,}   }
 
 
 def check_perms(ctx) -> bool:

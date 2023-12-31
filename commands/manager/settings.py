@@ -60,6 +60,8 @@ class multiInputModal(discord.ui.Modal, title='...'):
           label=self.questions[i],
           placeholder=self.placeholders[i],
           default= self.defults[i],
+          min_length=min[i],
+          max_length=max[i]
       )
       self.add_item(self.input)
 
@@ -165,9 +167,7 @@ class Settings(commands.Cog):
         elif main_selection == 2:
           embed, view = await Settings.economySettingsMessage(interaction.guild)
         elif main_selection == 3:
-          await interaction.response.send_message(
-              f"This feature is not ready yet", ephemeral=True)
-          return
+          embed, view = await Settings.gameSettingsMessage(interaction.guild)
         elif main_selection == 4:
           embed, view = await Settings.pvcSettingsMessage(interaction.guild)
         else:
@@ -396,6 +396,9 @@ class Settings(commands.Cog):
   #----------------------------------------Economy Settings Message------------------------------------------
   
   async def economySettingsMessage(guild: discord.Guild):
+    
+    client.data[guild.id]['economy'] = { **defult_games ,  **(client.data[guild.id]['economy'] if client.data[guild.id]['economy'] else {})}
+
     # Fetching the economy coin
     economy_coin = coin(guild.id)
 
@@ -427,6 +430,15 @@ class Settings(commands.Cog):
         value=
         f"Auto Money(AM) Cash/min : **0-{automoney_amount_cash}**\nAuto Money(AM) pvc/min : **0-{automoney_amount_pvc}**",
         inline=False)
+    embed.add_field(name="Rob Settings",
+                    value= f"Percent : **{int((client.data[guild.id]['economy']['rob']['percent'])* 100)}%**\n`⌚` : **{int((client.data[guild.id]['economy']['rob']['cooldown'])/60)}mins**",
+                    )
+    embed.add_field(name="Crime Settings",
+                    value= f"Amount : **{client.data[guild.id]['economy']['crime']['max']}**\n`⌚` : **{int((client.data[guild.id]['economy']['crime']['cooldown'])/60)}mins**",
+                    )
+    embed.add_field(name="Work Settings",
+                    value= f"Amount : **{client.data[guild.id]['economy']['work']['min']}** - **{client.data[guild.id]['economy']['work']['max']}**\n `⌚` : **{int((client.data[guild.id]['economy']['work']['cooldown'])/60)}mins**",
+                    )
 
     # Creating the Economy settings view
     class economySettingsView(discord.ui.View):
@@ -477,7 +489,25 @@ class Settings(commands.Cog):
                   emoji="<:settings:1187254549828882562>",
                   description=
                   f"Change the amount of cash given as automoney when texting in automoney channels.",
-                  value="3")
+                  value="3"),
+              discord.SelectOption(
+                  label="Work Settings",
+                  emoji="<:settings:1187254549828882562>",
+                  description=
+                  f"Change the Work Command Settings.",
+                  value="4"),
+              discord.SelectOption(
+                  label="Crime Settings",
+                  emoji="<:settings:1187254549828882562>",
+                  description=
+                  f"Change the Crime Command Settings.",
+                  value="5"),
+              discord.SelectOption(
+                  label="Rob Settings",
+                  emoji="<:settings:1187254549828882562>",
+                  description=
+                  f"Change the Rob Command Settings.",
+                  value="6"),
           ],
           custom_id="economy_setings_select")
       async def economy_setings_select(self, interaction: discord.Interaction,
@@ -604,6 +634,446 @@ class Settings(commands.Cog):
           view.message = self.message
           await interaction.message.edit(embed=embed, view=view)
           return
+        
+        if selection == 4:
+          
+            # Modal to update the amount of cash given as work
+            modal = multiInputModal([
+                "Cooldown (in Minutes)",
+                "Min Ammount",
+                "Max Amount"
+            ], ["Enter cooldown amount.","Enter Min Cash amount.", "Enter Max Cash amount."], [1, 1 , 1], [8, 8 , 8] , [ str(int((client.data[interaction.guild.id]['economy']['work']['cooldown'] if client.data[interaction.guild.id]['economy'] else defult_economy['work']['cooldown']) / 60 ) ) , str(client.data[interaction.guild.id]['economy']['work']['min'] if client.data[interaction.guild.id]['economy'] else defult_economy['work']['min'] ) , str(client.data[interaction.guild.id]['economy']['work']['max'] if client.data[interaction.guild.id]['economy'] else defult_economy['work']['max']) ])
+            modal.title = "Work Command Settings"
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+
+            # Checking if the inputs are valid and updating the automoney amoun settings
+            has_value_error = False
+            for value in modal.values:
+              try:
+                value = int(value)
+              except ValueError:
+                has_value_error = True
+
+            if has_value_error:
+              await interaction.followup.send("Invalid input detected.",
+                                              ephemeral=True)
+              return
+            else:
+              client.data[interaction.guild.id]['economy']['work'] = { "cooldown" : abs(int(modal.values[0])) * 60 , "min" : abs(int(modal.values[1])) , "max" : abs(int(modal.values[2])) }
+              await client.db.execute(
+                  'UPDATE guilds SET economy = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]['economy'], interaction.guild.id)
+
+            # Updating the original message
+            embed, view = await Settings.economySettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+        
+        if selection == 5:
+            
+              
+              # Modal to update the amount of cash given as crime 
+              modal = multiInputModal([
+                  "Cooldown (in Minutes)",
+                  "Max Amount"
+              ], ["Enter cooldown amount.","Enter Max Cash amount."], [1, 1], [8, 8] , [ str(int((client.data[interaction.guild.id]['economy']['crime']['cooldown'] if client.data[interaction.guild.id]['economy'] else defult_economy['crime']['cooldown']) / 60 ) ) , str(client.data[interaction.guild.id]['economy']['crime']['max'] if client.data[interaction.guild.id]['economy'] else defult_economy['crime']['max']) ])
+              modal.title = "Crime Command Settings"
+              await interaction.response.send_modal(modal)
+              await modal.wait()
+  
+              # Checking if the inputs are valid and updating the automoney amoun settings
+              
+              has_value_error = False
+              for value in modal.values:
+                try:
+                  value = int(value)
+                except ValueError:
+                  has_value_error = True
+  
+              if has_value_error:
+                await interaction.followup.send("Invalid input detected.",
+                                                ephemeral=True)
+                return
+              else:
+                client.data[interaction.guild.id]['economy']['crime'] = { "cooldown" : abs(int(modal.values[0])) * 60 , "max" : abs(int(modal.values[1])) }
+                await client.db.execute(
+                    'UPDATE guilds SET economy = $1 WHERE id = $2',
+                    client.data[interaction.guild.id]['economy'], interaction.guild.id)
+  
+              # Updating the original message
+              embed, view = await Settings.economySettingsMessage(self.guild)
+              view.user_id = self.user_id
+              view.message = self.message
+              await interaction.message.edit(embed=embed, view=view)
+              return
+        
+        if selection == 6:
+          
+          # Modal to update the amount rob
+          modal = multiInputModal([
+              "Cooldown (in Minutes)",
+              "Percent (%)"
+          ], ["Enter cooldown amount.","Enter Percent."], [1, 1], [8, 2] , [ str(int((client.data[interaction.guild.id]['economy']['rob']['cooldown'] if client.data[interaction.guild.id]['economy'] else defult_economy['rob']['cooldown']) / 60 ) ) , str(int((client.data[interaction.guild.id]['economy']['rob']['percent'] if client.data[interaction.guild.id]['economy'] else defult_economy['rob']['percent']) * 100)) ])
+          
+          modal.title = "Rob Command Settings"
+          await interaction.response.send_modal(modal)
+          await modal.wait()
+          
+          # Checking if the inputs are valid
+          has_value_error = False
+          for value in modal.values:
+            try:
+              value = int(value)
+            except ValueError:
+              has_value_error = True
+          
+          if has_value_error:
+            await interaction.followup.send("Invalid input detected.",
+                                            ephemeral=True)
+            return
+          else :
+            client.data[interaction.guild.id]['economy']['rob'] = { "cooldown" : abs(int(modal.values[0])) * 60 , "percent" : abs(int(modal.values[1]) / 100) }
+            await client.db.execute(
+                'UPDATE guilds SET economy = $1 WHERE id = $2',
+                client.data[interaction.guild.id]['economy'], interaction.guild.id)
+
+            embed, view = await Settings.economySettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+            
+        else:
+          await interaction.response.send_message(embed=bembed(
+              f"<:pixel_error:1187995377891278919> Interaction Failed: Unknown error"
+          ),
+                                                  ephemeral=True)
+          return
+        
+
+    return embed, economySettingsView(guild)
+
+
+
+
+  #----------------------------------------Games Settings Message------------------------------------------
+  
+  async def gameSettingsMessage(guild: discord.Guild):
+    
+    client.data[guild.id]['games'] = { **defult_games ,  **(client.data[guild.id]['games'] if client.data[guild.id]['games'] else {})}
+
+    # Creating the embed for Economy settings message
+    embed = discord.Embed(title="Game Settings")
+    embed.add_field(name="Blackjack",
+                    value= f"min : **{ client.data[guild.id]['games']['blackjack']['min']}**\nmax : **{client.data[guild.id]['games']['blackjack']['max']}**",
+    )
+    embed.add_field(name="Coinflip",
+                    value= f"min : **{ client.data[guild.id]['games']['coinflip']['min']}**\nmax : **{client.data[guild.id]['games']['coinflip']['max']}**",
+    )
+    embed.add_field(name="Roulette",
+                    value= f"min : **{ client.data[guild.id]['games']['roulette']['min']}**\nmax : **{client.data[guild.id]['games']['roulette']['max']}**",
+    )
+    embed.add_field(name="Russian-roulette",
+                    value= f"min : **{ client.data[guild.id]['games']['russian-roulette']['min']}**\nmax : **{client.data[guild.id]['games']['russian-roulette']['max']}**",
+    )
+    embed.add_field(name="Roll",
+                    value= f"min : **{ client.data[guild.id]['games']['roll']['min']}**\nmax : **{client.data[guild.id]['games']['roll']['max']}**",
+    )
+    embed.add_field(name="Slots",
+                    value= f"min : **{ client.data[guild.id]['games']['slots']['min']}**\nmax : **{client.data[guild.id]['games']['slots']['max']}**",
+    )
+    # Creating the Economy settings view
+    class gamesSettingsView(discord.ui.View):
+
+      def __init__(self, guild):
+        super().__init__(timeout=180)
+        self.guild = guild
+        self.user_id = None
+        self.message = None
+        
+      async def interaction_check(self, interaction: discord.Interaction):
+
+        if interaction.user.id == self.user_id:
+          return True
+        else:
+          await interaction.response.send_message(embed=discord.Embed(
+              description=
+              "<:pixel_error:1187995377891278919> Interaction failed: Not your panel.",
+              color=0x2b2c31),
+                                                  ephemeral=True)
+          return False
+
+      async def on_timeout(self):
+        for item in self.children:
+          item.disabled = True
+        content = self.message.content[:-18] + "**[** Inactive **]**"
+        await self.message.edit(content=content, view=self)
+
+      @discord.ui.select(
+          placeholder="Select a setting to change.",
+          options=[
+              discord.SelectOption(label="Main menu",
+                                   emoji="<:Backtomenu:1187504974226268211>",
+                                   description="Go back to main menu page.",
+                                   value="0"),
+              discord.SelectOption(
+                  label="Blackjack",
+                  emoji="<:settings:1187254549828882562>",
+                  # description="Change the currency symbol of your economy.",
+                  value="1"),
+              discord.SelectOption(
+                label="Coinflip" ,
+                emoji="<:settings:1187254549828882562>",
+                # description="Change the currency symbol of your economy.",
+                value="2"),
+              discord.SelectOption(
+                label="Roulette" ,
+                emoji="<:settings:1187254549828882562>",
+                # description="Change the currency symbol of your economy.",
+                value="3"),
+              discord.SelectOption(
+                label="Russian-roulette" ,
+                emoji="<:settings:1187254549828882562>",
+                # description="Change the currency symbol of your economy.",
+                value="4"),
+              discord.SelectOption(
+                label="Roll" ,
+                emoji="<:settings:1187254549828882562>",
+                # description="Change the currency symbol of your economy.",
+                value="5"),
+              discord.SelectOption(
+                label="Slots" ,
+                emoji="<:settings:1187254549828882562>",
+                # description="Change the currency symbol of your economy.",
+                value="6"),       
+          ],
+          custom_id="game_setings_select")
+      async def game_setings_select(self, interaction: discord.Interaction,
+                                       select):
+        selection = int(select.values[0])
+
+        # Main Menu
+        if selection == 0:
+          embed, view = await Settings.setupMessage()
+          view.user_id = self.user_id
+          view.message = self.message
+          await interaction.response.edit_message(embed=embed, view=view)
+          return
+
+        # BlackJack
+        
+        elif selection == 1:
+            modal = multiInputModal([
+                "Min Ammount",
+                "Max Amount"], 
+                                    ["Enter Min Cash amount.", "Enter Max Cash amount."], [1 , 1], [8, 8 ] , [ str( client.data[interaction.guild.id]['games']['blackjack']['min']) , str( client.data[interaction.guild.id]['games']['blackjack']['max']) ])
+            modal.title = "Blackjack Command Settings"
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+
+            # Checking if the inputs are valid and updating the automoney amoun settings
+            has_value_error = False
+            for value in modal.values:
+              try:
+                value = int(value)
+              except ValueError:
+                has_value_error = True
+
+            if has_value_error:
+              await interaction.followup.send("Invalid input detected.",
+                                              ephemeral=True)
+              return
+            else:
+              client.data[interaction.guild.id]['games']['blackjack'] = { "min" : abs(int(modal.values[0])) , "max" : abs(int(modal.values[1])) }
+              await client.db.execute(
+                  'UPDATE guilds SET games = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]['games'], interaction.guild.id)
+
+            # Updating the original message
+            embed, view = await Settings.gameSettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+        
+        # Coinflip
+        elif selection == 2:
+            modal = multiInputModal([
+                "Min Ammount",
+                "Max Amount"], 
+                                    ["Enter Min Cash amount.", "Enter Max Cash amount."], [1 , 1], [8, 8 ] , [ str( client.data[interaction.guild.id]['games']['coinflip']['min']) , str( client.data[interaction.guild.id]['games']['coinflip']['max']) ])
+            modal.title = "Coinflip Command Settings"
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+
+            # Checking if the inputs are valid and updating the automoney amoun settings
+            has_value_error = False
+            for value in modal.values:
+              try:
+                value = int(value)
+              except ValueError:
+                has_value_error = True
+
+            if has_value_error:
+              await interaction.followup.send("Invalid input detected.",
+                                              ephemeral=True)
+              return
+            else:
+              client.data[interaction.guild.id]['games']['coinflip'] = { "min" : abs(int(modal.values[0])) , "max" : abs(int(modal.values[1]))  }
+              await client.db.execute(
+                  'UPDATE guilds SET games = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]['games'], interaction.guild.id)
+
+            # Updating the original message
+            embed, view = await Settings.gameSettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+        
+        # Roulette
+        elif selection == 3:
+            modal = multiInputModal([
+                "Min Ammount",
+                "Max Amount"], 
+                                    ["Enter Min Cash amount.", "Enter Max Cash amount."], [1 , 1], [8, 8 ] , [ str( client.data[interaction.guild.id]['games']['roulette']['min']) , str( client.data[interaction.guild.id]['games']['roulette']['max']) ])
+            modal.title = "Roulette Command Settings"
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+
+            # Checking if the inputs are valid and updating the automoney amoun settings
+            has_value_error = False
+            for value in modal.values:
+              try:
+                value = int(value)
+              except ValueError:
+                has_value_error = True
+
+            if has_value_error:
+              await interaction.followup.send("Invalid input detected.",
+                                              ephemeral=True)
+              return
+            else:
+              client.data[interaction.guild.id]['games']['roulette'] = { "min" : abs(int(modal.values[0])) , "max" : abs(int(modal.values[1])) }
+              await client.db.execute(
+                  'UPDATE guilds SET games = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]['games'], interaction.guild.id)
+
+            # Updating the original message
+            embed, view = await Settings.gameSettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+        
+        # Russian-roulette
+        elif selection == 4:
+            modal = multiInputModal([
+                "Min Ammount",
+                "Max Amount"], 
+                                    ["Enter Min Cash amount.", "Enter Max Cash amount."], [1 , 1], [8, 8 ] , [ str( client.data[interaction.guild.id]['games']['russian-roulette']['min']) , str( client.data[interaction.guild.id]['games']['russian-roulette']['max']) ])
+            modal.title = "Russian-roulette Command Settings"
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+
+            # Checking if the inputs are valid and updating the automoney amoun settings
+            has_value_error = False
+            for value in modal.values:
+              try:
+                value = int(value)
+              except ValueError:
+                has_value_error = True
+
+            if has_value_error:
+              await interaction.followup.send("Invalid input detected.",
+                                              ephemeral=True)
+              return
+            else:
+              client.data[interaction.guild.id]['games']['russian-roulette'] = { "min" : abs(int(modal.values[0]))  , "max" : abs(int(modal.values[1])) }
+              await client.db.execute(
+                  'UPDATE guilds SET games = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]['games'], interaction.guild.id)
+
+            # Updating the original message
+            embed, view = await Settings.gameSettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+        
+        # Roll
+        elif selection == 5:
+            modal = multiInputModal([
+                "Min Ammount",
+                "Max Amount"], 
+                                    ["Enter Min Cash amount.", "Enter Max Cash amount."], [1 , 1], [8, 8 ] , [ str( client.data[interaction.guild.id]['games']['roll']['min']) , str( client.data[interaction.guild.id]['games']['roll']['max']) ])
+            modal.title = "Roll Command Settings"
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+
+            # Checking if the inputs are valid and updating the automoney amoun settings
+            has_value_error = False
+            for value in modal.values:
+              try:
+                value = int(value)
+              except ValueError:
+                has_value_error = True
+
+            if has_value_error:
+              await interaction.followup.send("Invalid input detected.",
+                                              ephemeral=True)
+              return
+            else:
+              client.data[interaction.guild.id]['games']['roll'] = { "min" : abs(int(modal.values[0])) , "max" : abs(int(modal.values[1]))}
+              await client.db.execute(
+                  'UPDATE guilds SET games = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]['games'], interaction.guild.id)
+
+            # Updating the original message
+            embed, view = await Settings.gameSettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+        
+        # Slots
+        elif selection == 6:
+            modal = multiInputModal([
+                "Min Ammount",
+                "Max Amount"], 
+                                    ["Enter Min Cash amount.", "Enter Max Cash amount.", ], [1 , 1 ], [8, 8  ] , [ str( client.data[interaction.guild.id]['games']['slots']['min']) , str( client.data[interaction.guild.id]['games']['slots']['max'])])
+            modal.title = "Slots Command Settings"
+            await interaction.response.send_modal(modal)
+            await modal.wait()
+
+            # Checking if the inputs are valid and updating the automoney amoun settings
+            has_value_error = False
+            for   value in modal.values:
+              try:
+                  value = int(value)
+              except ValueError :
+                has_value_error = True
+
+            if has_value_error:
+              await interaction.followup.send("Invalid input detected.",
+                                              ephemeral=True)
+              return
+            else:
+              client.data[interaction.guild.id]['games']['slots'] = { "min" : abs(int(modal.values[0])) , "max" : abs(int(modal.values[1])) , "2" : 1.5 , "3" : 3 }
+              await client.db.execute(
+                  'UPDATE guilds SET games = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]['games'], interaction.guild.id)
+
+            # Updating the original message
+            embed, view = await Settings.gameSettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
+          
         else:
           await interaction.response.send_message(embed=bembed(
               f"<:pixel_error:1187995377891278919> Interaction Failed: Unknown error"
@@ -611,7 +1081,7 @@ class Settings(commands.Cog):
                                                   ephemeral=True)
           return
 
-    return embed, economySettingsView(guild)
+    return embed, gamesSettingsView(guild)
 
 
 # ----------------------------------------pvc Settings Message--------------------------------------------
@@ -1015,16 +1485,29 @@ class Settings(commands.Cog):
   @commands.guild_only()
   @commands.check(check_perms)
   @commands.cooldown(1, 5, commands.BucketType.member)
-  async def setup(self, ctx):
+  async def setup(self, ctx , page : int = 0):
 
     await ctx.defer()
-    embed, view = await self.setupMessage()
+
+    if page == 1 :
+      embed , view = await Settings.botSettingsMessage(ctx.guild)
+    elif page == 2 :
+      embed , view = await Settings.economySettingsMessage(ctx.guild)
+    elif page == 3 :
+      embed , view = await Settings.gameSettingsMessage(ctx.guild)
+    elif page == 4 :
+      embed , view = await Settings.pvcSettingsMessage(ctx.guild)
+    else :
+      embed, view = await self.setupMessage()
+      
+
     view.user_id = ctx.author.id
     view.message = await ctx.send(
         content=
         f"> **Setting up {self.client.user.display_name}** •  **[** {ctx.author.name} **]** •  **[** Active **]**",
         embed=embed,
         view=view)
+      
 
 
 async def setup(client):

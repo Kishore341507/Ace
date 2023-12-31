@@ -122,22 +122,25 @@ class russian_roulette(commands.Cog):
             await open_account(ctx.guild.id, ctx.author.id)
             bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
             
+        _max = client.data[ctx.guild.id]["games"]["russian-roulette"]["max"] if client.data[ctx.guild.id]["games"] else defult_economy["russian-roulette"]["max"]
+        _min = client.data[ctx.guild.id]["games"]["russian-roulette"]["min"] if client.data[ctx.guild.id]["games"] else defult_economy["russian-roulette"]["min"]
+        
         try:
             amount = int(amount)
         except ValueError:
             if amount == "all":
                 amount = bal["cash"]
-                if amount > 100000:
-                    amount=100000  
+                if amount > _max:
+                    amount=_max  
             elif amount == "half":
                 amount = int(0.5 * bal["cash"])
-                if amount > 100000:
-                    amount=100000 
+                if amount > _max:
+                    amount=_max 
         if amount > bal['cash']:
             await ctx.send('You do not have enough money to rr in you **cash**')
             ctx.command.reset_cooldown(ctx)
-        elif amount <= 0:
-            await ctx.send('You cannot rr 0 or less')
+        elif amount <= _min:
+            await ctx.send(f'You cannot rr {_min} or less')
             ctx.command.reset_cooldown(ctx)   
         else: 
             await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id) 
@@ -158,9 +161,7 @@ class russian_roulette(commands.Cog):
             await client.application.owner.send(f'{error}')
             ctx.command.reset_cooldown(ctx)
             return
-
-
-
+        
 
 async def setup(client):
    await client.add_cog(russian_roulette(client))    

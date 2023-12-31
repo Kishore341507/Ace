@@ -177,8 +177,12 @@ class Bj(commands.Cog):
     @commands.check(check_channel)
     @cooldown(1, 60, BucketType.user)
     async def bj(self, ctx, amount: amountconverter):
-        ctx.defer()
-        bj_amount = 50000
+        await ctx.defer()
+        
+        _max = client.data[ctx.guild.id]['games']['blackjack']['max'] if client.data[ctx.guild.id]['games'] else defult_games['blackjack']['max']
+        _min = client.data[ctx.guild.id]['games']['blackjack']['min'] if client.data[ctx.guild.id]['games'] else defult_games['blackjack']['min']
+        
+        bj_amount = _max
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
         if bal is None:
             await open_account(ctx.guild.id, ctx.author.id)
@@ -198,7 +202,7 @@ class Bj(commands.Cog):
             await ctx.send('You do not have enough money to BJ that much')
             ctx.command.reset_cooldown(ctx)
             return
-        elif amount <= 0 or amount > bj_amount:
+        elif amount <= _min or amount > bj_amount:
             await ctx.send(f'You cannot BJ 0 , less or more then {bj_amount}')
             ctx.command.reset_cooldown(ctx)
             return

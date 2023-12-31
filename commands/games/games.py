@@ -21,25 +21,27 @@ class Games(commands.Cog):
     @cooldown(2, 60, BucketType.user)
     async def flip(self , ctx , amount : amountconverter  ,  side : typing.Literal[ 'head', 'tail' , 'h','t','H','T' ] = "head"): 
         user = ctx.author
+        _max = client.data[ctx.guild.id]['games']['coinflip']['max'] if client.data[ctx.guild.id]['games'] else defult_games['coinflip']['max']
+        _min = client.data[ctx.guild.id]['games']['coinflip']['min'] if client.data[ctx.guild.id]['games'] else defult_games['coinflip']['min']
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
         try:
             amount = int(amount)
         except ValueError:
             if amount == "all":
                 amount = bal["cash"]
-                if amount > 75000:
-                    amount=75000  
+                if amount > _max:
+                    amount=_max  
             elif amount == "half":
                 amount = int(0.5 * bal["cash"])
-                if amount > 75000:
-                    amount=75000        
+                if amount > _max:
+                    amount=_max        
         if bal is None:
                 await open_account( ctx.guild.id , user.id)
                 bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to coinflip that much')
-        elif amount <= 0 or amount > 75000:
-                await ctx.send('You cannot flip 0 , less or more then 50000') 
+        elif amount <= _min or amount > _max:
+                await ctx.send(f'You cannot flip {_min} , less or more then {_max}') 
         else:   
                 await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
                 coin_flip = 0.5
@@ -76,6 +78,10 @@ class Games(commands.Cog):
     async def slot( self , ctx , amount : amountconverter ):
         ecoembed = discord.Embed(color=  0x08FC08)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        
+        _max = client.data[ctx.guild.id]['games']['slots']['max'] if client.data[ctx.guild.id]['games'] else defult_games['slots']['max']
+        _min = client.data[ctx.guild.id]['games']['slots']['min'] if client.data[ctx.guild.id]['games'] else defult_games['slots']['min']
+        
         all = ctx.guild.emojis
         if len(all) < 3 :
             all =  [  *all ,  "😉" , "🙂" , "😐" ]
@@ -87,7 +93,7 @@ class Games(commands.Cog):
         
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
         
-        st_amount = 50000
+        st_amount = _max
         
         if bal is None:
             await open_account( ctx.guild.id ,ctx.author.id)
@@ -105,16 +111,16 @@ class Games(commands.Cog):
                     amount=st_amount          
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to slots that much')
-        elif amount <= 0 or amount > st_amount:
-                await ctx.send(f'You cannot slot 0 , less or more then {st_amount}') 
+        elif amount <= _min or amount > st_amount:
+                await ctx.send(f'You cannot slot {_min} , less or more then {st_amount}') 
         else :
                 if first == second == third:
-                    ecoembed.description=f"you won {coin(ctx.guild.id)} {2*amount}\n\n{outupt}" 
-                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
+                    ecoembed.description=f"you won {coin(ctx.guild.id)} {3*amount}\n\n{outupt}" 
+                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
                     await ctx.send(embed=ecoembed)
                 elif first == second or second  == third:
-                    ecoembed.description=f"you won {coin(ctx.guild.id)} {int(1.7*amount)} \n\n{outupt}"
-                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , (int(0.7*amount)) , ctx.author.id , ctx.guild.id) 
+                    ecoembed.description=f"you won {coin(ctx.guild.id)} {int(1.5*amount)} \n\n{outupt}"
+                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , (int(0.5*amount)) , ctx.author.id , ctx.guild.id) 
                     await ctx.send(embed=ecoembed)
                 else:
                     ecoembed.description=f"you lost {coin(ctx.guild.id)} {amount}\n\n{outupt}" 
@@ -134,6 +140,10 @@ class Games(commands.Cog):
     async def roll(self , ctx ,amount : amountconverter ,  rang:typing.Literal["odd" , "even" , 1 , 2 , 3 ,4, 5, 6] = "even"):
         ecoembed = discord.Embed(color= discord.Color.green())
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        
+        _max = client.data[ctx.guild.id]['games']['roll']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roll']['max']
+        _min = client.data[ctx.guild.id]['games']['roll']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roll']['min']
+        
         user = ctx.author
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
@@ -142,19 +152,19 @@ class Games(commands.Cog):
         except ValueError:
             if amount == "all":
                 amount = bal["cash"]
-                if amount > 50000:
-                    amount=50000  
+                if amount > _max:
+                    amount=_max  
             elif amount == "half":
                 amount = int(0.5 * bal["cash"])
-                if amount > 50000:
-                    amount=50000     
+                if amount > _max:
+                    amount=_max     
         if bal is None:
                 await open_account( ctx.guild.id , user.id)
                 bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to roll that much')
-        elif amount <= 0 or amount > 50000:
-                await ctx.send('You cannot roll 0 , less or more then 50000') 
+        elif amount <= _min or amount > _max:
+                await ctx.send(f'You cannot roll {_min} , less or more then {_max}') 
         else:
             x = random.randint(1, 6)
             if rang == "even" and x in [2,4,6]:

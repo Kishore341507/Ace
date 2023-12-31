@@ -95,9 +95,12 @@ class Roulette(commands.Cog):
     async def roulette(self , ctx  , amount : amountconverter2 , space : typing.Optional[roulette_space] = "x" ):
         flag = True
         if space is "x":
-            space = random.randint(1, 36)         
+            space = random.randint(1, 36)  
+            
+        _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['max']
+        _min = client.data[ctx.guild.id]['games']['roulette']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['min']       
 
-        game_limit = 100000
+        game_limit = _max
         
         if amount > game_limit :
             amount = game_limit    
@@ -118,8 +121,8 @@ class Roulette(commands.Cog):
             embed.description='You do not have enough money to roulette that much'
             await ctx.send (embed = embed)
             return
-        elif amount < 0:
-            ecoembed.description='You cannot roulette 0 or less'
+        elif amount <= _min:
+            embed.description=f'You cannot roulette {_min} or less'
             await ctx.send (embed = embed)  
             return 
          
