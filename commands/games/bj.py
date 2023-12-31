@@ -203,7 +203,7 @@ class Bj(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return
         elif amount <= _min or amount > bj_amount:
-            await ctx.send(f'You cannot BJ 0 , less or more than {bj_amount}')
+            await ctx.send(f'You cannot BJ less than {_min} or more than {_max}')
             ctx.command.reset_cooldown(ctx)
             return
 
