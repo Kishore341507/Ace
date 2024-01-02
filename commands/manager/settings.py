@@ -397,7 +397,7 @@ class Settings(commands.Cog):
   
   async def economySettingsMessage(guild: discord.Guild):
     
-    client.data[guild.id]['economy'] = { **defult_games ,  **(client.data[guild.id]['economy'] if client.data[guild.id]['economy'] else {})}
+    client.data[guild.id]['economy'] = { **defult_economy ,  **(client.data[guild.id]['economy'] if client.data[guild.id]['economy'] else {})}
 
     # Fetching the economy coin
     economy_coin = coin(guild.id)
