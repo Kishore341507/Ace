@@ -1480,7 +1480,7 @@ class Settings(commands.Cog):
 
   @commands.hybrid_command(name="setup",
                            description="Setup the bot for your server",
-                           aliases=["prefix" , "config" , "start"])
+                           aliases=[ "config" , "start"])
   @commands.guild_only()
   @commands.guild_only()
   @commands.check(check_perms)
@@ -1507,6 +1507,27 @@ class Settings(commands.Cog):
         f"> **Setting up {self.client.user.display_name}** •  **[** {ctx.author.name} **]** •  **[** Active **]**",
         embed=embed,
         view=view)
+    
+  @commands.hybrid_command(name="prefix", description="Change the bot prefix")
+  @commands.guild_only()
+  @commands.check(check_perms)
+  @commands.cooldown(1, 5, commands.BucketType.member)
+  async def prefix(self, ctx, prefix: str = None):
+
+    if not prefix:
+      await ctx.send(embed=bembed(
+          f"Current prefix for this server is `{ctx.clean_prefix}`"
+      ))
+      return
+
+    if len(prefix) > 1:
+      await ctx.send(embed=bembed("Prefix can't be more than 1 characters."))
+      return
+
+    client.data[ctx.guild.id]['prefix'] = prefix
+    await client.db.execute('UPDATE guilds SET prefix = $1 WHERE id = $2',
+                            prefix, ctx.guild.id)
+    await ctx.send(embed=bembed(f"Prefix updated to `{prefix}`"))
       
 
 

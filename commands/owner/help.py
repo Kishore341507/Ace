@@ -33,15 +33,21 @@ class MyHelp(commands.HelpCommand):
                 modules["Other"].extend(filter_commands)
           
         for module , commands in modules.items():
-            if commands:
+            if len(commands) != 0:
                 embed.add_field(name=module , value=f"`{'` `'.join([command.name for command in commands])}`" , inline=False)      
         embed.set_footer(text=f"Use {self.context.clean_prefix}help <command> for more info on a command.")
         await self.context.send(embed=embed , view= helpCommandView())
     
-    async def send_command_help(self, command: Command) -> None:
+    async def send_command_help(self, command) -> None:
+        filter_commands = await self.filter_commands([command] , sort=True)
+        if len(filter_commands) == 0 :
+            return await self.context.send( embed= discord.Embed(description="Hidden command , add in your to know more about it" , color=discord.Color.red()) , view= helpCommandView())
         embed = discord.Embed(title=f"{command.name}" , description= f"`{self.get_command_signature(command)}`"   , color=discord.Color.blurple())
         await self.context.send(embed=embed , view= helpCommandView())
             
+    async def send_error_message(self, error: str) -> None:
+        return await self.context.send( embed= discord.Embed(description=f"Command not found" , color=discord.Color.red()) , view= helpCommandView() , delete_after=5)
+    
 class helpCommandView(View):
     def __init__(self):
         super().__init__(timeout=180)

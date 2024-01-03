@@ -144,7 +144,7 @@ def coin( guild_id : int ) :
 def pvc_coin( guild_id : int ) :
     icon = client.data.get(guild_id , {}).get('pvc_coin' , None )
     if not icon :
-        icon = "🪙"
+        icon = "<:tickapCoin:1191976654042570792>"
     name = client.data.get(guild_id , {}).get('pvc_name' , None )
     if not name :
         name= 'Pvc'

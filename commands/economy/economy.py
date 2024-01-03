@@ -88,13 +88,13 @@ class Economy(commands.Cog):
     @commands.guild_only()
     # @commands.check(check_channel_pvc)
     @cooldown(1, 5, BucketType.user)
-    async def bug(self, ctx, message :str , screenshot : discord.Attachment):
+    async def bug(self, ctx, message :str , screenshot : discord.Attachment = None):
         user  = client.get_user(591011843552837655)
         embed = bembed(message)
-        embed.set_image(url = screenshot.url)
-        await user.send( embed = embed )
+        if screenshot :
+            embed.set_image(url = screenshot.url)
+        await user.send(content= f"{ctx.guild.name} , {ctx.author}" , embed = embed )
         await ctx.send(embed = bembed("Done , Thanks for Report , we will Fix it Soon !"))
-
          
    
     @commands.hybrid_command(aliases=["bal"])
@@ -133,8 +133,7 @@ class Economy(commands.Cog):
             embed.set_footer(
                     text=f"Use /bug to report a bug") 
 
-
-        embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1023642824551444694/1144091334760730704/20230824_052021.jpg")
+        # embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1023642824551444694/1144091334760730704/20230824_052021.jpg")
         await ctx.send( embed=embed) 
         
     @commands.hybrid_command(aliases=["up"])

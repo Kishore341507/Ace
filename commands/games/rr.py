@@ -163,7 +163,6 @@ class russian_roulette(commands.Cog):
             # await client.application.owner.send(f'{error}')
             ctx.command.reset_cooldown(ctx)
             return
-        
 
 async def setup(client):
    await client.add_cog(russian_roulette(client))    
