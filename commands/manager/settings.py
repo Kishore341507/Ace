@@ -5,7 +5,7 @@ from database import *
 
 class singleInputModal(discord.ui.Modal, title='...'):
 
-  def __init__(self, question, placeholder,min=None, max=None , defult = None):
+  def __init__(self, question, placeholder,min=None, max=None , defult = None , required = True ):
     super().__init__()
     self.question = question
     self.placeholder = placeholder
@@ -13,12 +13,14 @@ class singleInputModal(discord.ui.Modal, title='...'):
     self.max = max
     self.value = None
     self.defult = defult
+    self.required = required
     self.input = discord.ui.TextInput(label=self.question,
                                       placeholder=self.placeholder,
                                       min_length=self.min,
                                       max_length=self.max,
-                                      default= self.defult
-                                      )
+                                      default= self.defult ,
+                                      required=self.required)
+                                      
     self.add_item(self.input)
 
   async def on_submit(self, interaction: discord.Interaction):
@@ -527,7 +529,7 @@ class Settings(commands.Cog):
 
           # Modal to update the economy coin
           modal = singleInputModal("Enter a coin to use as your Economy coin.",
-                                   "Paste your coin.", 1, None , coin(interaction.guild.id) )
+                                   "Paste your coin.", 0, None , coin(interaction.guild.id) , False )
           modal.title = "Change the economy coin."
           await interaction.response.send_modal(modal)
           await modal.wait()
@@ -539,8 +541,11 @@ class Settings(commands.Cog):
                 'UPDATE guilds SET coin = $1 WHERE id = $2', modal.value,
                 interaction.guild.id)
           else:
-            await interaction.followup.send("No input", ephemeral=True)
-
+            client.data[interaction.guild.id]["coin"] = modal.value
+            await client.db.execute(
+                'UPDATE guilds SET coin = $1 WHERE id = $2', modal.value,
+                interaction.guild.id)
+            
           # Updating the original message
           embed, view = await Settings.economySettingsMessage(self.guild)
           view.user_id = self.user_id
