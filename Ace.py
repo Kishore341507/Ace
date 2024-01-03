@@ -13,14 +13,14 @@ async def on_ready():
 
 
 @client.command()
-@commands.has_permissions(administrator=True)
+@commands.cooldown(1, 5, commands.BucketType.user)
 async def ping(ctx):
     ping = round(client.latency * 1000 , ndigits=2)
     time1 = time.time()
     x = await client.db.execute("SELECT 1")
     time2 = time.time()
     db_ping = round( (time2 - time1) * 1000 , ndigits=2)
-    await ctx.reply(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`')
+    await ctx.reply(embed = bembed(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`'))
 
 async def load():
 

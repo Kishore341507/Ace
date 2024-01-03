@@ -5,8 +5,8 @@ import asyncio
 from discord.ext.commands import BucketType, cooldown
 import random
 from discord.ui import Button , View
+import time
 
-colors = [0x0847F7, 0xF7C906 , 0xF90651 , 0x08FC08]
 
 class MyView(View):
     
@@ -34,6 +34,7 @@ class MyView(View):
                     if i == x :
                         item = next(y) 
                         ecoembed.description = f"**{item}** pulls the trigger... and gets hit 🪦"
+                        ecoembed.color = discord.Color.red()
                         await self.ctx.send(embed=ecoembed)
                         self.player.pop()
                         self.player.remove(item)
@@ -50,9 +51,10 @@ class MyView(View):
                     else :
                         item = next(y)
                         ecoembed.description = f"**{item}** pulls the trigger... and survives!"
+                        ecoembed.color = discord.Color.green()
                         await self.ctx.send(embed=ecoembed)
     
-    @discord.ui.button(label = "Join" , style=discord.ButtonStyle.green , emoji="\U00002694")
+    @discord.ui.button(label = "Join" , style=discord.ButtonStyle.green )
     async def button1(self ,interaction ,  button ):
         ecoembed = discord.Embed(color= None)
         amount = self.amount
@@ -86,7 +88,7 @@ class MyView(View):
             await interaction.response.send_message("you dont have enough money !!" , ephemeral=True)
     
 
-    @discord.ui.button(label = "Start" , style=discord.ButtonStyle.red , emoji="<a:images_2:1012307982282919947>")
+    @discord.ui.button(label = "Start" , style=discord.ButtonStyle.red )
     async def button2s(self ,interaction ,  button ):
         amount = self.amount
         author = self.author
@@ -145,8 +147,8 @@ class russian_roulette(commands.Cog):
         else: 
             await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id) 
             view = MyView(timeout=240 , amount= amount , author = ctx.author , ctx = ctx)
-            ecoembed = discord.Embed(description= f'RR from {ctx.author} , if you want to accept this tap join (amount=**{coin(ctx.guild.id)} {amount}**) ||autostart after 2min if not started||', color= random.choice(colors))
-            ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+            ecoembed = discord.Embed(description= f'Russian Roulette from **{ctx.author}** , if you want to accept this tap join\n> **{amount}** {coin(ctx.guild.id)} \n> Autostart(ed) <t:{int(time.time() + 120)}:R>', color=  discord.Color.blurple() )
+            # ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
             self.msg = await ctx.reply(embed = ecoembed,view = view)
             await asyncio.sleep(120)
             if not view.started:
@@ -158,7 +160,7 @@ class russian_roulette(commands.Cog):
         if isinstance(error, commands.CommandOnCooldown):
             await self.msg.reply(f"{ctx.author.mention} game is already going , check replyed message")
         else : 
-            await client.application.owner.send(f'{error}')
+            # await client.application.owner.send(f'{error}')
             ctx.command.reset_cooldown(ctx)
             return
         

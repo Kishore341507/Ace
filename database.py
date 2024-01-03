@@ -25,7 +25,6 @@ class MyBot(commands.Bot):
 
 defult_prefix = ","
 
-
 async def get_prefix(client , message):  
     try :
         prefix = client.data[message.guild.id]['prefix']
