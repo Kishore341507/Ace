@@ -11,3 +11,6 @@ __pycache__
 
 #vertual env
 .venv
+
+#ignore directory
+extra
