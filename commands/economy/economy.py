@@ -472,32 +472,35 @@ class Economy(commands.Cog):
         
         if type in ["total" ,"-total"]:
             type = "total"
-            docs = await client.db.fetch("SELECT id , (bank + cash) AS total FROM users WHERE guild_id = $1 ORDER BY total DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            docs = await client.db.fetch("SELECT id , (bank + cash) AS total FROM users WHERE guild_id = $1 ORDER BY total DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
             rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank + cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
         elif  type in ["bank","-bank"]:
             type = "bank"
-            docs = await client.db.fetch("SELECT id , bank FROM users WHERE guild_id = $1 ORDER BY bank DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            docs = await client.db.fetch("SELECT id , bank FROM users WHERE guild_id = $1 ORDER BY bank DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
             rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
         elif type in ["cash" , "-cash"]:
             type = "cash"
-            docs = await client.db.fetch("SELECT id , cash FROM users WHERE guild_id = $1 ORDER BY cash DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            docs = await client.db.fetch("SELECT id , cash FROM users WHERE guild_id = $1 ORDER BY cash DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
             rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
                 
         elif type == "pvc":
             type = "pvc"
-            docs = await client.db.fetch("SELECT id , pvc FROM users WHERE guild_id = $1 ORDER BY pvc DESC LIMIT 10 OFFSET $2;" , guild.id , offset)
+            docs = await client.db.fetch("SELECT id , pvc FROM users WHERE guild_id = $1 ORDER BY pvc DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
             rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (pvc) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
 
         dis =  ""   
+        temp = offset
         for x in docs:
             amount = x[type]
             user = guild.get_member(x['id'])
             if user is None:
                 continue
             else :
-                 offset = offset+1     
+                offset = offset+1   
             v = f"**{offset}**. [{user}](https://tickap.com/user/{user.id}) **:** {pvc_coin(guild.id)[0] if type == 'pvc' else coin(guild.id) } {amount:,}\n"
             dis = dis + v
+            if offset - temp == 10:
+                break
 
         embed = discord.Embed(description=dis, color=discord.Colour.blue())
         title = f"{guild.name}'s Leaderboard" if type == "total" else f"{guild.name}'s Leaderboard for {type}"
