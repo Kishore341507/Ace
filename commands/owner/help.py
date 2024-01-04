@@ -8,10 +8,16 @@ class MyHelp(commands.HelpCommand):
     
     async def send_bot_help(self, mapping) -> None:
         
+        if check_perms(self.context):
+            pass
+        elif check_perms(self.context):
+            pass
+        else:
+            return
+        
         embed = discord.Embed(title="Help Commands" , color=discord.Color.blurple() )
         data = {"Economy " : [ "Economy" ] , "Games" : ["Bj" , "Games" , "Roulette" , "russian_roulette" ] , "Manager" : ["EcoManager" , "Settings" ] , "Store & Income" : ["store" , "income" ] ,  "PVC" : [ "PVC" , "PVC_COMMANDS"] }
         modules = { "Economy" : [] , "Games" : [] , "Manager" : [], "Store & Income" : [] , "PVC" : [] , "Other" : [] }
-        
         for cog , commands  in mapping.items() :
             filter_commands = await self.filter_commands(commands , sort=True)
             
@@ -39,6 +45,13 @@ class MyHelp(commands.HelpCommand):
         await self.context.send(embed=embed , view= helpCommandView())
     
     async def send_command_help(self, command) -> None:
+        if check_perms(self.context):
+            pass
+        elif check_perms(self.context):
+            pass
+        else:
+            return
+        
         filter_commands = await self.filter_commands([command] , sort=True)
         if len(filter_commands) == 0 :
             return await self.context.send( embed= discord.Embed(description="Hidden command , add in your to know more about it" , color=discord.Color.red()) , view= helpCommandView())
