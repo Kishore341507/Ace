@@ -132,17 +132,8 @@ class Economy(commands.Cog):
         else :
             embed.set_footer(
                     text=f"Use /bug to report a bug") 
-        view = None
-        if random.randint(1,10) == 2 :
-            view = discord.ui.View()
-            view.add_item(Button(label="Ace",
-                                    style=discord.ButtonStyle.url,
-                                    url="https://discord.com/api/oauth2/authorize?client_id=1165310965710082099&permissions=288706064&scope=bot+applications.commands"))
-            view.add_item(Button(label="Bots",
-                                    style=discord.ButtonStyle.url,
-                                    url="https://tickap.com/bots"))
-        # embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1023642824551444694/1144091334760730704/20230824_052021.jpg")
-        await ctx.send( embed=embed , view = view ) 
+            
+        await ctx.send( embed=embed  ) 
         
         
     @commands.hybrid_command(aliases=["up"])
@@ -534,6 +525,11 @@ class Economy(commands.Cog):
             next_pg_button = Button(label="Next Page", style=discord.ButtonStyle.blurple, disabled=True if self.current_page >= self.last_page else False)
             next_pg_button.callback = self.lb_forwards_button
             self.add_item(next_pg_button)
+            
+            if random.randint(1,3) == 2 :
+                self.add_item(Button(label= client.user.name ,
+                                        style=discord.ButtonStyle.url,
+                                        url="https://discord.com/api/oauth2/authorize?client_id=1165310965710082099&permissions=288706064&scope=bot+applications.commands"))
 
         async def interaction_check(self, interaction: discord.Interaction):
             if self.message is None:
