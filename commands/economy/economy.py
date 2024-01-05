@@ -132,9 +132,18 @@ class Economy(commands.Cog):
         else :
             embed.set_footer(
                     text=f"Use /bug to report a bug") 
-
+        view = None
+        if random.randint(1,10) == 2 :
+            view = discord.ui.View()
+            view.add_item(Button(label="Ace",
+                                    style=discord.ButtonStyle.url,
+                                    url="https://discord.com/api/oauth2/authorize?client_id=1165310965710082099&permissions=288706064&scope=bot+applications.commands"))
+            view.add_item(Button(label="Bots",
+                                    style=discord.ButtonStyle.url,
+                                    url="https://tickap.com/bots"))
         # embed.set_thumbnail(url="https://cdn.discordapp.com/attachments/1023642824551444694/1144091334760730704/20230824_052021.jpg")
-        await ctx.send( embed=embed) 
+        await ctx.send( embed=embed , view = view ) 
+        
         
     @commands.hybrid_command(aliases=["up"])
     @commands.guild_only()
