@@ -22,7 +22,18 @@ class MyBot(commands.Bot):
  
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
-
+        
+        #Load Cogs
+        
+        for filename in os.listdir('./commands'):
+            if filename.endswith('.py'):
+                await client.load_extension( f'commands.{filename[:-3]}')
+            elif not filename.endswith('.py'):
+                filenametemp =  filename
+                for filename in os.listdir(f'./commands/{filenametemp}'):
+                    if filename.endswith('.py'):
+                        await client.load_extension(f'commands.{filenametemp}.{filename[:-3]}')
+        
 defult_prefix = ","
 
 async def get_prefix(client , message):  

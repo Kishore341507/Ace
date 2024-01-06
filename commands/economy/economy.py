@@ -47,6 +47,7 @@ class Economy(commands.Cog):
 
     def __init__(self , client):
         self.client = client
+        self.message_cooldown = commands.CooldownMapping.from_cooldown(1.0, 60.0, commands.BucketType.member)
         
     async def check_channel_pvc(ctx) ->bool : 
         return client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels'] or client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id
@@ -62,10 +63,9 @@ class Economy(commands.Cog):
 #------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                            AUTOCOINS     
 
-    message_cooldown = commands.CooldownMapping.from_cooldown(1.0, 60.0, commands.BucketType.user)    
     @commands.Cog.listener()
     async def on_message(self , message):
-      try :    
+      try : 
         if self.client.data[message.guild.id]['am_channels'] is None or len(self.client.data[message.guild.id]['am_channels']) == 0  or message.channel.id in self.client.data[message.guild.id]['am_channels'] :
             if message.author.bot:
                 return

@@ -22,19 +22,6 @@ async def ping(ctx):
     db_ping = round( (time2 - time1) * 1000 , ndigits=2)
     await ctx.reply(embed = bembed(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`'))
 
-async def load():
-
-    #load Files 
-    for filename in os.listdir('./commands'):
-        if filename.endswith('.py'):
-            await client.load_extension( f'commands.{filename[:-3]}')
-        elif not filename.endswith('.py'):
-            filenametemp =  filename
-            for filename in os.listdir(f'./commands/{filenametemp}'):
-                if filename.endswith('.py'):
-                   await client.load_extension(f'commands.{filenametemp}.{filename[:-3]}') 
-
-asyncio.run(load())
 
 load_dotenv()
 client.run(os.environ.get("TOKEN"))
