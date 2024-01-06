@@ -272,9 +272,6 @@ class PVC_COMMANDS(commands.Cog):
             i = 1
             for  j in  vc.overwrites:
                 if type(j) == discord.Member and not j.bot :
-                    # if j.id == info['id'] :
-                    #     text  += f"{i}. {j.mention} 👑\n"
-                    # else :
                     text  += f"{i}. {j.mention}\n"
                     i += 1
             embed.add_field(name = "Members" , value= text)          
@@ -491,15 +488,15 @@ class PVC_COMMANDS(commands.Cog):
                 view.clear_items()
                 for i in items :
                     view.add_item(i)
-                collapse.emoji = '<:arrow:1144084016929181756>'
+                collapse.emoji = '<:up:1193058411928104991>'
                 view.add_item(collapse)
             else :
                 view.clear_items()
-                collapse.emoji = '<:arrow:1144084206520123513>'
+                collapse.emoji = '<:down:1193058406920093706>'
                 view.add_item(collapse)
             await interaction.response.edit_message(view = view)
         
-        collapse = discord.ui.Button( style=discord.ButtonStyle.gray , emoji= '<:arrow:1144084206520123513>' ,  row=4 )
+        collapse = discord.ui.Button( style=discord.ButtonStyle.gray , emoji= '<:down:1193058406920093706>' ,  row=4 )
         collapse.callback = update_collapse
         view.add_item(collapse)
         
