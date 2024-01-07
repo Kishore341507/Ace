@@ -8,7 +8,7 @@ class MyHelp(commands.HelpCommand):
     
     async def send_bot_help(self, mapping) -> None:
         
-        if check_perms(self.context):
+        if check_channel(self.context):
             pass
         elif check_perms(self.context):
             pass
