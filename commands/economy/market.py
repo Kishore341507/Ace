@@ -93,7 +93,7 @@ class Market(commands.Cog):
       return client.data[ctx.guild.id]['market'] and client.data[ctx.guild.id]['market']['status']
   
 
-  @tasks.loop( minutes= 30 , reconnect = True )
+  @tasks.loop( minutes= 30  , reconnect = True )
   async def stock_data_update(self):
       for guild_id  in self.client.data :
           if self.client.data[guild_id]['market'] and self.client.data[guild_id]['market']['status']:
@@ -110,7 +110,7 @@ class Market(commands.Cog):
               
               if guild_id not in self.stock_data:
                   self.stock_data[guild_id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
-              elif len(self.client.data[guild_id]['data']) > 48  :
+              elif len(self.stock_data[guild_id]['data']) > 48  :
                 
                   self.stock_data[guild_id]['data'].pop(0)
                   self.stock_data[guild_id]['data'].append(current_rate)
