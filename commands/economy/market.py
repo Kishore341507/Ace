@@ -149,16 +149,18 @@ class Market(commands.Cog):
       current_rate = 0
     embed = discord.Embed(
         description=
-        f"**__Market Details__**\n```py\nShare Value  : {coin(ctx.guild.id)}{current_rate}\nTotal shares : 📈{current_stocks}```\n**__Market Stats__**\n"
+        f"**__Market Details__**\n\nCurrent Value  : {coin(ctx.guild.id)} {current_rate}\n\n**__Market Stats__**"
     )
 
     self.stock_data[ctx.guild.id]['data'].append((current_rate))
     self.stock_data[ctx.guild.id]['time'].append(datetime.now().timestamp())
 
+    plt.style.use('dark_background')
+      
     plt.plot([
         datetime.fromtimestamp(i)
         for i in self.stock_data[ctx.guild.id]['time']
-    ], self.stock_data[ctx.guild.id]['data'])
+    ], self.stock_data[ctx.guild.id]['data'] , color='cyan', label='Stock Data' ,  linestyle='-', marker='o', markersize=5, alpha=0.7, markerfacecolor='lightblue', markeredgecolor='white')
     plt.ylim(
         int(min(self.stock_data[ctx.guild.id]['data'])) - 1,
         int(max(self.stock_data[ctx.guild.id]['data'])) + 2)
@@ -167,6 +169,23 @@ class Market(commands.Cog):
     plt.gca().xaxis.set_major_formatter(
         DateFormatter('%H:%M', tz=self.ist_timezone))
     plt.gcf().autofmt_xdate()
+    plt.title('Stock Data')
+    # Customize grid and legend
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.legend(loc='upper left')
+    
+    # Set background color and borders for the plot
+    plt.gca().set_facecolor('#2C2F33')
+    plt.gca().spines['bottom'].set_color('white')
+    plt.gca().spines['top'].set_color('white')
+    plt.gca().spines['right'].set_color('white')
+    plt.gca().spines['left'].set_color('white')
+
+    # Customize ticks color
+    plt.tick_params(axis='x', colors='white')
+    plt.tick_params(axis='y', colors='white')
+    
+    
     plt.savefig("stock_value.png")
     with open("stock_value.png", "rb") as f:
       file = discord.File(f, filename="image.png")
@@ -250,8 +269,10 @@ class Market(commands.Cog):
     embed = discord.Embed(
         title=f"{user_name}",
         url=f"https://tickap.com/user/{ctx.author.id}",
+        # description=
+        # f"**__Transaction Details__**\n>>> ```yaml\n• Shares bought    : 📈 {number}\n• Total cost       : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
         description=
-        f"**__Transaction Details__**\n>>> ```yaml\n• Shares bought    : 📈 {number}\n• Total cost       : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
+        f"**__Transaction Details__**\n>>> ```yaml\n• Shares bought    : 📈 {number}\n• Total cost       : {coin(ctx.guild.id)} {total_cost}```",
         color=discord.Color.blue())
     embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon.url)
     await ctx.send(embed=embed)
@@ -339,8 +360,10 @@ class Market(commands.Cog):
     embed = discord.Embed(
         title=f"{user_name}",
         url=f"https://tickap.com/user/{ctx.author.id}",
+        # description=
+        # f"**__Transaction Details__**\n>>> ```yaml\n• Shares sold      : 📈 {number}\n• Total value      : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
         description=
-        f"**__Transaction Details__**\n>>> ```yaml\n• Shares sold      : 📈 {number}\n• Total value      : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
+        f"**__Transaction Details__**\n>>> ```yaml\n• Shares sold      : 📈 {number}\n• Total value      : {coin(ctx.guild.id)} {total_cost}```",
         color=discord.Color.blue())
     embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon.url)
     await ctx.send(embed=embed)
