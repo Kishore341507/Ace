@@ -90,7 +90,7 @@ class Market(commands.Cog):
               if current_stocks <= 0:
                   current_rate = 0
               else:
-                  current_rate = math.ceil((total_economy / current_stocks) * 1 / 2)
+                  current_rate = round((total_economy / current_stocks) * 1 / 2 , 2)
               
               if guild_id not in self.stock_data:
                   self.stock_data[guild_id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
@@ -152,7 +152,7 @@ class Market(commands.Cog):
         f"**__Market Details__**\n\nCurrent Value  : {coin(ctx.guild.id)} {current_rate}\n\n**__Market Stats__**"
     )
 
-    self.stock_data[ctx.guild.id]['data'].append((current_rate))
+    self.stock_data[ctx.guild.id]['data'].append(round((total_economy / current_stocks) * 1 / 2 , 2))
     self.stock_data[ctx.guild.id]['time'].append(datetime.now().timestamp())
 
     plt.style.use('dark_background')
