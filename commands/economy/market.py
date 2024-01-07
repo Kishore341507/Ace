@@ -130,7 +130,7 @@ class Market(commands.Cog):
   @commands.hybrid_command()
   @commands.guild_only()
   @commands.check(check_channel)
-  # @commands.check(check_market)
+  @commands.check(check_market)
   @cooldown(1, 5, BucketType.member)
   async def market(self, ctx):
     
@@ -185,9 +185,9 @@ class Market(commands.Cog):
   @commands.check(check_market)
   @cooldown(1, 10, BucketType.member)
   async def buystocks(self, ctx, amount: str):
+    
     total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
     
-    total_stocks = self.stock_data[ctx.guild.id]['total_share']
     amount, total_economy, sold_stocks, bal = await amountConverterMarket(
         ctx.author.id, ctx.guild.id, amount, "buy", total_stocks)
 
@@ -270,6 +270,8 @@ class Market(commands.Cog):
       ecoembed.description = f"⌚ | try after {min}min {sec}seconds."
       await ctx.send(embed=ecoembed)
       return
+    else :
+      print(error)
 
   @commands.hybrid_command(aliases=["ss"])
   @commands.guild_only()
@@ -277,7 +279,9 @@ class Market(commands.Cog):
   @commands.check(check_market)
   @cooldown(1, 10, BucketType.member)
   async def sellstocks(self, ctx, amount: str):
-    total_stocks = self.stock_data[ctx.guild.id]['total_share']
+    
+    total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
+    
     amount, total_economy, sold_stocks, bal = await amountConverterMarket(
         ctx.author.id, ctx.guild.id, amount, "sell", total_stocks)
 
