@@ -1,3 +1,4 @@
+from typing import Optional
 import discord
 from discord.ext import commands, tasks
 from database import *
@@ -8,6 +9,20 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 
+
+class MarketInfo(discord.ui.View) :
+
+    def __init__(self):
+      super().__init__(timeout=None)
+    
+    @discord.ui.button(label='Info', emoji='📈' , custom_id="market:info")
+    async def info(self, interaction: discord.Interaction , button: discord.ui.Button):
+      embed = bembed()
+      embed.title = "Market Info"
+      embed.description = "# What's Market?\nThe Market is like a virtual store for trading. It adds a fun strategy to the game, letting players make smart choices based on how the in-game money changes.\n# How it Works?\nThe Market is connected to how much total economy there is in the game and how many stocks are available. When there's less economy in the game, stock prices drop, so it's a good time to buy. When players win at the casino games, the total economy goes up, and it's a good time to sell stocks to make a profit. Players can trade stocks by deciding when to buy low and sell high. It's like a cool store where players use their smarts to make more in-game money, going beyond the usual casino games."
+      
+      await interaction.response.send_message( embed=embed, ephemeral=True)
+    
 
 async def amountConverterMarket(user_id: int, guild_id: int, argument: str, type: str, total_shares=0):
 
@@ -66,6 +81,7 @@ class Market(commands.Cog):
 
   def __init__(self, client):
     self.client = client
+    self.client.add_view(MarketInfo())
     self.stock_data = { } # guild_id : { 'data' : [] , 'time' : [] }
     self.ist_timezone = timezone('Asia/Kolkata')
     self.stock_data_update.start()
@@ -194,7 +210,9 @@ class Market(commands.Cog):
     self.stock_data[ctx.guild.id]['data'].pop()
     self.stock_data[ctx.guild.id]['time'].pop()
     
-    await ctx.send(file=file, embed=embed)
+    view = MarketInfo()
+    
+    await ctx.send(file=file, embed=embed , view = view)
 
 
 
