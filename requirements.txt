@@ -6,3 +6,4 @@ numerize
 beautifulsoup4
 python-dotenv
 tabulate
+matplotlib
