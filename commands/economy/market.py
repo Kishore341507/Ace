@@ -94,7 +94,7 @@ class Market(commands.Cog):
               
               if guild_id not in self.stock_data:
                   self.stock_data[guild_id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
-              elif len(self.client.data[guild_id]['data']) > 12  :
+              elif len(self.client.data[guild_id]['data']) > 48  :
                 
                   self.stock_data[guild_id]['data'].pop(0)
                   self.stock_data[guild_id]['data'].append(current_rate)
