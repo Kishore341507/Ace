@@ -8,6 +8,7 @@ import math
 from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
+import io
 
 
 class MarketInfo(discord.ui.View) :
@@ -201,10 +202,11 @@ class Market(commands.Cog):
     plt.tick_params(axis='x', colors='white')
     plt.tick_params(axis='y', colors='white')
     
+    buffer = io.BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
     
-    plt.savefig("stock_value.png")
-    with open("stock_value.png", "rb") as f:
-      file = discord.File(f, filename="image.png")
+    file = discord.File( buffer , filename="image.png")
     embed.set_image(url="attachment://image.png")
     plt.clf()
     self.stock_data[ctx.guild.id]['data'].pop()
