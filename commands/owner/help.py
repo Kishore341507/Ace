@@ -16,7 +16,7 @@ class MyHelp(commands.HelpCommand):
             return
         
         embed = discord.Embed(title="Help Commands" , color=discord.Color.blurple() )
-        data = {"Economy " : [ "Economy" ] , "Games" : ["Bj" , "Games" , "Roulette" , "russian_roulette" ] , "Manager" : ["EcoManager" , "Settings" ] , "Store & Income" : ["store" , "income" ] ,  "PVC" : [ "PVC" , "PVC_COMMANDS"] }
+        data = {"Economy " : [ "Economy" , "Market" ] , "Games" : ["Bj" , "Games" , "Roulette" , "russian_roulette" ] , "Manager" : ["EcoManager" , "Settings" ] , "Store & Income" : ["store" , "income" ] ,  "PVC" : [ "PVC" , "PVC_COMMANDS"] }
         modules = { "Economy" : [] , "Games" : [] , "Manager" : [], "Store & Income" : [] , "PVC" : [] , "Other" : [] }
         for cog , commands  in mapping.items() :
             filter_commands = await self.filter_commands(commands , sort=True)

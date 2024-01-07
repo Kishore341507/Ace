@@ -69,6 +69,6 @@ CREATE TABLE IF NOT EXISTS public.users
     bank bigint NOT NULL DEFAULT 0,
     pvc integer NOT NULL DEFAULT 0,
     friends bigint[],
-    temp bigint NOT NULL DEFAULT 0,
+    stocks bigint NOT NULL DEFAULT 0,
     CONSTRAINT users_pkey PRIMARY KEY (guild_id, id)
 );

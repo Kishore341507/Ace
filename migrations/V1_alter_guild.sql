@@ -3,3 +3,6 @@ ALTER TABLE IF EXISTS public.guilds
 
 ALTER TABLE IF EXISTS public.guilds
     ADD COLUMN games jsonb;
+
+ALTER TABLE IF EXISTS public.guilds
+    ADD COLUMN market jsonb;
