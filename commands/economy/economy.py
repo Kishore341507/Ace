@@ -469,11 +469,14 @@ class Economy(commands.Cog):
     async def generate_lb_emb(self, guild , user , page, type):
         last_page = int(math.ceil(int(await client.db.fetchval("SELECT COUNT(*) FROM users WHERE guild_id = $1" , guild.id))/10))
         offset = (page-1)*10
+        coin_icon = coin(guild.id)
         
         if type in ["total" ,"-total"]:
             type = "total"
             docs = await client.db.fetch("SELECT id , (bank + cash) AS total FROM users WHERE guild_id = $1 ORDER BY total DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
             rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank + cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+            
+        
         elif  type in ["bank","-bank"]:
             type = "bank"
             docs = await client.db.fetch("SELECT id , bank FROM users WHERE guild_id = $1 ORDER BY bank DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
@@ -487,7 +490,14 @@ class Economy(commands.Cog):
             type = "pvc"
             docs = await client.db.fetch("SELECT id , pvc FROM users WHERE guild_id = $1 ORDER BY pvc DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
             rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (pvc) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
-
+            coin_icon = pvc_coin(guild.id)[0]
+            
+        elif type in ["market", "-market", "shares", "-shares", "stocks", "-stocks"] and client.data[guild.id]['market'] and client.data[guild.id]['market']['status']:
+            type = "stocks"
+            docs = await client.db.fetch("SELECT id , stocks FROM users WHERE guild_id = $1 ORDER BY stocks DESC LIMIT 50 OFFSET $2;" , guild.id , offset)
+            rank = await client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (stocks) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , guild.id , user.id)
+            coin_icon = "📈"
+            
         dis =  ""   
         temp = offset
         for x in docs:
@@ -497,7 +507,7 @@ class Economy(commands.Cog):
                 continue
             else :
                 offset = offset+1   
-            v = f"**{offset}**. [{user}](https://tickap.com/user/{user.id}) **:** {pvc_coin(guild.id)[0] if type == 'pvc' else coin(guild.id) } {amount:,}\n"
+            v = f"**{offset}**. [{user}](https://tickap.com/user/{user.id}) **:** {coin_icon} {amount:,}\n"
             dis = dis + v
             if offset - temp == 10:
                 break
