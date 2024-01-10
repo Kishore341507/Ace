@@ -63,6 +63,7 @@ class Economy(commands.Cog):
 #------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                            AUTOCOINS     
 
+
     @commands.Cog.listener()
     async def on_message(self , message):
       try : 
