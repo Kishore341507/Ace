@@ -7,7 +7,7 @@ from tabulate import tabulate
 class Owner(commands.Cog):
 
     def __init__(self , client):
-        self.client = client   
+        self.client = client
 
     @commands.hybrid_command()
     @commands.is_owner()

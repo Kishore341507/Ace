@@ -10,7 +10,6 @@ class Guild(commands.Cog):
     @tasks.loop( seconds=10 , count=1)
     async def load_guilds(self):
         for guild in self.client.guilds :
-            print(guild.id)
             if guild.id not in self.client.data :
                 try :
                     await self.client.db.execute('INSERT INTO guilds(id) VALUES ($1)' , guild.id)
@@ -38,5 +37,5 @@ class Guild(commands.Cog):
             client.data[guild.id] = dict(guild_data)         
 
 async def setup(client):
-   await client.add_cog(Guild(client))         
+    await client.add_cog(Guild(client))
         

@@ -35,6 +35,10 @@ class PVC_COMMANDS(commands.Cog):
         self.client.add_view(PVC_COMMANDS.PanelView())
     
     async def check_channel(ctx) ->bool : 
+        
+        if client.data[ctx.guild.id]['disabled'] and ctx.command.name in client.data[ctx.guild.id]['disabled'] :
+            raise commands.DisabledCommand("Command disable in Server")
+
         return (client.data[ctx.guild.id]['pvc']) and (client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id or client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels']) 
 
 
@@ -142,7 +146,6 @@ class PVC_COMMANDS(commands.Cog):
         view.add_item(delete)
         await ctx.send(embed =embed , view=view)
 
-    
 
     @commands.command()
     @commands.guild_only()
@@ -237,8 +240,8 @@ class PVC_COMMANDS(commands.Cog):
           
     @commands.hybrid_command(aliases = ['info' , 'ipvc' , 'i'])
     @commands.guild_only()
-    # @cooldown(1, 10, BucketType.user)
-    # @commands.check(check_channel)  
+    @cooldown(1, 10, BucketType.member)
+    @commands.check(check_channel)  
     async def pvcinfo(self , ctx ): 
         
         info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
@@ -267,14 +270,17 @@ class PVC_COMMANDS(commands.Cog):
             elif info['auto'] :
                 time = f"🛺 PAYG Enabled"
 
-            embed.description = f"VC Owner : {ctx.guild.get_member(info['id']).mention}\n{time}" 
+            embed.description = f"VC Owner : {ctx.guild.get_member(info['id']).mention}\n{time} \n\n**Members**" 
             text = " "
-            i = 1
+            i = 0
             for  j in  vc.overwrites:
                 if type(j) == discord.Member and not j.bot :
-                    text  += f"{i}. {j.mention}\n"
                     i += 1
-            embed.add_field(name = "Members" , value= text)          
+                    text  += f"{i}. {j.mention}\n"
+                if i != 0 and (i) % 10 == 0 :
+                    embed.add_field(name = "\n" , value= text)
+                    text = ' '
+            embed.add_field(name = "\n" , value= text)          
             return embed
         
         view = discord.ui.View()
@@ -384,7 +390,7 @@ class PVC_COMMANDS(commands.Cog):
             
             if info['auto'] :
                 await client.db.execute('UPDATE pvcs SET auto = $1 WHERE id = $2' , False , ctx.author.id)
-                embed.description = f"VC Owner : {ctx.guild.get_member(info['id']).mention}\n{time}"
+                embed.description = f"VC Owner : {ctx.guild.get_member(info['id']).mention}\n{time}\n\n**Members**"
                 await interaction.response.edit_message(embed=embed )
             else : 
                 await client.db.execute('UPDATE pvcs SET auto = $1 WHERE id = $2' , True , ctx.author.id)
@@ -392,6 +398,7 @@ class PVC_COMMANDS(commands.Cog):
                     time = f"🛺 PAYG Enable <t:{ int(datetime.now().timestamp() + (info['duration']))}:R>"
                 else :
                     time = f"🛺 PAYG Enabled"
+                embed.description = f"VC Owner : {ctx.guild.get_member(info['id']).mention}\n{time}\n\n**Members**"
                 
                 await interaction.response.edit_message(embed=embed )
 
@@ -400,60 +407,54 @@ class PVC_COMMANDS(commands.Cog):
         items.append(auto)
         
         async def update_friends(interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message(embed = bembed("Not Your Interaction"), ephemeral = True)
-                return
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
 
-            bal = await self.client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-            info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-            if info == None or ctx.guild.get_channel(info['vcid']) is None :
-                return
-            
-            confirm = SelectUer(ctx.author)
-            await interaction.response.send_message( embed = bembed(f"Select Your PVC mate"), view = confirm , ephemeral = True)
-            await confirm.wait()
-            if confirm.value :
-                embed = bembed()
-                if bal['friends'] and (confirm.value).id in bal['friends'] :
-                    await client.db.execute("UPDATE users SET friends = ARRAY_REMOVE( friends , $1) WHERE id = $2 AND guild_id = $3", (confirm.value).id , ctx.author.id , ctx.guild.id )
-                    embed.description = f"{(confirm.value).mention} Removed From Friendlist\n\nn# FriendList\n"
-                else :
-                    await client.db.execute( "UPDATE users SET friends = ARRAY_APPEND( friends , $1) WHERE id = $2 AND guild_id = $3" , (confirm.value).id , ctx.author.id , ctx.guild.id )
-                    embed.description = f"{(confirm.value).mention} Added In Friendlist\n\n# FriendList\n"
-            
-            bal = await self.client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-            if bal['friends'] :
-                i = 1 
-                for friend in bal['friends'] :
-                    if ctx.guild.get_member(friend) :
-                        embed.description += f"{i}. {ctx.guild.get_member(friend).mention}\n"
-                        i += 1
-            await interaction.followup.send(embed = embed , ephemeral = True)   
+            bal = await client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            view = discord.ui.View()
+            friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] ] if bal['friends'] else None )
+            async def callback(interaction):
+                data = [ member.id for member in friend.values if not member.bot ]
+                await client.db.execute( "UPDATE users SET friends = $1 WHERE id = $2 AND guild_id = $3" , data , interaction.user.id , interaction.guild.id )
+                temp = "\n- "+'\n- '.join( [member.mention for member in friend.values if not member.bot ] )
+                embed = bembed(f"✅ FriendList Updated\n{temp}")
+                await interaction.response.edit_message(embed=embed , view = view )
+                if info and interaction.guild.get_channel(info['vcid']) :
+                    overwrites = interaction.guild.get_channel(info['vcid']).overwrites
+                    for member in friend.values :
+                        if member.bot :
+                            continue
+                        overwrites[member] = discord.PermissionOverwrite(connect=True , view_channel = True)
+                    if overwrites != interaction.guild.get_channel(info['vcid']).overwrites :
+                        await interaction.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
+                    
+            friend.callback = callback
+            view.add_item(friend)
+            await interaction.response.send_message(view=view , ephemeral=True)
+   
         
-        if client.data[ctx.guild.id]['pvc_vc_limit'] != 0 :
-            async def update_public(interaction):
-                if interaction.user != ctx.author:
-                    await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
-                    return
-                if ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).connect :
-                    overwrite = ctx.guild.get_channel(info['vcid']).overwrites_for(ctx.guild.default_role)
-                    overwrite.update(connect = False  , view_channel = None )
-                    overwrites = {**ctx.guild.get_channel(info['vcid']).overwrites , ctx.guild.default_role : overwrite }
-                    await ctx.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = 0 )
-                    await interaction.response.send_message( embed = bembed("VC is Private Now") , ephemeral = True)
-                elif ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).connect == False:
-                    overwrite = ctx.guild.get_channel(info['vcid']).overwrites_for(ctx.guild.default_role)
-                    overwrite.update(connect = True , view_channel = True)
-                    overwrites = {**ctx.guild.get_channel(info['vcid']).overwrites , ctx.guild.default_role : overwrite }
-                    await ctx.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = client.data[ctx.guild.id]['pvc_vc_limit']  )
-                    await interaction.response.send_message( embed = bembed(f"VC is Public Now") , ephemeral = True )
+        # if client.data[ctx.guild.id]['pvc_vc_limit'] != 0 :
+        #     async def update_public(interaction):
+        #         if interaction.user != ctx.author:
+        #             await interaction.response.send_message(embed = bembed("Not Your Interaction") , ephemeral = True)
+        #             return
+        #         if ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).connect :
+        #             overwrite = ctx.guild.get_channel(info['vcid']).overwrites_for(ctx.guild.default_role)
+        #             overwrite.update(connect = False  , view_channel = None )
+        #             overwrites = {**ctx.guild.get_channel(info['vcid']).overwrites , ctx.guild.default_role : overwrite }
+        #             await ctx.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = 0 )
+        #             await interaction.response.send_message( embed = bembed("VC is Private Now") , ephemeral = True)
+        #         elif ctx.guild.get_channel(info['vcid']) and ctx.guild.get_channel(info['vcid']).permissions_for( ctx.guild.default_role).connect == False:
+        #             overwrite = ctx.guild.get_channel(info['vcid']).overwrites_for(ctx.guild.default_role)
+        #             overwrite.update(connect = True , view_channel = True)
+        #             overwrites = {**ctx.guild.get_channel(info['vcid']).overwrites , ctx.guild.default_role : overwrite }
+        #             await ctx.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = client.data[ctx.guild.id]['pvc_vc_limit']  )
+        #             await interaction.response.send_message( embed = bembed(f"VC is Public Now") , ephemeral = True )
              
-            public = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='👥' , row = 3 ) 
-            public.callback = update_public
-            items.append(public)
+        #     public = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='👥' , row = 3 ) 
+        #     public.callback = update_public
+        #     items.append(public)
 
-
-        friends = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='🤝' , row = 3 )
+        friends = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='<:users:1188641484895961228>' , row = 2 )
         friends.callback = update_friends
         items.append(friends)
 
@@ -476,7 +477,7 @@ class PVC_COMMANDS(commands.Cog):
                     pass
                 await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) , ctx.author.id , ctx.guild.id )
                 await ctx.message.delete()
-        delete_pvc = discord.ui.Button( style=discord.ButtonStyle.danger , emoji='🗑️' , row = 3 )
+        delete_pvc = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='<:bin:1188639295423139950>' , row = 2 )
         delete_pvc.callback = update_delete_pvc
         items.append(delete_pvc)
         
@@ -526,14 +527,17 @@ class PVC_COMMANDS(commands.Cog):
             elif info['auto'] :
                 time = f"🛺 PAYG Enabled"
 
-            embed.description = f"VC Owner : {interaction.guild.get_member(info['id']).mention}\n{time}" 
+            embed.description = f"VC Owner : {interaction.guild.get_member(info['id']).mention}\n{time}\n\n **Members" 
             text = " "
-            i = 1
+            i = 0
             for  j in  vc.overwrites:
                 if type(j) == discord.Member and not j.bot :
-                    text  += f"{i}. {j.mention}\n"
                     i += 1
-            embed.add_field(name = "Members" , value= text)  
+                    text  += f"{i}. {j.mention}\n"
+                if i != 0 and i % 10 == 0 :
+                    embed.add_field(name=" " , value= text)
+                    text = " "
+            embed.add_field(name = " " , value= text)  
             await interaction.response.send_message(embed = embed , ephemeral=True)        
         
         @discord.ui.button(emoji="<:add:1188641489392238662>", custom_id="pvc:add-user")
@@ -683,9 +687,6 @@ class PVC_COMMANDS(commands.Cog):
             newowner.callback = callback
             view.add_item(newowner)
             await interaction.response.send_message(view=view , ephemeral=True)
- 
-
-
         
         @discord.ui.button(emoji= '<:bin:1188639295423139950>', custom_id="pvc:delete", row=1)
         async def delete(self, interaction: discord.Interaction , button: discord.ui.Button,):

@@ -41,6 +41,50 @@ class EcoManager(commands.Cog):
     def __init__(self, client):
         self.client = client
         
+    @commands.hybrid_command(name="command",aliases=[ "enable" , 'disable' , 'commands' , 'cmd'],description="Enables or disables commands for the server.")
+    @commands.check(check_perms)
+    async def command(self, ctx, *, command_name: str = None):
+        
+        if not command_name :
+            await ctx.send(embed =  discord.Embed().add_field( name="Disabled Commands" , value= "```" + (" ".join(self.client.data[ctx.guild.id]['disabled']) if self.client.data[ctx.guild.id]['disabled'] and len(self.client.data[ctx.guild.id]['disabled']) > 0 else "None")+ "```") )
+            return
+        if command_name == 'all' :
+            if ctx.invoked_with == "enable" : 
+                command_name = "enable-all"
+            elif ctx.invoked_with == 'disable' : 
+                command_name = "disable-all"
+            else : 
+                return
+        
+        if command_name in [ 'enable-all' , 'enable all' , 'enableall' ] :
+            client.data[ctx.guild.id]['disabled'] = []
+            await client.db.execute("UPDATE guilds SET disabled = $1 WHERE id = $2" , [] , ctx.guild.id )
+            await ctx.send(embed = discord.Embed(description="All general command are enabled now"))
+            return
+        
+        elif command_name in [ 'disable-all' , 'disable all' , 'disableall' ] :
+            client.data[ctx.guild.id]['disabled'] = [ command.name for command in self.client.commands if ('check_channel' in [ check.__name__ for check in command.checks ]) ]
+            await client.db.execute("UPDATE guilds SET disabled = $1 WHERE id = $2" , client.data[ctx.guild.id]['disabled'] , ctx.guild.id )
+            await ctx.send(embed = discord.Embed(description="All general command are disabled now"))
+            return 
+        
+        command = self.client.get_command(command_name)
+        if command and 'check_channel' in [ check.__name__ for check in command.checks ] :
+            
+            dis = ''
+            if command.name in (client.data[ctx.guild.id]['disabled'] or []) :
+                client.data[ctx.guild.id]['disabled'].remove(command.name)
+                dis = f"{command.name} is enabled in server"
+            else :
+                if not  client.data[ctx.guild.id]['disabled'] :
+                    client.data[ctx.guild.id]['disabled'] = []
+                client.data[ctx.guild.id]['disabled'].append(command.name)
+                dis = f"{command.name} is disabled in server"
+            await ctx.send(embed = discord.Embed(description=dis))
+        elif command :
+            await ctx.send(embed = discord.Embed(description="This Command can't be disable/enable"))
+
+
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_perms)
