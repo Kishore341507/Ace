@@ -527,7 +527,7 @@ class PVC_COMMANDS(commands.Cog):
             elif info['auto'] :
                 time = f"🛺 PAYG Enabled"
 
-            embed.description = f"VC Owner : {interaction.guild.get_member(info['id']).mention}\n{time}\n\n **Members" 
+            embed.description = f"VC Owner : {interaction.guild.get_member(info['id']).mention}\n{time}\n\n **Members**" 
             text = " "
             i = 0
             for  j in  vc.overwrites:
@@ -537,8 +537,8 @@ class PVC_COMMANDS(commands.Cog):
                 if i != 0 and i % 10 == 0 :
                     embed.add_field(name=" " , value= text)
                     text = " "
-            embed.add_field(name = " " , value= text)  
-            await interaction.response.send_message(embed = embed , ephemeral=True)        
+            embed.add_field(name = " " , value= text)
+            await interaction.response.send_message(embed = embed , ephemeral=True)
         
         @discord.ui.button(emoji="<:add:1188641489392238662>", custom_id="pvc:add-user")
         async def add_user(self,  interaction: discord.Interaction , button: discord.ui.Button,):
