@@ -322,7 +322,7 @@ class Economy(commands.Cog):
         ecoembed = discord.Embed(color= 0xF90651)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
         if user.id == ctx.author.id:
-            await ctx.send('Trying to rob yourself?')
+            await ctx.reply(embed=bembed('Trying to rob yourself?'))
             ctx.command.reset_cooldown(ctx)
             return
         else:
@@ -337,6 +337,23 @@ class Economy(commands.Cog):
     
             mem_total = member_bal["bank"] + member_bal["cash"]
             user_cash = user_bal["cash"]
+
+            # Checking if the command author owns any shares in the market and adding their worth into his net balance if he does
+            if member_bal['stocks'] > 0 and self.client.data[ctx.guild.id]['market'] and self.client.data[ctx.guild.id]['market']['status']:
+                docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;", ctx.guild.id)
+                total_economy = docs['economy']
+                stocks_left = client.data[ctx.guild.id]['market']['stocks'] - docs['stocks']
+                current_rate = math.ceil((total_economy / stocks_left) / 2) if stocks_left != 0 else math.ceil(total_economy)
+                starting_rate = current_rate
+                member_share_value = 0
+                
+                for x in range(1, member_bal['stocks'] + 1):
+                    member_share_value += current_rate
+                    total_economy = total_economy + current_rate
+                    stocks_left += 1
+                    current_rate = math.ceil((total_economy / stocks_left) / 2) if stocks_left != 0 else math.ceil(total_economy)
+                member_share_value = member_share_value - (starting_rate - current_rate)
+                mem_total += member_share_value
 
             rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else defult_economy['rob']['percent'] 
             if mem_total < 5000:
