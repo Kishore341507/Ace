@@ -467,7 +467,7 @@ class Economy(commands.Cog):
             await ctx.send(embed = bembed(f"Do You Want Reset {user}'s Money ?") , view = view )
             await view.wait()
             if view.value :
-                await self.client.db.execute('UPDATE users SET cash = 0 , bank = 0 WHERE id = $1 AND guild_id = $2'  , user.id , ctx.guild.id) 
+                await self.client.db.execute('UPDATE users SET cash = 0 , bank = 0, stocks = 0 WHERE id = $1 AND guild_id = $2'  , user.id , ctx.guild.id) 
                 await ctx.send( embed = bembed(f"{user.name}'s Economy Reset "))
     
         else :    
@@ -475,11 +475,11 @@ class Economy(commands.Cog):
             await ctx.send(embed = bembed("Are You Sure ?") , view = view )
             await view.wait()
             if view.value :
-                await self.client.db.execute('UPDATE users SET cash = 0 , bank = 0 WHERE id = $1 AND guild_id = $2'  , ctx.author.id , ctx.guild.id) 
+                await self.client.db.execute('UPDATE users SET cash = 0 , bank = 0, stocks = 0 WHERE id = $1 AND guild_id = $2', ctx.author.id , ctx.guild.id) 
                 await ctx.send( embed = bembed(f"{ctx.author.name}'s Economy Reset "))
     @resetmoney.error
     async def er(self , ctx , error ):
-        await ctx.send(error)   
+        await ctx.reply(embed=bembed(error))   
             
 #------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                                 LB
