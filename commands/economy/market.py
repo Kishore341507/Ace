@@ -103,11 +103,7 @@ class Market(commands.Cog):
               sold_stocks = docs['stocks']
               
               current_stocks =  self.client.data[guild_id]['market']['stocks'] - sold_stocks
-              
-              if current_stocks <= 0:
-                  current_rate = 0
-              else:
-                  current_rate = round((total_economy / current_stocks) * 1 / 2 , 2)
+              current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
               
               if guild_id not in self.stock_data:
                   self.stock_data[guild_id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
@@ -160,10 +156,7 @@ class Market(commands.Cog):
     sold_stocks = docs['stocks']
     
     current_stocks = total_stocks - sold_stocks
-    if current_stocks != 0:
-      current_rate = math.ceil((total_economy / current_stocks) * 1 / 2)
-    else:
-      current_rate = 0
+    current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
     embed = discord.Embed(
         description=
         f"**__Market Details__**\n\nCurrent Value  : {coin(ctx.guild.id)} {current_rate}\n\n**__Market Stats__**"
@@ -243,10 +236,7 @@ class Market(commands.Cog):
       return
 
     current_stocks = total_stocks - sold_stocks
-    if current_stocks <= 0:
-      current_rate = total_economy / current_stocks
-    else:
-      current_rate = math.ceil((total_economy / current_stocks) * 1 / 2)
+    current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
 
     if amount > current_stocks:
       await ctx.send(embed=bembed(
@@ -266,10 +256,7 @@ class Market(commands.Cog):
       current_stocks -= 1
       number += 1
       total_economy = total_economy - current_rate
-      if current_stocks != 0:
-        current_rate = math.ceil((total_economy / current_stocks) * 1 / 2)
-      else:
-        current_rate = 0
+      current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
 
 
     if bal['bank'] < total_cost:
@@ -352,10 +339,7 @@ class Market(commands.Cog):
       return
 
     current_stocks = total_stocks - sold_stocks
-    if current_stocks != 0:
-      current_rate = math.ceil((total_economy / current_stocks) * 1 / 2)
-    else:
-      current_rate = 0
+    current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
 
     total_cost = 0
     number = 0
@@ -365,10 +349,7 @@ class Market(commands.Cog):
       total_economy = total_economy + current_rate
       number += 1
       current_stocks += 1
-      if current_stocks != 0:
-        current_rate = math.ceil((total_economy / current_stocks) * 1 / 2)
-      else:
-        current_rate = 0
+      current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
 
     total_cost = total_cost - (starting_rate - current_rate)
     await self.client.db.execute(
@@ -435,7 +416,80 @@ class Market(commands.Cog):
           icon_url=f"{ctx.author.display_avatar}")
     else:
       embed.set_footer(text=f"Use /bug to report a bug")
+
+    avatar = user.display_avatar.url if user.display_avatar else user.avatar.url
+    if not avatar:
+      avatar = user.default_avatar.url
+
+    embed.set_thumbnail(url=avatar)
     await ctx.send(embed=embed)
+
+  @commands.hybrid_command(
+      name="calculate",
+      aliases=["cal"],
+      description="Calculate the buy/sell value of stocks in the market.")
+  @commands.guild_only()
+  @commands.check(check_channel)
+  @cooldown(1, 5, BucketType.member)
+  async def calculate(
+      self,
+      ctx,
+      action: str,
+      shares: str,
+  ):
+    if shares.lower() in ["all", "half"]:
+      return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> Failed: Invalid amount to calculate."))
+    if action.lower() in ["buy", "bs", "buystocks"]:
+      action = "buy"
+    elif action.lower() in ["sell", "ss", "sellstocks"]:
+      action = "sell"
+    else:
+      return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> Failed: Invalid Input."))
+    total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
+    amount, total_economy, sold_stocks, bal = await amountConverterMarket(
+        ctx.author.id, ctx.guild.id, shares, "buy", total_stocks)
+
+    current_stocks = total_stocks - sold_stocks
+    current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
+
+    if amount > current_stocks:
+      return await ctx.send(embed=bembed(
+          '<:pixel_error:1187995377891278919> Failed: Not enough shares available in the market.'
+      ))
+    elif amount == 0:
+      return await ctx.send(embed=bembed(
+          "<:pixel_error:1187995377891278919> Failed: Can't buy/sell 0 stocks."
+      ))
+    elif amount < 0:
+      return await ctx.send(embed=bembed(
+          '<:pixel_error:1187995377891278919> Failed: Not a valid amount to buy/sell.'
+      ))
+
+    total_cost = 0
+    number = 0
+    if action == "buy":
+      for x in range(1, amount + 1):
+        total_cost += current_rate
+        current_stocks -= 1
+        number += 1
+        total_economy = total_economy - current_rate
+        current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
+
+      return await ctx.send(embed=bembed(
+          f"Buying 📈{number} will cost you {coin(ctx.guild.id)}{total_cost}"))
+    elif action == "sell":
+      starting_rate = current_rate
+      for x in range(1, int(amount) + 1):
+        total_cost += current_rate
+        total_economy = total_economy + current_rate
+        number += 1
+        current_stocks += 1
+        current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
+
+      total_cost = total_cost - (starting_rate - current_rate)
+
+      return await ctx.send(embed=bembed(f"Selling 📈{number} will give you {coin(ctx.guild.id)} {total_cost}"))
+
 
 
 async def setup(client):

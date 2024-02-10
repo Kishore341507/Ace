@@ -88,7 +88,7 @@ class EcoManager(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_perms)
-    async def addmoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc'] = "bank"):
+    async def addmoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "bank"):
         try:
             amount = int(amount)
         except ValueError:
@@ -103,15 +103,8 @@ class EcoManager(commands.Cog):
             if bal is None:
                 await open_account(ctx.guild.id, member.id)
 
-            if location == "cash":
-                await client.db.execute("UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **Cash** coins added in {member.name}'s account")
-            elif location == "pvc":
-                await client.db.execute("UPDATE users SET pvc = pvc + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **pvc** coins added in {member.name}'s account")
-            else:
-                await client.db.execute("UPDATE users SET bank = bank + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **bank** coins added in {member.name}'s account")
+            await client.db.execute(f"UPDATE users SET {location} = {location} + $1  WHERE id = $2 guild_id = $3", amount, member.id ,ctx.guild.id)
+            
 
         elif type(target) == discord.Role:
             role = target
@@ -119,26 +112,24 @@ class EcoManager(commands.Cog):
             await ctx.defer()
 
             if target == ctx.guild.default_role :
-                if location == "cash":
-                    await client.db.execute("UPDATE users SET cash = cash + $1  WHERE  guild_id = $2", amount, ctx.guild.id)
-                elif location == "pvc":
-                    await client.db.execute("UPDATE users SET pvc = pvc + $1  WHERE guild_id = $2", amount, ctx.guild.id)
-                else:
-                    await client.db.execute("UPDATE users SET bank = bank + $1  WHERE guild_id = $2", amount, ctx.guild.id)
+                msg = await ctx.send(embed=bembed(f"<a:loading:1187994564812873789> Adding money into {len(ctx.guild.members)} account(s)."))
+                for member in ctx.guild.members:
+                    if member.bot:
+                        continue
+                    bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
+                    if bal is None:
+                        await open_account(ctx.guild.id, member.id)
+                await client.db.execute(f"UPDATE users SET {location} = {location} + $1  WHERE  guild_id = $2", amount, ctx.guild.id)
             else : 
+                msg = await ctx.send(embed=bembed(f"<a:loading:1187994564812873789> Adding money into {len(role.members)} account(s)."))
                 for member in role.members:
                     if member.bot:
                         continue
                     bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
                     if bal is None:
                         await open_account(ctx.guild.id, member.id)
-                    if location == "cash":
-                        await client.db.execute("UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                    elif location == "pvc":
-                        await client.db.execute("UPDATE users SET pvc = pvc + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                    else:
-                        await client.db.execute("UPDATE users SET bank = bank + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-            await ctx.send(embed=discord.Embed(description=f"**{amount}** **{location}** coins added in {len(role.members)} accounts"))
+                    await client.db.execute(f"UPDATE users SET {location} = {location} + $1  WHERE id = $2 guild_id = $3", amount, member.id ,ctx.guild.id)
+                await msg.edit(embed=bembed(description=f"**{amount}** **{location}** coins added in {len(role.members)} accounts"))
 
 
     @commands.hybrid_command()

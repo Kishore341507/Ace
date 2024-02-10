@@ -18,8 +18,10 @@ class Games(commands.Cog):
     @commands.hybrid_command(aliases=["cf"])
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(2, 60, BucketType.user)
-    async def flip(self , ctx , amount : amountconverter  ,  side : typing.Literal[ 'head', 'tail' , 'h','t','H','T' ] = "head"): 
+    # @cooldown(2, 60, BucketType.user)
+    async def flip(self , ctx , amount : amountconverter  ,  side : typing.Literal[ 'head', 'tail' , 'h','t' ] = "head"):
+        
+             
         user = ctx.author
         _max = client.data[ctx.guild.id]['games']['coinflip']['max'] if client.data[ctx.guild.id]['games'] else defult_games['coinflip']['max']
         _min = client.data[ctx.guild.id]['games']['coinflip']['min'] if client.data[ctx.guild.id]['games'] else defult_games['coinflip']['min']
@@ -42,17 +44,22 @@ class Games(commands.Cog):
                 await ctx.send('You do not have enough money to coinflip that much')
         elif amount <= _min or amount > _max:
                 await ctx.send(f'You cannot flip {_min} , less or more then {_max}') 
-        else:   
+        else:
+                embed = bembed(f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1205817149612884028>")
                 await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-                coin_flip = 0.5
-                x = random.choices([1,2] , weights = [coin_flip ,(1- coin_flip)])[0]  
-                msg = await ctx.send(f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1007007819490406573>")
+                result = random.choice(['head','tail'])
+                result_side = "<:tickapCoin:1191976654042570792>"
+                msg = await ctx.send(content = ctx.author.mention, embed=embed)
                 await asyncio.sleep(random.randint(1,4))
-                if x == 1:
-                  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
-                  await msg.edit(content= f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you Won {coin(ctx.guild.id)} **{amount*2:,}** ')
+                if result == side:
+                  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id)
+                  embed.description = f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you Won {coin(ctx.guild.id)} **{amount*2:,}**"
+                  embed.color = discord.Color.brand_green()
+                  await msg.edit(embed=embed)
                 else: 
-                  await msg.edit(content=f'**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {coin(ctx.guild.id)} and you lost it all... :c ')    
+                  embed.description = f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you lost it all... :c"
+                  embed.color = discord.Color.brand_red()
+                  await msg.edit(embed=embed)
            
     @flip.error
     @commands.guild_only()
