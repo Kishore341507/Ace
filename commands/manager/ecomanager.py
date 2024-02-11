@@ -961,8 +961,7 @@ class EcoManager(commands.Cog):
     @commands.check(check_perms)
     async def roleincome(self, ctx, role : typing.Optional[discord.Role] , bank : typing.Optional[int] , cash : typing.Optional[int] , pvc : typing.Optional[int] , cooldown : typing.Optional[TimeConverter] ):
         ecoembed = discord.Embed(color=discord.Color.blue())
-        ecoembed.set_author(
-            name=ctx.guild.name, icon_url=ctx.guild.icon.url)
+        ecoembed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
     
         if role :
             data = await client.db.fetchrow("SELECT * FROM income WHERE guild_id = $1 AND role_id = $2" , ctx.guild.id , role.id)
@@ -995,11 +994,11 @@ class EcoManager(commands.Cog):
             ecoembed.description = "No Income Role"
         await ctx.send(embed=ecoembed)
 
-    @roleincome.error
-    async def roleincome_error(self, ctx, error):
-        await ctx.send(f'{error}')
-        print(error)
-        return
+    # @roleincome.error
+    # async def roleincome_error(self, ctx, error):
+    #     await ctx.send(f'{error}')
+    #     print(error)
+    #     return
     
 async def setup(client):
     await client.add_cog(EcoManager(client))

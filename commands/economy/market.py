@@ -133,7 +133,7 @@ class Market(commands.Cog):
           self.client.data[ctx.guild.id]['market'] = { 'status' : status , 'stocks' : stocks }
           self.stock_data[ctx.guild.id] = { 'data' : [] , 'time' : [] }
           await ctx.send(embed=bembed(f"Market is now open with {stocks} shares."))
-      elif status is False :
+      elif status is False:
           await self.client.db.execute('UPDATE guilds SET market = $1 WHERE id = $2', {"status": status,"stocks": stocks}, ctx.guild.id )
           self.client.data[ctx.guild.id]['market'] = { 'status' : status , 'stocks' : stocks }
           await ctx.send(embed=bembed(f"Market is now closed."))
@@ -279,9 +279,9 @@ class Market(commands.Cog):
         # description=
         # f"**__Transaction Details__**\n>>> ```yaml\n• Shares bought    : 📈 {number}\n• Total cost       : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
         description=
-        f"**__Transaction Details__**\n>>> ```yaml\n• Shares bought    : 📈 {number}\n• Total cost       : {coin(ctx.guild.id)} {total_cost}```",
+        f"**__Transaction Details__**\n\n>>> Share(s) bought : 📈 {number:,}\n Total money paid : {coin(ctx.guild.id)} {total_cost:,}",
         color=discord.Color.blue())
-    embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon.url)
+    embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon)
     await ctx.send(embed=embed)
 
 
@@ -364,9 +364,9 @@ class Market(commands.Cog):
         # description=
         # f"**__Transaction Details__**\n>>> ```yaml\n• Shares sold      : 📈 {number}\n• Total value      : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
         description=
-        f"**__Transaction Details__**\n>>> ```yaml\n• Shares sold      : 📈 {number}\n• Total value      : {coin(ctx.guild.id)} {total_cost}```",
+        f"**__Transaction Details__**\n\n>>> Share(s) sold : 📈 {number:,}\n Total in value : {coin(ctx.guild.id)} {total_cost:,}",
         color=discord.Color.blue())
-    embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon.url)
+    embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon)
     await ctx.send(embed=embed)
 
 
@@ -408,8 +408,10 @@ class Market(commands.Cog):
         title=f"{user_name}",
         url=f"https://tickap.com/user/{user.id}",
         description=
-        f"**__Account Details__**\n>>> ```py\n• Bank balance : {coin(ctx.guild.id)} {bal['bank']}\n• Shares held  : 📈 {bal['stocks']}```",
+        f"**__Account Details__**",
         color=discord.Color.blue())
+    embed.add_field(name="**Bank balance**", value=f"{coin(ctx.guild.id)} {bal['bank']:,}")
+    embed.add_field(name="**Shares held**", value=f"📈 {bal['stocks']:,}")
     if ctx.author != user:
       embed.set_footer(
           text=f"Requested By: {ctx.author.name} | use /bug to report a bug",

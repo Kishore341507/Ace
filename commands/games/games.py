@@ -18,7 +18,7 @@ class Games(commands.Cog):
     @commands.hybrid_command(aliases=["cf"])
     @commands.guild_only()
     @commands.check(check_channel)
-    # @cooldown(2, 60, BucketType.user)
+    @cooldown(2, 60, BucketType.user)
     async def flip(self , ctx , amount : amountconverter  ,  side : typing.Literal[ 'head', 'tail' , 'h','t' ] = "head"):
         
              
@@ -66,7 +66,7 @@ class Games(commands.Cog):
     @commands.check(check_channel)
     async def flip_error(self,ctx , error):
         ecoembed = discord.Embed(color= 0xF90651)
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         if isinstance(error, commands.CommandOnCooldown):
             sec = int(error.retry_after)
             min , sec = divmod(sec, 60)
@@ -84,7 +84,7 @@ class Games(commands.Cog):
     @cooldown(1, 3, BucketType.user)
     async def slot( self , ctx , amount : amountconverter ):
         ecoembed = discord.Embed(color=  0x08FC08)
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         
         _max = client.data[ctx.guild.id]['games']['slots']['max'] if client.data[ctx.guild.id]['games'] else defult_games['slots']['max']
         _min = client.data[ctx.guild.id]['games']['slots']['min'] if client.data[ctx.guild.id]['games'] else defult_games['slots']['min']
@@ -146,7 +146,7 @@ class Games(commands.Cog):
     @cooldown(2, 5, BucketType.user)
     async def roll(self , ctx ,amount : amountconverter ,  rang:typing.Literal["odd" , "even" , 1 , 2 , 3 ,4, 5, 6] = "even"):
         ecoembed = discord.Embed(color= discord.Color.green())
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         
         _max = client.data[ctx.guild.id]['games']['roll']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roll']['max']
         _min = client.data[ctx.guild.id]['games']['roll']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roll']['min']

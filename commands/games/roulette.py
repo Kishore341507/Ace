@@ -106,7 +106,7 @@ class Roulette(commands.Cog):
             amount = game_limit    
 
         embed = discord.Embed(color=discord.Color.blue() , description= f"You have placed a bet of {coin(ctx.guild.id)} {amount} on `{space}`.")
-        embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar.url)
+        embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar)
 
         if space is None :
             embed.description = f":negative_squared_cross_mark: Invalid `<space>` argument given.\n\nUsage:\n`roulette <amount> <space>`"
@@ -188,7 +188,7 @@ class Roulette(commands.Cog):
     async def bj_error(self ,ctx ,error):
         if isinstance(error, commands.CommandOnCooldown):
             embed = discord.Embed(color=discord.Color.blue() , description= f"You are on cooldown try after {int(ctx.command.get_cooldown_retry_after(ctx)) } seconds")
-            embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar.url)
+            embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar)
             await ctx.send(embed = embed)
         else : 
             # await ctx.send(f'{error}')

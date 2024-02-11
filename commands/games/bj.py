@@ -265,7 +265,7 @@ class Bj(commands.Cog):
         embed = discord.Embed(
             description="`hit` - take another card\n`stand` - end the game\n`double down` - double your bet, hit once, than stand", color=0xebd691)
         embed.set_author(
-            name=ctx.author, icon_url=ctx.author.display_avatar.url)
+            name=ctx.author, icon_url=ctx.author.display_avatar)
         embed.add_field(name=f"**Your Hand**",
                         value=f"{pTotal}\n\nScore: {sum(pCardNum)}", inline=True)
         embed.add_field(name=f"**Dealer Hand**",

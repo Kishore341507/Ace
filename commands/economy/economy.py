@@ -156,6 +156,12 @@ class Economy(commands.Cog):
         embed.add_field(name = "Joined Server", value = f"<t:{int(user.joined_at.timestamp())}:F>\n<t:{int(user.joined_at.timestamp())}:R>", inline = False)
         embed.add_field(name = "Highest Role", value = (user.top_role).mention, inline = False)
         embed.set_thumbnail(url = user.display_avatar)
+        req = await client.http.request(discord.http.Route("GET", "/users/{uid}", uid=user.id))
+        banner_id = req["banner"]
+        banner_url = ""
+        if banner_id:
+            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}.gif?size=1024"
+        embed.set_image(url=banner_url)
         await ctx.send(embed=embed) 
           
 #------------------------------------------------xxx--------------------------------------------------------------------------------
