@@ -53,11 +53,11 @@ class Games(commands.Cog):
                 await asyncio.sleep(random.randint(1,4))
                 if result == side:
                   await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id)
-                  embed.description = f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you Won {coin(ctx.guild.id)} **{amount*2:,}**"
+                  embed.description = f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you Won {coin(ctx.guild.id)} **{amount*2:,}**"
                   embed.color = discord.Color.brand_green()
                   await msg.edit(embed=embed)
                 else: 
-                  embed.description = f"**{ctx.author.mention}** spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you lost it all... :c"
+                  embed.description = f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you lost it all... :c"
                   embed.color = discord.Color.brand_red()
                   await msg.edit(embed=embed)
            

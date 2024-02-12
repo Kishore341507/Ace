@@ -9,7 +9,7 @@ import os
 async def on_ready():
     print(f'bot logged in named : {client.user}')
     user = client.get_user(591011843552837655)
-    # await user.send(f"{client.user} is Online Now")
+    await user.send(f"{client.user} is Online Now")
 
 
 @client.command()
