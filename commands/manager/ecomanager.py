@@ -168,7 +168,7 @@ class EcoManager(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_perms)
-    async def removemoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc'] = "bank"):
+    async def removemoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "bank"):
         try:
             amount = int(amount)
         except ValueError:
@@ -198,7 +198,7 @@ class EcoManager(commands.Cog):
             else:
                 await msg.edit(fembed=bembed("Failed removing {eco} {amount} from {ctx.guild.member_count} account(s).", discord.Color.brand_red()))
                 return
-            await ctx.send(embed=bembed(f"<:checkmark:1194449772044623872> Removed {eco} {amount} into {member.mention}'s account."))
+            await ctx.send(embed=bembed(f"<:checkmark:1194449772044623872> Removed {eco} {amount} from {member.mention}'s account."))
 
         elif type(target) == discord.Role:
             role = target

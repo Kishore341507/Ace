@@ -430,7 +430,7 @@ class Settings(commands.Cog):
 
     # Creating the embed for Economy settings message
     embed = discord.Embed(title="Economy Settings")
-    embed.description = f"Economy Coin - `{economy_coin}`"
+    embed.description = f"Economy Coin - {economy_coin}"
     embed.add_field(name="Automoney Channel(s)",
                     value=automoney_channels,
                     inline=False)
@@ -1145,7 +1145,7 @@ class Settings(commands.Cog):
 
     # Creating the embeded message for PVC settings
     embed = discord.Embed(title="PVC Settings")
-    embed.description = f"PVC Status - {pvc_status}\nCoin - `{pvc_coin_symbol}`\nCoin Name - `{pvc_coin_name}`\n\nRate/hr :  - **{pvc_coin_rate}**\n\nMin Time Limit - **{pvc_min_time}** Hrs\nMax Time Limit - **{pvc_max_time}** Hrs\n(0 means no limit)"
+    embed.description = f"PVC Status - {pvc_status}\nCoin - {pvc_coin_symbol}\nCoin Name - `{pvc_coin_name}`\n\nRate/hr :  - **{pvc_coin_rate}**\n\nMin Time Limit - **{pvc_min_time}** Hrs\nMax Time Limit - **{pvc_max_time}** Hrs\n(0 means no limit)"
     embed.add_field(name="PVC Commands Channel",
                     value=pvc_commands_channels,
                     inline=False)
