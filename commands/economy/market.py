@@ -162,7 +162,7 @@ class Market(commands.Cog):
         f"**__Market Details__**\n\nCurrent Value  : {coin(ctx.guild.id)} {current_rate}\n\n**__Market Stats__**"
     )
 
-    self.stock_data[ctx.guild.id]['data'].append(round((total_economy / current_stocks) * 1 / 2 , 2))
+    self.stock_data[ctx.guild.id]['data'].append(round((total_economy / max(1, current_stocks) * 1 / 2) , 2))
     self.stock_data[ctx.guild.id]['time'].append(datetime.now().timestamp())
 
     plt.style.use('dark_background')
@@ -279,7 +279,7 @@ class Market(commands.Cog):
         # description=
         # f"**__Transaction Details__**\n>>> ```yaml\n• Shares bought    : 📈 {number}\n• Total cost       : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
         description=
-        f"**__Transaction Details__**\n\n>>> Share(s) bought : 📈 {number:,}\n Total money paid : {coin(ctx.guild.id)} {total_cost:,}",
+        f"**__Transaction Details__**\n\n>>> Share(s) bought : 📈 {number:,}\nTotal money paid : {coin(ctx.guild.id)} {total_cost:,}",
         color=discord.Color.blue())
     embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon)
     await ctx.send(embed=embed)
@@ -364,7 +364,7 @@ class Market(commands.Cog):
         # description=
         # f"**__Transaction Details__**\n>>> ```yaml\n• Shares sold      : 📈 {number}\n• Total value      : {coin(ctx.guild.id)} {total_cost}\n• Current rate     : {coin(ctx.guild.id)} {current_rate}\n• Stocks in market : 📈 {current_stocks}```",
         description=
-        f"**__Transaction Details__**\n\n>>> Share(s) sold : 📈 {number:,}\n Total in value : {coin(ctx.guild.id)} {total_cost:,}",
+        f"**__Transaction Details__**\n\n>>> Share(s) sold : 📈 {number:,}\nTotal in value : {coin(ctx.guild.id)} {total_cost:,}",
         color=discord.Color.blue())
     embed.set_footer(text=f"{ctx.guild.name}", icon_url=ctx.guild.icon)
     await ctx.send(embed=embed)

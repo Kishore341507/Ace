@@ -334,7 +334,7 @@ class Economy(commands.Cog):
         ecoembed = discord.Embed(color= 0xF90651)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
         if user.id == ctx.author.id:
-            await ctx.reply(embed=bembed('Trying to rob yourself?'))
+            await ctx.reply(embed=bembed('Trying to rob yourself?', discord.Color.brand_red()))
             ctx.command.reset_cooldown(ctx)
             return
         else:
@@ -346,7 +346,10 @@ class Economy(commands.Cog):
             if member_bal is None:
                 await open_account( ctx.guild.id , ctx.author.id)
                 member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
-    
+            if member_bal['stocks'] > 0:
+                await ctx.reply(embed=bembed('Sorry! You cannot rob someone while owning stocks from the market. Sell them first :c', discord.Color.brand_red()))
+                ctx.command.reset_cooldown(ctx)
+                return
             mem_total = member_bal["bank"] + member_bal["cash"]
             user_cash = user_bal["cash"]
             

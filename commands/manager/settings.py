@@ -177,6 +177,8 @@ class Settings(commands.Cog):
           embed, view = await Settings.gameSettingsMessage(interaction.guild)
         elif main_selection == 4:
           embed, view = await Settings.pvcSettingsMessage(interaction.guild)
+        elif main_selection == 5:
+          embed, view = await Settings.marketSettingsMessage(interaction.guild)
         else:
           await interaction.response.send_message(embed=bembed(
               f"<:pixel_error:1187995377891278919> Interaction Failed: Unknown error"
@@ -1487,7 +1489,8 @@ class Settings(commands.Cog):
           return
 
     return embed, pvcSettingsView(guild)
-  
+ 
+  ################################################################################### Market Settings Message ########################################################################
   async def marketSettingsMessage(guild):
     # Fetching the pvc status for guild (on/off)
     if client.data[guild.id]['market'] and client.data[guild.id]['market']['status'] is True:
@@ -1496,17 +1499,19 @@ class Settings(commands.Cog):
       market_enabled = False
     market_status = "`🟢`" if market_enabled else "`🔴`"
 
-    stocks = str(client.data[guild.id]['market']['stocks'] if client.data[guild.id]['market'] else 0)
+    stocks = client.data[guild.id]['market']['stocks'] if client.data[guild.id]['market'] else 0
 
     # Creating the embeded message for Merket settings
     embed = discord.Embed(title="Market Settings")
-    embed.description = f"Market Status - {market_status}\nSymbol - 📈\n Name - **Feature yet unavailable**"
+    embed.description = f"Market Status - {market_status}\nTotal Stocks - 📈 {stocks:,}" # + "Symbol - 📈\nName - **Feature yet unavailable**"
+    # 
 
     # Creating the view for PVC settings
     class marketSettingsView(discord.ui.View):
 
       def __init__(self, guild):
         super().__init__(timeout=None)
+        self.client = client
         self.guild = guild
         self.user_id = None
         self.message = None
@@ -1529,6 +1534,13 @@ class Settings(commands.Cog):
         content = self.message.content[:-18] + "**[** Inactive **]**"
         await self.message.edit(content=content, view=self)
 
+        """
+              discord.SelectOption(
+                  label="Market Symbol/Name",
+                  emoji="<:settings:1187254549828882562>",
+                  description="Change the name or symbol of your stock.",
+                  value="3")
+        """
       @discord.ui.select(
           placeholder="Select a setting to change.",
           options=[
@@ -1548,12 +1560,12 @@ class Settings(commands.Cog):
                   description="Enable or disable the market for the server.",
                   value="2"),
               discord.SelectOption(
-                  label="Market Symbol/Name",
+                  label="Total Stocks",
                   emoji="<:settings:1187254549828882562>",
-                  description="Change the name or symbol of your stock.",
+                  description="Change the number of stocks the market is open at.",
                   value="3")
           ],
-          custom_id="market_setings_select")
+              custom_id="market_setings_select")
       async def market_setings_select(self, interaction: discord.Interaction,
                                    select: discord.ui.Select):
         selection = int(select.values[0])
@@ -1572,15 +1584,14 @@ class Settings(commands.Cog):
           total_economy = docs['economy']
           sold_stocks = docs['stocks']
           stocks_left = client.data[interaction.guild.id]['market']['stocks'] - sold_stocks
-          message = f"The server stats of **{interaction.guild.name}** are as follows:\n- The total amount of economy in  the server is {coin(interaction.guild.id)} {total_economy}.\n- The total amount of {pvc_coin(interaction.guild.id)[1]} in the server is {pvc_coin(interaction.guild.id)[0]} {docs['pvc']}.\n"
+          message = f"The server stats of **{interaction.guild.name}** are as follows:\n- The total amount of economy in  the server is {coin(interaction.guild.id)} {total_economy:,}.\n- The total amount of {pvc_coin(interaction.guild.id)[1]} in the server is {pvc_coin(interaction.guild.id)[0]} {docs['pvc']:,}.\n"
           if client.data[interaction.guild.id]['market'] and client.data[interaction.guild.id]['market']['status'] is True: 
-            current_price = math.ceil((total_economy/max(1, )) / 2)
-            message = message + f"- The total amount of shares sold in this server is 📈 {sold_stocks} and the current stock price is {current_price}{f" with a total of 📈 {stocks_left} in the market." if stocks_left >= 0 else "."}"
-          await interaction.followup.send(message)
+            current_price = math.ceil((total_economy/max(1, stocks_left)) / 2)
+            message = message + f"- The total amount of shares sold in this server is 📈 {sold_stocks:,} and the current stock price is {coin(interaction.guild.id)} {current_price:,}{f" with a total of 📈 {stocks_left:,} in the market." if stocks_left >= 0 else "."}"
+          await interaction.response.send_message(message, ephemeral=True)
 
         # Market Status
         elif selection == 2:
-          return await interaction.followup.send("This is underdevelopment as of now.", ephemeral=True)
           # Switching the Market status
           if client.data[interaction.guild.id]['market'] and client.data[interaction.guild.id]['market']['status'] is True:
             stocks = self.client.data[interaction.guild.id]['market']['stocks']
@@ -1588,18 +1599,12 @@ class Settings(commands.Cog):
             self.client.data[interaction.guild.id]['market'] = { 'status' : False , 'stocks' : stocks}
           else:
             stocks = self.client.data[interaction.guild.id]['market']['stocks'] if self.client.data[interaction.guild.id]['market'] else 100000
-            await self.client.db.execute('UPDATE guilds SET market = $1 WHERE id = $2', {"status": False,"stocks": stocks}, interaction.guild.id )
-            self.client.data[interaction.guild.id]['market'] = { 'status' : False , 'stocks' : stocks}
-
-          # Updating the original message
-          embed, view = await Settings.marketSettingsMessage(self.guild)
-          view.user_id = self.user_id
-          view.message = self.message
-          await interaction.response.edit_message(embed=embed, view=view)
-          return
-
+            await self.client.db.execute('UPDATE guilds SET market = $1 WHERE id = $2', {"status": True,"stocks": stocks}, interaction.guild.id )
+            self.client.data[interaction.guild.id]['market'] = { 'status' : True , 'stocks' : stocks}
+          """
         # Market symblol/stock's name
         elif selection == 3:
+          return await interaction.followup.send("This is underdevelopment as of now.", ephemeral=True)
           # Modal to update the pvc coin/name
           modal = multiInputModal(
               ["Enter the stock's name.", "Enter the stock's symbol."],
@@ -1623,17 +1628,53 @@ class Settings(commands.Cog):
           view.message = self.message
           await interaction.message.edit(embed=embed, view=view)
           return
+          """
+        elif selection == 3:
+          modal = singleInputModal("Total Number of Stocks for Market.",
+                                   "Input should be in Numbers", 1, None , str(client.data[interaction.guild.id]['market']['stocks']) if  client.data[interaction.guild.id]['market'] else "0")
+          modal.title = "Total Stocks Settings"
+          await interaction.response.send_modal(modal)
+          await modal.wait()
+          # Checking if the input is a number and updating the rate in database
+          if modal.value:
+            has_value_error = False
+            try:
+              value = int(modal.value)
+            except Exception:
+              has_value_error = True
+            if has_value_error:
+              await interaction.followup.send("Stock amount should be in numbers.")
+              return
+            else:
+              status = self.client.data[interaction.guild.id]['market']['status']
+              await self.client.db.execute('UPDATE guilds SET market = $1 WHERE id = $2', {"status": status,"stocks": value}, interaction.guild.id )
+              self.client.data[interaction.guild.id]['market'] = { 'status' : status , 'stocks' : value}
 
+            # Updating the original message
+            embed, view = await Settings.marketSettingsMessage(self.guild)
+            view.user_id = self.user_id
+            view.message = self.message
+            await interaction.message.edit(embed=embed, view=view)
+            return
         else:
           await interaction.response.send_message(embed=bembed(
               f"<:pixel_error:1187995377891278919> Interaction Failed: Unknown error"
           ),
                                                   ephemeral=True)
           return
+        
+        # Updating the original message
+        embed, view = await Settings.marketSettingsMessage(self.guild)
+        view.user_id = self.user_id
+        view.message = self.message
+        await interaction.response.edit_message(embed=embed, view=view)
+        return
+      
+    return embed, marketSettingsView(guild)
 
   @commands.hybrid_command(name="setup",
                            description="Setup the bot for your server",
-                           aliases=[ "config" , "start"])
+                           aliases=[ "config" , "start", 'setting'])
   @commands.guild_only()
   @commands.guild_only()
   @commands.check(check_perms)
@@ -1650,6 +1691,8 @@ class Settings(commands.Cog):
       embed , view = await Settings.gameSettingsMessage(ctx.guild)
     elif page == 4 :
       embed , view = await Settings.pvcSettingsMessage(ctx.guild)
+    elif page == 5:
+      embed, view = await Settings.marketSettingsMessage(ctx.guild)
     else :
       embed, view = await self.setupMessage()
       
