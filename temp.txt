@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS giveaway(
+  id varchar,
+  channel_id bigint,
+  title varchar(255),
+  winners int,
+  prize_type varchar(255),
+  prize_value bigint,
+  req_role bigint,
+  end_time timestamp,
+  rerolled boolean DEFAULT false,
+  participants bigint[]
+)

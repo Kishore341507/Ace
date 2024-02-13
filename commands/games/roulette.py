@@ -95,7 +95,12 @@ class Roulette(commands.Cog):
     async def roulette(self , ctx  , amount : amountconverter2 , space : typing.Optional[roulette_space] = "x" ):
         flag = True
         if space is "x":
-            space = random.randint(1, 36)  
+            space = random.randint(1, 36)
+        if space is None :
+            embed.description = f":negative_squared_cross_mark: Invalid `<space>` argument given.\n\nUsage:\n`roulette <amount> <space>`"
+            embed.color = discord.Color.red()
+            await ctx.send(embed = embed)
+            return
             
         _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['max']
         _min = client.data[ctx.guild.id]['games']['roulette']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['min']       
@@ -107,12 +112,6 @@ class Roulette(commands.Cog):
 
         embed = discord.Embed(color=discord.Color.blue() , description= f"You have placed a bet of {coin(ctx.guild.id)} {amount} on `{space}`.")
         embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar)
-
-        if space is None :
-            embed.description = f":negative_squared_cross_mark: Invalid `<space>` argument given.\n\nUsage:\n`roulette <amount> <space>`"
-            embed.color = discord.Color.red()
-            await ctx.send(embed = embed)
-            return
         
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
 

@@ -4,13 +4,33 @@ from database import *
 import time
 from dotenv import load_dotenv
 import os
+from datetime import datetime, timedelta
 
 @client.event
 async def on_ready():
     print(f'bot logged in named : {client.user}')
     user = client.get_user(591011843552837655)
-    await user.send(f"{client.user} is Online Now")
+    client.start_time = datetime.now()
+    # await user.send(f"{client.user} is Online Now")
 
+def seconds_to_dhms(seconds):
+    days = seconds // 86400
+    seconds %= 86400
+    hours = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+    """
+    if int(days) > 0:
+        string = string + f"{int(days)}d "
+    if int(hours) > 0:
+        string = string + f"{int(dahourss)}h "
+    if int(minutes) > 0:
+        string =  string + f"{int(minutes)}m "
+    if int (seconds) >= 0:
+         string = string + f"{int(seconds)}s"
+    """
+    return f"{int(days)}d {int(hours)}h {int(minutes)}m {int(seconds)}s"
 
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
@@ -20,7 +40,18 @@ async def ping(ctx):
     x = await client.db.execute("SELECT 1")
     time2 = time.time()
     db_ping = round( (time2 - time1) * 1000 , ndigits=2)
-    await ctx.reply(embed = bembed(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`'))
+    elpased_time = (datetime.now() - client.start_time).total_seconds()
+    uptime_string = seconds_to_dhms(elpased_time)
+    embed = bembed("")
+    embed.add_field(name="**Bot Ping**", value= f"`{ping}ms`")
+    embed.add_field(name="**Database Ping**",value=f"`{db_ping}ms`")
+    embed.add_field(name="**Uptime** ",value=f"`{uptime_string}`")
+    embed.set_author(name=client.user.name, icon_url=client.user.avatar)
+    embed.set_footer(text=f"Requested by {ctx.author}",icon_url=ctx.author.display_avatar)
+    embed.timestamp  = datetime.now()
+    await ctx.reply(embed=embed)
+
+    #await ctx.reply(embed = bembed(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`\nUptime: `{uptime_string}`'))
 
 
 load_dotenv()
