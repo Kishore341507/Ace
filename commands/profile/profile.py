@@ -341,7 +341,7 @@ class multiInputModal(discord.ui.Modal, title='...'):
 
 class EditProfileButton(discord.ui.View):
   def  __init__(self, user_id):
-    super().__init__(timeout=60)
+    super().__init__(timeout=180)
     self.user_id = user_id
     self.message = None
 
@@ -356,27 +356,27 @@ class EditProfileButton(discord.ui.View):
     except Exception as e:
       pass
 
-  @discord.ui.button(label="Customize", style=discord.ButtonStyle.green, emoji="🛠️", custom_id="customize_button")
+  @discord.ui.button(label="Customize", style=discord.ButtonStyle.blurple, emoji="🛠️", custom_id="customize_button")
   async def customize_button(self, interaction: discord.Interaction, button: discord.ui.Button):
     data = await client.db.fetchrow("SELECT * FROM profiles WHERE user_id = $1", interaction.user.id)
-    modal = multiInputModal(["Enter a new nickname.", "Enter a new description.", "Enter a new Backgroud URL.", "Enter a blur value for BG."], ["Text Input.", "Text Input.", "Must be valid URL.", "Must be a number in range 1-10."],[1, 1, 1, 1], [30, 135, 250, 2], [data['nick'], data['description'], data['bg'], data['bg_blur']], [True, True, True, True])
+    modal = multiInputModal(["Enter a new nickname.", "Enter a new description.", "Enter a new Backgroud URL.", "Enter a blur value for BG."], ["Text Input.", "Text Input.", "Must be valid URL.", "Must be a number in range 1-10."],[1, 1, 1, 1], [30, 135, 250, 2], [data['nick'], data['description'], data['bg_url'], data['bg_blur']], [True, True, True, True])
     modal.title = f"{interaction.user.display_name}'s Profile Settings"
     modal.color = discord.Color.blurple()
     await interaction.response.send_modal(modal)
-    await modal.wait(timeout=180)
+    await modal.wait()
     if modal.values:
       name = modal.values[0]
       description = modal.values[1]
-      bg = modal.values[2]
+      bg_url = modal.values[2]
       bg_blur = modal.values[3]
 
       error = "⚠️ Following errors occured during execution:\n"
-      if bg:
+      if bg_url:
         image = fetch_image_from_url(bg)
         if image:
-          bg = bg
+          bg_url = bg_url
         else:
-          bg = data['bg']
+          bg_url = data['bg_url']
           error = error + "- Invalid URL for background.\n"
       if modal.values[1]:
         validValue = True
@@ -395,16 +395,17 @@ class EditProfileButton(discord.ui.View):
         await interaction.followup.send(error, ephemeral=True)
 
       result = await client.db.execute(
-        "UPDATE profiles SET nick = $1, description = $2, bg = $3, bg_blur = $4 WHERE user_id = $5",
-        name, description, bg, bg_blur, interaction.user.id)
+        "UPDATE profiles SET nick = $1, description = $2, bg_url = $3, bg_blur = $4 WHERE user_id = $5",
+        name, description, bg_url, bg_blur, interaction.user.id)
       if result != "UPDATE 1":
         await interaction.followup.send("done", ephemeral=True)
-        # await interaction.response.edit_message(embed=bembed(
-        #     f"**__Current Settings__**\n\n- **Nickname**: {self.nickname}\n- **Description**: {self.description}\n- **Backgroud**: {self.bg}\n- **Blur**: {self.bg_blur}"
-        # ).set_author(name="Edit Profile", icon_url=avatar))
         await interaction.followup.send_message(
             "⚠️ An error occured. You may report this in our support server.",
             ephemeral=True)
+      else:
+        await interaction.followup.send(embed=bembed(
+          f"[**__{interaction.user.global_name}__**](https://discordapp.com/users/{interaction.user.id})\n\n- **Nickname**: {name}\n- **Description**: {description}\n- **Backgroud**: {bg}\n- **Blur**: {bg_blur}"
+      ).set_author(name="Current Settings", icon_url=interaction.user.avatar), ephemeral=True)
       return
 
 
@@ -415,11 +416,11 @@ class EditProfileButton(discord.ui.View):
 """
 class editProfileView(discord.ui.View):
 
-  def __init__(self, nickname, description, bg, bg_blur):
+  def __init__(self, nickname, description, bg_url, bg_blur):
     super().__init__(timeout=180)
     self.nickname = nickname
     self.description = description
-    self.bg = bg
+    self.bg_url = bg_url
     self.bg_blur = bg_blur
 
   @discord.ui.button(label="Edit Nickname",
@@ -462,7 +463,7 @@ class editProfileView(discord.ui.View):
     modal = multiInputModal([
         "Enter a new background URL.", "Enter the blur value for background."
     ], ["https://", "Must be an Integer between 1-10"], [1, 1], [200, 2],
-                            [self.bg, self.bg_blur], [True, True])
+                            [self.bg_url, self.bg_blur], [True, True])
     modal.title = "Customize Background"
     await interaction.response.send_modal(modal)
     await modal.wait()
@@ -470,7 +471,7 @@ class editProfileView(discord.ui.View):
     if modal.values[0]:
       image = fetch_image_from_url(modal.values[0])
       if image:
-        self.bg = modal.values[0]
+        self.bg_url = modal.values[0]
       else:
         error = error + "- Invalid URL for background.\n"
     if modal.values[1]:
@@ -495,8 +496,8 @@ class editProfileView(discord.ui.View):
   async def commit_changes_button(self, interaction: discord.Interaction,
                                   button: discord.ui.Button):
     result = await client.db.execute(
-        "UPDATE profiles SET nick = $1, description = $2, bg = $3, bg_blur = $4 WHERE user_id = $5",
-        self.nickname, self.description, self.bg, self.bg_blur,
+        "UPDATE profiles SET nick = $1, description = $2, bg_url = $3, bg_blur = $4 WHERE user_id = $5",
+        self.nickname, self.description, self.bg_url, self.bg_blur,
         interaction.user.id)
     if result == "UPDATE 1":
       avatar = interaction.user.display_avatar.url if interaction.user.display_avatar else interaction.user.avatar.url
@@ -513,12 +514,12 @@ class editProfileView(discord.ui.View):
 
 class editProfileButton(discord.ui.View):
 
-  def __init__(self, user_id, nickname, description, bg, bg_blur):
+  def __init__(self, user_id, nickname, description, bg_url, bg_blur):
     super().__init__(timeout=60)
     self.user_id = user_id
     self.nickname = nickname
     self.description = description
-    self.bg = bg
+    self.bg_url = bg_url
     self.bg_blur = bg_blur
     self.msg = None
 
@@ -549,7 +550,7 @@ class editProfileButton(discord.ui.View):
     ).set_author(name="Edit Profile", icon_url=avatar),
                                             view=editProfileView(
                                                 self.nickname,
-                                                self.description, self.bg,
+                                                self.description, self.bg_url,
                                                 self.bg_blur),
                                             ephemeral=True)
     return
@@ -599,7 +600,7 @@ class profile(commands.Cog):
       fetch_view = 1
 
     data = await client.db.fetchrow(
-        "SELECT * FROM profiles WHERE user_id = $1", user.id)
+        "SELECT * FROM (SELECT ROW_NUMBER() OVER (ORDER BY xp DESC) AS rank, user_id, xp, nick, description, bg_blur, bg_url FROM profiles) as profiles WHERE user_id = $1", user.id)
     if data is None:
       await client.db.execute(
           "INSERT INTO profiles (user_id, xp) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING",
@@ -608,7 +609,7 @@ class profile(commands.Cog):
           "SELECT * FROM profiles WHERE user_id = $1", user.id)
     default_bg = "https://images.wallpapersden.com/image/download/3d-photoshop-nature_aGZoapSZmpqtpaSklG1lZa1rZWU.jpg"
 
-    bg = fetch_image_from_url(data["bg"] if data['bg'] else default_bg)
+    bg = fetch_image_from_url(data["bg_url"] if data['bg_url'] else default_bg)
     if bg:
       bg = bg.convert("RGBA")
     else:
@@ -629,8 +630,7 @@ class profile(commands.Cog):
     # Fetching the user's info to show in the profile
     name = user.nick if user.nick else user.display_name
     name = name[:20] + "..." if len(name) > 20 else name
-    rank = await client.db.fetchval(
-        "SELECT RANK() OVER (ORDER BY xp DESC) FROM profiles")
+    rank = data["rank"]
     level, exp, exp_next = get_level(int(data['xp']))
     nickname = data['nick'] if data['nick'] else "Ace Aspirant"
     nickname = nickname[:30] + "..." if len(nickname) > 30 else nickname
@@ -701,14 +701,14 @@ class profile(commands.Cog):
     highest_id = 0
     topmost_role = None
     roles = None
-    # Fetching the topmost item bought by the user in the server (determined through item id)
+    # Fetching the topmost item bought by the user in the server (determined through item id) [To display in second card]
     for item in store_docs:
       if store_docs[item]['buyers'] and user.id in store_docs[item]['buyers'] and store_docs[item]['id'] > highest_id:
         highest_bought_item = store_docs[item]['name']
         roles = store_docs[item]['roles'] if store_docs[item]['roles'] else None
         highest_id = store_docs[item]['id']
 
-    # Fetching the topmost role in the rewards of the topmost item bought by the user in the server
+    # Fetching the topmost role in the rewards of the topmost item bought by the user in the server (To display in second card)
     if roles:
       for role_id in roles:
         role = ctx.guild.get_role(role_id)
@@ -716,6 +716,7 @@ class profile(commands.Cog):
                      or role.position > topmost_role.position):
           topmost_role = role
 
+    # Fetching the leaderboard rank of the user in the server (determined by total bank and cash held by him)
     lb_rank = await client.db.fetchval(
         "SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (bank + cash) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2",
         user.guild.id, user.id)
@@ -756,7 +757,7 @@ class profile(commands.Cog):
       await ctx.send(
           "Invalid URL. Please provide a valid URL starting with `https://`.")
       return
-    await client.db.execute("UPDATE profiles SET bg = $1 WHERE user_id = $2",
+    await client.db.execute("UPDATE profiles SET bg_url = $1 WHERE user_id = $2",
                             bg_url, ctx.author.id)
     await ctx.send("Background set successfully!")
 
