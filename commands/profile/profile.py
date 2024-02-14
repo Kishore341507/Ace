@@ -372,7 +372,7 @@ class EditProfileButton(discord.ui.View):
 
       error = "⚠️ Following errors occured during execution:\n"
       if bg_url:
-        image = fetch_image_from_url(bg)
+        image = fetch_image_from_url(bg_url)
         if image:
           bg_url = bg_url
         else:
@@ -404,8 +404,8 @@ class EditProfileButton(discord.ui.View):
             ephemeral=True)
       else:
         await interaction.followup.send(embed=bembed(
-          f"[**__{interaction.user.global_name}__**](https://discordapp.com/users/{interaction.user.id})\n\n- **Nickname**: {name}\n- **Description**: {description}\n- **Backgroud**: {bg}\n- **Blur**: {bg_blur}"
-      ).set_author(name="Current Settings", icon_url=interaction.user.avatar), ephemeral=True)
+          f"[**__{interaction.user.display_name}__**]\n\n- **Nickname**: {name}\n- **Description**: {description}\n- **Backgroud**: {bg_url}\n- **Blur**: {bg_blur}"
+      ).set_author(name="Current Settings", icon_url=interaction.user.display_avatar), ephemeral=True)
       return
 
 
@@ -773,10 +773,10 @@ class profile(commands.Cog):
         ctx.author.id)
     await ctx.send("Blur set successfully!")
 
-  @commands.hybrid_command(name="card", aliases=["c"])
+  @commands.hybrid_command(name="card", aliases=["c", "gen"])
   @commands.check(check_channel)
   @commands.check(check_perms)
-  async def level_card(self,
+  async def gen_card(self,
                        ctx,
                        card,
                        input1: str = "1",

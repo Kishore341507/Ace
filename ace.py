@@ -11,7 +11,7 @@ async def on_ready():
     print(f'bot logged in named : {client.user}')
     user = client.get_user(591011843552837655)
     client.start_time = datetime.now()
-    # await user.send(f"{client.user} is Online Now")
+    await user.send(f"{client.user} is Online Now")
 
 def seconds_to_dhms(seconds):
     days = seconds // 86400
@@ -20,16 +20,6 @@ def seconds_to_dhms(seconds):
     seconds %= 3600
     minutes = seconds // 60
     seconds %= 60
-    """
-    if int(days) > 0:
-        string = string + f"{int(days)}d "
-    if int(hours) > 0:
-        string = string + f"{int(dahourss)}h "
-    if int(minutes) > 0:
-        string =  string + f"{int(minutes)}m "
-    if int (seconds) >= 0:
-         string = string + f"{int(seconds)}s"
-    """
     return f"{int(days)}d {int(hours)}h {int(minutes)}m {int(seconds)}s"
 
 @client.command()
@@ -51,7 +41,6 @@ async def ping(ctx):
         uptime_string = seconds_to_dhms(elpased_time)
         embed.add_field(name="**Uptime** ",value=f"`{uptime_string}`")
     await ctx.reply(embed=embed)
-
     #await ctx.reply(embed = bembed(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`\nUptime: `{uptime_string}`'))
 
 
