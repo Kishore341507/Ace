@@ -550,7 +550,7 @@ class EcoManager(commands.Cog):
                 if stocks :
                     await self.client.db.execute('UPDATE users SET stocks = 0 WHERE guild_id = $1'  , ctx.guild.id)
                 
-                await ctx.send( embed = bembed(f"Economy Reset\n{'✅' if cash else '❌'} Cash\n{'✅' if bank else '❌'} Bank\n{'✅' if pvc else '❌'} PVC"))
+                await ctx.send( embed = bembed(f"Economy Reset\n{'✅' if cash else '❌'} Cash\n{'✅' if bank else '❌'} Bank\n{'✅' if pvc else '❌'} PVC\n{'✅' if stocks else '❌'} Stocks") )
 
     # Manage settings Here !!!!!!!!!!!!!!!!!!
 
