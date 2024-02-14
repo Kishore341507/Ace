@@ -485,7 +485,7 @@ class EcoManager(commands.Cog):
 
     @commands.hybrid_command()
     @commands.check(check_perms)
-    async def reseteconomy(self, ctx , cash : typing.Optional[bool] = True , bank : typing.Optional[bool] = True , pvc : typing.Optional[bool] = True):
+    async def reseteconomy(self, ctx , cash : typing.Optional[bool] = True , bank : typing.Optional[bool] = True , pvc : typing.Optional[bool] = True , stocks : typing.Optional[bool] = True):
         view = Confirm(ctx.author)
         await ctx.send(embed = bembed("Do You Really want To reset Economy ?") , view = view )
         await view.wait()
@@ -500,6 +500,8 @@ class EcoManager(commands.Cog):
                     await self.client.db.execute('UPDATE users SET bank = 0 WHERE guild_id = $1'  , ctx.guild.id) 
                 if pvc :
                     await self.client.db.execute('UPDATE users SET pvc = 0 WHERE guild_id = $1'  , ctx.guild.id) 
+                if stocks :
+                    await self.client.db.execute('UPDATE users SET stocks = 0 WHERE guild_id = $1'  , ctx.guild.id)
                 
                 await ctx.send( embed = bembed(f"Economy Reset\n{'✅' if cash else '❌'} Cash\n{'✅' if bank else '❌'} Bank\n{'✅' if pvc else '❌'} PVC"))
 
