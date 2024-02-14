@@ -133,12 +133,6 @@ class Economy(commands.Cog):
         else :
             embed.set_footer(
                     text=f"Use /bug to report a bug")
-        
-        avatar = user.display_avatar.url if user.display_avatar else user.avatar.url
-        if not avatar:
-            avatar = user.default_avatar.url
-
-        embed.set_thumbnail(url=avatar)
             
         await ctx.send( embed=embed  ) 
         

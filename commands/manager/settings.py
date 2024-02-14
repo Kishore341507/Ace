@@ -1587,7 +1587,7 @@ class Settings(commands.Cog):
           message = f"The server stats of **{interaction.guild.name}** are as follows:\n- The total amount of economy in  the server is {coin(interaction.guild.id)} {total_economy:,}.\n- The total amount of {pvc_coin(interaction.guild.id)[1]} in the server is {pvc_coin(interaction.guild.id)[0]} {docs['pvc']:,}.\n"
           if client.data[interaction.guild.id]['market'] and client.data[interaction.guild.id]['market']['status'] is True: 
             current_price = math.ceil((total_economy/max(1, stocks_left)) / 2)
-            message = message + f"- The total amount of shares sold in this server is 📈 {sold_stocks:,} and the current stock price is {coin(interaction.guild.id)} {current_price:,}{f" with a total of 📈 {stocks_left:,} in the market." if stocks_left >= 0 else "."}"
+            message = message + f"- The total amount of shares sold in this server is 📈 {sold_stocks:,} and the current stock price is {coin(interaction.guild.id)} {current_price:,}" + f" with a total of 📈 {stocks_left:,} in the market." if stocks_left >= 0 else "."
           await interaction.response.send_message(message, ephemeral=True)
 
         # Market Status
