@@ -53,7 +53,7 @@ class store(commands.Cog):
         i = 0
         doc = await client.db.fetch("SELECT * FROM store WHERE guild_id = $1 ORDER BY currency DESC , price DESC " , ctx.guild.id)
         ecoembed = discord.Embed(color= 0x08FC08)
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         ecoembed.description = "Buy an item with the ***buyitem <id>*** command.\nFor more information on an item use the `item-info <id>` command \n\n" 
         ecoembed.set_author(name=f"{ctx.guild.name} STORE" , icon_url=ctx.guild.icon)
  
@@ -71,7 +71,7 @@ class store(commands.Cog):
     @cooldown(1, 5, BucketType.user)
     async def buyitem(self , ctx , id: typing.Optional[int] , * , name : typing.Optional[str] ):
         ecoembed = discord.Embed(color= 0x08FC08)
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)      
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)      
         item = None
 
         if id :
@@ -154,7 +154,7 @@ class store(commands.Cog):
     # @cooldown(1, 5, BucketType.user)
     # async def sellitem(self , ctx , id: typing.Optional[int] , * , name : typing.Optional[str]):
     #     ecoembed = discord.Embed(color= 0x08FC08)
-    #     ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+    #     ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         
     #     item = None
     #     if id :

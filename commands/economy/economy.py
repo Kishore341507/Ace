@@ -132,7 +132,7 @@ class Economy(commands.Cog):
                     text=f"Requested By: {ctx.author.name} | use /bug to report a bug", icon_url=f"{ctx.author.display_avatar.url}") 
         else :
             embed.set_footer(
-                    text=f"Use /bug to report a bug") 
+                    text=f"Use /bug to report a bug")
             
         await ctx.send( embed=embed  ) 
         
@@ -150,6 +150,12 @@ class Economy(commands.Cog):
         embed.add_field(name = "Joined Server", value = f"<t:{int(user.joined_at.timestamp())}:F>\n<t:{int(user.joined_at.timestamp())}:R>", inline = False)
         embed.add_field(name = "Highest Role", value = (user.top_role).mention, inline = False)
         embed.set_thumbnail(url = user.display_avatar)
+        req = await client.http.request(discord.http.Route("GET", "/users/{uid}", uid=user.id))
+        banner_id = req["banner"]
+        banner_url = ""
+        if banner_id:
+            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}.gif?size=1024"
+        embed.set_image(url=banner_url)
         await ctx.send(embed=embed) 
           
 #------------------------------------------------xxx--------------------------------------------------------------------------------
@@ -322,7 +328,7 @@ class Economy(commands.Cog):
         ecoembed = discord.Embed(color= 0xF90651)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
         if user.id == ctx.author.id:
-            await ctx.reply(embed=bembed('Trying to rob yourself?'))
+            await ctx.reply(embed=bembed('Trying to rob yourself?', discord.Color.brand_red()))
             ctx.command.reset_cooldown(ctx)
             return
         else:
@@ -334,26 +340,39 @@ class Economy(commands.Cog):
             if member_bal is None:
                 await open_account( ctx.guild.id , ctx.author.id)
                 member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
-    
+            if member_bal['stocks'] > 0:
+                embed=bembed('Sorry! You cannot rob someone while owning stocks from the market. Sell them first :c', discord.Color.brand_red())
+                embed.set_author(name=ctx.author.display_name, icon_url= ctx.author.display_avatar)
+                await ctx.reply(embed=embed)
+                ctx.command.reset_cooldown(ctx)
+                return
             mem_total = member_bal["bank"] + member_bal["cash"]
             user_cash = user_bal["cash"]
-
+            
+            '''
             # Checking if the command author owns any shares in the market and adding their worth into his net balance if he does
-            if member_bal['stocks'] > 0 and self.client.data[ctx.guild.id]['market'] and self.client.data[ctx.guild.id]['market']['status']:
-                docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;", ctx.guild.id)
+            if member_bal['stocks'] > 0 and self.client.data[ctx.guild.id][
+                'market'] and self.client.data[ctx.guild.id]['market']['status']:
+                docs = await client.db.fetchrow(
+                    "SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;",
+                    ctx.guild.id)
                 total_economy = docs['economy']
-                stocks_left = client.data[ctx.guild.id]['market']['stocks'] - docs['stocks']
-                current_rate = math.ceil((total_economy / stocks_left) / 2) if stocks_left != 0 else math.ceil(total_economy)
+                stocks_left = client.data[
+                    ctx.guild.id]['market']['stocks'] - docs['stocks']
+                current_rate = math.ceil(
+                    (total_economy / stocks_left) /
+                    2) if stocks_left != 0 else math.ceil(total_economy)
                 starting_rate = current_rate
                 member_share_value = 0
-                
+
                 for x in range(1, member_bal['stocks'] + 1):
                     member_share_value += current_rate
                     total_economy = total_economy + current_rate
                     stocks_left += 1
-                    current_rate = math.ceil((total_economy / stocks_left) / 2) if stocks_left != 0 else math.ceil(total_economy)
+                    current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
                 member_share_value = member_share_value - (starting_rate - current_rate)
                 mem_total += member_share_value
+            '''
 
             rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else defult_economy['rob']['percent'] 
             if mem_total < 5000:

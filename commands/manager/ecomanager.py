@@ -5,7 +5,7 @@ from comp.converters import TimeConverter
 import typing
 from discord.ui import Button, View
 from discord import app_commands
-
+from datetime import datetime
  
 class SingleInput(discord.ui.Modal, title='...'):
     def __init__(self, question, placeholder):
@@ -88,115 +88,162 @@ class EcoManager(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_perms)
-    async def addmoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc'] = "bank"):
+    async def addmoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "bank"):
         try:
             amount = int(amount)
         except ValueError:
             await ctx.send(discord.Embed(description="Not a valid amount input!"), delete_after=5)
             return
+        location = str(location).lower()
+        if location == "pvc":
+            eco = pvc_coin(ctx.guild.id)
+        elif location == "shares":
+            eco = "📈"
+        else:
+            eco = coin(ctx.guild.id)
 
         if type(target) == discord.Member:
-
             member = target
-
             bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
             if bal is None:
                 await open_account(ctx.guild.id, member.id)
-
-            if location == "cash":
-                await client.db.execute("UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **Cash** coins added in {member.name}'s account")
+            if location == "bank":
+                await client.db.execute(f"UPDATE users SET bank = bank + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+            elif location == "cash":
+                await client.db.execute(f"UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
             elif location == "pvc":
-                await client.db.execute("UPDATE users SET pvc = pvc + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **pvc** coins added in {member.name}'s account")
+                await client.db.execute(f"UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+            elif location == "shares":
+                await client.db.execute(f"UPDATE users SET stocks = stocks + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
             else:
-                await client.db.execute("UPDATE users SET bank = bank + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **bank** coins added in {member.name}'s account")
+                return
+            await ctx.send(embed=bembed(f"<:checkmark:1194449772044623872> Added {eco} {amount} into {member.mention}'s account."))
 
         elif type(target) == discord.Role:
             role = target
             await ctx.channel.typing()
             await ctx.defer()
-
-            if target == ctx.guild.default_role :
-                if location == "cash":
-                    await client.db.execute("UPDATE users SET cash = cash + $1  WHERE  guild_id = $2", amount, ctx.guild.id)
+            if target == ctx.guild.default_role:
+                msg = await ctx.send(embed=bembed(f"<a:loading:1187994564812873789> Adding {eco} {amount} into {ctx.guild.member_count} account(s)."))
+                for member in ctx.guild.members:
+                    if member.bot:
+                        continue
+                    bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
+                    if bal is None:
+                        await open_account(ctx.guild.id, member.id)
+                if location == "bank":
+                    await client.db.execute(f"UPDATE users SET bank = bank + $1 guild_id = $2", amount ,ctx.guild.id)
+                elif location == "cash":
+                    await client.db.execute(f"UPDATE users SET cash = cash + $1 WHERE guild_id = $2", amount ,ctx.guild.id)
                 elif location == "pvc":
-                    await client.db.execute("UPDATE users SET pvc = pvc + $1  WHERE guild_id = $2", amount, ctx.guild.id)
+                    await client.db.execute(f"UPDATE users SET pvc = pvc + $1 guild_id = $3", amount ,ctx.guild.id)
+                elif location == "shares":
+                    await client.db.execute(f"UPDATE users SET stocks = stocks + $1 WHERE guild_id = $2", amount ,ctx.guild.id)
                 else:
-                    await client.db.execute("UPDATE users SET bank = bank + $1  WHERE guild_id = $2", amount, ctx.guild.id)
-            else : 
+                    await msg.edit(fembed=bembed("Failed adding {eco} {amount} into {ctx.guild.member_count} account(s).", discord.Color.brand_red()))
+                    return
+                await msg.edit(embed=bembed(f"<:checkmark:1194449772044623872> Added {eco} {amount} into {ctx.guild.member_count} account(s).", discord.Color.brand_green()))
+            else: 
+                msg = await ctx.send(embed=bembed(f"<a:loading:1187994564812873789> Adding {eco} {amount} into {len(role.members)} account(s)."))
                 for member in role.members:
                     if member.bot:
                         continue
                     bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
                     if bal is None:
                         await open_account(ctx.guild.id, member.id)
-                    if location == "cash":
-                        await client.db.execute("UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
+                    if location == "bank":
+                        await client.db.execute(f"UPDATE users SET bank = bank + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+                    elif location == "cash":
+                        await client.db.execute(f"UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                     elif location == "pvc":
-                        await client.db.execute("UPDATE users SET pvc = pvc + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
+                        await client.db.execute(f"UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+                    elif location == "shares":
+                        await client.db.execute(f"UPDATE users SET stocks = stock + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                     else:
-                        await client.db.execute("UPDATE users SET bank = bank + $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-            await ctx.send(embed=discord.Embed(description=f"**{amount}** **{location}** coins added in {len(role.members)} accounts"))
+                        await msg.edit(embed=bembed(f"Failed adding {eco} {amount} into {len(role.members)} account(s).", discord.Color.brand_red()))
+                        return
+                await msg.edit(embed=bembed(f"<:checkmark:1194449772044623872> Added {eco} {amount} into {len(role.members)} account(s).", discord.Color.brand_green()))
 
 
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_perms)
-    async def removemoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc'] = "bank"):
+    async def removemoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "bank"):
         try:
             amount = int(amount)
         except ValueError:
             await ctx.send(discord.Embed(description="Not a valid amount input!"), delete_after=5)
             return
+        location = str(location).lower()
+        if location == "pvc":
+            eco = pvc_coin(ctx.guild.id)
+        elif location == "shares":
+            eco = "📈"
+        else:
+            eco = coin(ctx.guild.id)
 
         if type(target) == discord.Member:
-
             member = target
-
             bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
             if bal is None:
                 await open_account(ctx.guild.id, member.id)
-
-            if location == "cash":
-                await client.db.execute("UPDATE users SET cash = cash - $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **Cash** coins removed from {member.name}'s account")
+            if location == "bank":
+                await client.db.execute(f"UPDATE users SET bank = bank - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+            elif location == "cash":
+                await client.db.execute(f"UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
             elif location == "pvc":
-                await client.db.execute("UPDATE users SET pvc = pvc - $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **pvc** coins removed from {member.name}'s account")
+                await client.db.execute(f"UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+            elif location == "shares":
+                await client.db.execute(f"UPDATE users SET stocks = stocks - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
             else:
-                await client.db.execute("UPDATE users SET bank = bank - $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-                await ctx.send(f"**{amount}** **bank** coins removed from {member.name}'s account")
+                await msg.edit(fembed=bembed("Failed removing {eco} {amount} from {ctx.guild.member_count} account(s).", discord.Color.brand_red()))
+                return
+            await ctx.send(embed=bembed(f"<:checkmark:1194449772044623872> Removed {eco} {amount} from {member.mention}'s account."))
 
         elif type(target) == discord.Role:
             role = target
             await ctx.channel.typing()
             await ctx.defer()
-
-
-            if target == ctx.guild.default_role :
-                if location == "cash":
-                    await client.db.execute("UPDATE users SET cash = cash - $1  WHERE  guild_id = $2", amount, ctx.guild.id)
+            if target == ctx.guild.default_role:
+                msg = await ctx.send(embed=bembed(f"<a:loading:1187994564812873789> Removing {eco} {amount} from {ctx.guild.member_count} account(s)."))
+                for member in ctx.guild.members:
+                    if member.bot:
+                        continue
+                    bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
+                    if bal is None:
+                        await open_account(ctx.guild.id, member.id)
+                if location == "bank":
+                    await client.db.execute(f"UPDATE users SET bank = bank - $1 guild_id = $2", amount ,ctx.guild.id)
+                elif location == "cash":
+                    await client.db.execute(f"UPDATE users SET cash = cash - $1 WHERE guild_id = $2", amount ,ctx.guild.id)
                 elif location == "pvc":
-                    await client.db.execute("UPDATE users SET pvc = pvc - $1  WHERE guild_id = $2", amount, ctx.guild.id)
+                    await client.db.execute(f"UPDATE users SET pvc = pvc - $1 guild_id = $3", amount ,ctx.guild.id)
+                elif location == "shares":
+                    await client.db.execute(f"UPDATE users SET stocks = stocks - $1 WHERE guild_id = $2", amount ,ctx.guild.id)
                 else:
-                    await client.db.execute("UPDATE users SET bank = bank - $1  WHERE guild_id = $2", amount, ctx.guild.id)
-            else : 
+                    await msg.edit(fembed=bembed("Failed removing {eco} {amount} from {ctx.guild.member_count} account(s).", discord.Color.brand_red()))
+                    return
+                await msg.edit(embed=bembed(f"<:checkmark:1194449772044623872> Removed {eco} {amount} from {ctx.guild.member_count} account(s).", discord.Color.brand_green()))
+            else: 
+                msg = await ctx.send(embed=bembed(f"<a:loading:1187994564812873789> Removing {eco} {amount} from {len(role.members)} account(s)."))
                 for member in role.members:
                     if member.bot:
                         continue
                     bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, ctx.guild.id)
                     if bal is None:
                         await open_account(ctx.guild.id, member.id)
-                    if location == "cash":
-                        await client.db.execute("UPDATE users SET cash = cash - $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
+                    if location == "bank":
+                        await client.db.execute(f"UPDATE users SET bank = bank - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+                    elif location == "cash":
+                        await client.db.execute(f"UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                     elif location == "pvc":
-                        await client.db.execute("UPDATE users SET pvc = pvc - $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
+                        await client.db.execute(f"UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
+                    elif location == "shares":
+                        await client.db.execute(f"UPDATE users SET stocks = stock - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                     else:
-                        await client.db.execute("UPDATE users SET bank = bank - $1  WHERE id = $2 AND guild_id = $3", amount, member.id, ctx.guild.id)
-            
-            await ctx.send(embed=discord.Embed(description=f"**{amount}** **{location}** coins removed from {len(role.members)} accounts"))
+                        await msg.edit(embed=bembed(f"Failed removing {eco} {amount} from {len(role.members)} account(s).", discord.Color.brand_red()))
+                        return
+                await msg.edit(embed=bembed(f"<:checkmark:1194449772044623872> Removed {eco} {amount} from {len(role.members)} account(s).", discord.Color.brand_green()))
 
 
     async def edit_item(self ,ctx , id) :
@@ -972,8 +1019,7 @@ class EcoManager(commands.Cog):
     @commands.check(check_perms)
     async def roleincome(self, ctx, role : typing.Optional[discord.Role] , bank : typing.Optional[int] , cash : typing.Optional[int] , pvc : typing.Optional[int] , cooldown : typing.Optional[TimeConverter] ):
         ecoembed = discord.Embed(color=discord.Color.blue())
-        ecoembed.set_author(
-            name=ctx.guild.name, icon_url=ctx.guild.icon.url)
+        ecoembed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
     
         if role :
             data = await client.db.fetchrow("SELECT * FROM income WHERE guild_id = $1 AND role_id = $2" , ctx.guild.id , role.id)
@@ -1006,11 +1052,11 @@ class EcoManager(commands.Cog):
             ecoembed.description = "No Income Role"
         await ctx.send(embed=ecoembed)
 
-    @roleincome.error
-    async def roleincome_error(self, ctx, error):
-        await ctx.send(f'{error}')
-        print(error)
-        return
+    # @roleincome.error
+    # async def roleincome_error(self, ctx, error):
+    #     await ctx.send(f'{error}')
+    #     print(error)
+    #     return
     
 async def setup(client):
     await client.add_cog(EcoManager(client))

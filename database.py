@@ -88,7 +88,7 @@ async def open_account( guild_id : int , id : int):
 
 class amountconverter(commands.Converter):
     async def convert(self , ctx , argument):
-        if argument[-2] == "e":
+        if len(argument) >= 2 and argument[-2] == "e":
             return str(int(argument[:-2]) * (10** int(argument[-1])))
         else:
             return str(argument)
@@ -163,5 +163,5 @@ def pvc_coin( guild_id : int ) :
         name= 'Pvc'
     return icon , name
     
-def bembed(message=None) :
-    return discord.Embed( description= message , color= 0x2b2d31 )
+def bembed(message=None, color = 0x2b2d31) :
+    return discord.Embed( description= message , color= color )

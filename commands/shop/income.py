@@ -16,7 +16,7 @@ class income(commands.Cog):
     @cooldown(1,5 , BucketType.member)     
     async def collect(self , ctx ):
         ecoembed = discord.Embed(color= discord.Color.blue())
-        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         dis = "✅ Role income successfully collected!\n\n"   
         docs = await client.db.fetch('SELECT role_id ,bank , cash , pvc , cooldown FROM  income WHERE guild_id = $1 ORDER BY cash DESC' , ctx.guild.id)        
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
