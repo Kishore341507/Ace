@@ -4,12 +4,14 @@ from database import *
 import time
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
 @client.event
 async def on_ready():
     print(f'bot logged in named : {client.user}')
     user = client.get_user(591011843552837655)
-    await user.send(f"{client.user} is Online Now")
+    client.start_time = datetime.now()
+    # await user.send(f"{client.user} is Online Now")
 
 
 def seconds_to_dhms(seconds):
