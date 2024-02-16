@@ -8,20 +8,7 @@ from datetime import datetime
 
 @client.event
 async def on_ready():
-    client.start_time = datetime.now()
-    client.embed_thumbnail = None
-    print("Freezing accounts")
-    for guild in client.guilds:
-        member_ids = []
-        async for member in guild.fetch_members():
-            member_ids.append(member.id)
-        result = await client.db.fetch("SELECT id FROM users WHERE guild_id = $1 AND frozen = False", guild.id)
-        user_ids = [row[0] for row in result]
-        left_users = list(set(user_ids) - set(member_ids))
-        if len(left_users) > 0:
-            for user in left_users:
-                await client.db.execute("UPDATE users SET frozen = $1 WHERE id = $2 and guild_id = $3", True, user, guild.id)
-    print(f'bot logged in named : {client.user}')
+    print(f'{client.user} has connected to Discord!')
     user = client.get_user(591011843552837655)
     # await user.send(f"{client.user} is Online Now")
 

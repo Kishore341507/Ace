@@ -75,8 +75,6 @@ class Owner(commands.Cog):
                 i += 1
         await ctx.send(embeds=embeds)
 
-        # embed.add_field(name= "eval list" , value= f"```py\n{self.lis}```" , inline = False )
-
  
     @eval.error
     async def error123(self , ctx , error):
@@ -310,23 +308,6 @@ class Owner(commands.Cog):
     @sync.error
     async def unload_error(self ,ctx , error):
         await ctx.author.send(f"owner only command , {error}")
-
-    @commands.command(aliases = ['set_thumb', 'setthumb'])
-    @commands.is_owner()
-    async def set_embed_thumb(self, ctx, url : str = None):
-        if not url:
-            client.embed_thumbnail = None
-            await ctx.reply(embed=bembed("Thumbnail has been reset.", discord.Color.brand_green()))
-        elif url.startswith('http://'):
-            client.embed_thumbnail = url
-        else:
-            ctx.author.send("URL must start with `http://`")
-            
-    @set_embed_thumb.error
-    async def embed_error(self, ctx, error):
-        await ctx.author.send(error)
-
-
 
 async def setup(client):
    await client.add_cog(Owner(client))        
