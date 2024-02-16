@@ -114,27 +114,27 @@ class Market(commands.Cog):
 
   @tasks.loop( minutes= 30  , reconnect = True )
   async def stock_data_update(self):
-      for guild_id  in self.client.data :
-          if self.client.data[guild_id]['market'] and self.client.data[guild_id]['market']['status']:
-              docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;",guild_id)
-              total_economy = docs['economy']
-              sold_stocks = docs['stocks']
+      for guild_id in self.client.data:
+        if self.client.data[guild_id]['market'] and self.client.data[guild_id]['market']['status'] is True:
+            docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;",guild_id)
+            total_economy = docs['economy']
+            sold_stocks = docs['stocks']
+            
+            current_stocks =  self.client.data[guild_id]['market']['stocks'] - sold_stocks
+            current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
+            
+            if guild_id not in self.stock_data:
+                self.stock_data[guild_id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
+            elif len(self.stock_data[guild_id]['data']) > 48  :
               
-              current_stocks =  self.client.data[guild_id]['market']['stocks'] - sold_stocks
-              current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
-              
-              if guild_id not in self.stock_data:
-                  self.stock_data[guild_id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
-              elif len(self.stock_data[guild_id]['data']) > 48  :
-                
-                  self.stock_data[guild_id]['data'].pop(0)
-                  self.stock_data[guild_id]['data'].append(current_rate)
-                  self.stock_data[guild_id]['time'].pop(0)
-                  self.stock_data[guild_id]['time'].append(datetime.now().timestamp())
-              else:
-                  self.stock_data[guild_id]['data'].append(current_rate)
-                  self.stock_data[guild_id]['time'].append(datetime.now().timestamp())
-  
+                self.stock_data[guild_id]['data'].pop(0)
+                self.stock_data[guild_id]['data'].append(current_rate)
+                self.stock_data[guild_id]['time'].pop(0)
+                self.stock_data[guild_id]['time'].append(datetime.now().timestamp())
+            else:
+                self.stock_data[guild_id]['data'].append(current_rate)
+                self.stock_data[guild_id]['time'].append(datetime.now().timestamp())
+
   
   @stock_data_update.before_loop
   async def before_stock_data_update(self):
@@ -164,7 +164,8 @@ class Market(commands.Cog):
   @commands.check(check_market)
   @cooldown(1, 5, BucketType.member)
   async def market(self, ctx):
-    
+    if ctx.guild.id not in self.stock_data:
+      self.stock_data[ctx.guild.id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
     total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
     docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;", ctx.guild.id)
     

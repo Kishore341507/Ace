@@ -3,7 +3,7 @@ import os
 from discord.ext import commands
 import typing
 from tabulate import tabulate
-
+from database import *
 class Owner(commands.Cog):
 
     def __init__(self , client):
@@ -44,19 +44,39 @@ class Owner(commands.Cog):
 
     @commands.hybrid_command()
     @commands.is_owner()
-    async def eval(self , ctx , type : typing.Optional[bool] = False , * ,  input : str ):
-        embed = discord.Embed(color= 0x2b2c31 )
+    async def eval(self, ctx, type: typing.Optional[bool] = False, *, input: str):
         if type:
             data = await eval(input)
-        else:    
+        else:
             data = eval(input)
-        if input.find("config") is not -1 :
-            data = "xxx.com"
-        # self.lis[0] = data  
-        embed.add_field(name= "Input" , value= f"```py\n{input}```" , inline = False )
-        embed.add_field(name= "Output" , value= f"```py\n{data}```" )
+        data = str(data)
+        if input.find("config") is not -1:
+            data = "-1"
+        # self.lis[0] = data
+            
+        max_size = 1000
+        if len(str(data)) > max_size:
+            data_list = [data[i:i + max_size] for i in range(0, len(data), max_size)]
+        else:
+            data_list = [data]
+        embeds = []
+        embeds.append(bembed().add_field(name="**Input**", value=f"```py\n{input}```"))
+        i = 1
+        edited_first_embed = False
+
+        for data in data_list:
+            if not edited_first_embed:
+                embeds[0].add_field(name=f"Output {i}", value=f"```py\n{data}```", inline=False)
+                edited_first_embed = True
+                i += 1
+            else:
+                print(i)
+                embeds.append(bembed().add_field(name=f"**Output {i}**", value=f"```py\n{data}```"))
+                i += 1
+        await ctx.send(embeds=embeds)
+
         # embed.add_field(name= "eval list" , value= f"```py\n{self.lis}```" , inline = False )
-        await ctx.send(embed = embed )
+
  
     @eval.error
     async def error123(self , ctx , error):
@@ -74,14 +94,14 @@ class Owner(commands.Cog):
                 for filename in os.listdir(f'./commands/{filenametemp}'):
                     if filename.endswith('.py'):
                         files.append(f'{filenametemp}.{filename[:-3]}')
-        await ctx.send(embed = discord.Embed(color= 0x2b2c31 , description= "\n".join(files) ))
+        await ctx.send(embed = discord.Embed(color= 0x2b2c31, description= "\n".join(files) ))
 
     @commands.command()
     @commands.is_owner()
     async def disableall(self , ctx , command):
         command = self.client.get_command(command)
         command.update(enabled=False)
-        await ctx.send( embed = discord.Embed(color= 0x2b2c31 , description=f'Disabled {command.name}' )) 
+        await ctx.send(embed = discord.Embed(color= 0x2b2c31 , description=f'Disabled {command.name}')) 
 
     @commands.command()
     @commands.is_owner()
@@ -240,7 +260,7 @@ class Owner(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def leaveguild(self , ctx , *guilds : discord.Guild) :
-        await ctx.send(f'''leaving(s) {' ,'.join([ str(f"{guild.name} ({guild.id})") for guild in guilds  ])} type YES to conti....''')
+        await ctx.send(f'''leaving guild(s) **{' ,'.join([ str(f"**{guild.name} ({guild.id})**") for guild in guilds  ])}** type YES to continue....''')
 
         def check(m):
             return m.content == 'YES' and m.author == ctx.author
@@ -290,6 +310,22 @@ class Owner(commands.Cog):
     @sync.error
     async def unload_error(self ,ctx , error):
         await ctx.author.send(f"owner only command , {error}")
+
+    @commands.command(aliases = ['set_thumb', 'setthumb'])
+    @commands.is_owner()
+    async def set_embed_thumb(self, ctx, url : str = None):
+        if not url:
+            client.embed_thumbnail = None
+            await ctx.reply(embed=bembed("Thumbnail has been reset.", discord.Color.brand_green()))
+        elif url.startswith('http://'):
+            client.embed_thumbnail = url
+        else:
+            ctx.author.send("URL must start with `http://`")
+            
+    @set_embed_thumb.error
+    async def embed_error(self, ctx, error):
+        await ctx.author.send(error)
+
 
 
 async def setup(client):

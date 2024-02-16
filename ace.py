@@ -8,11 +8,29 @@ from datetime import datetime
 
 @client.event
 async def on_ready():
+    client.start_time = datetime.now()
+    client.embed_thumbnail = None
+    print("Freezing accounts")
+    for guild in client.guilds:
+        member_ids = []
+        async for member in guild.fetch_members():
+            member_ids.append(member.id)
+        result = await client.db.fetch("SELECT id FROM users WHERE guild_id = $1 AND frozen = False", guild.id)
+        user_ids = [row[0] for row in result]
+        left_users = list(set(user_ids) - set(member_ids))
+        if len(left_users) > 0:
+            for user in left_users:
+                await client.db.execute("UPDATE users SET frozen = $1 WHERE id = $2 and guild_id = $3", True, user, guild.id)
     print(f'bot logged in named : {client.user}')
     user = client.get_user(591011843552837655)
-    client.start_time = datetime.now()
     # await user.send(f"{client.user} is Online Now")
 
+@client.event
+async def on_member_leave(member):
+    try:
+        await client.db.execute("UPDATE TABLE users SET frozen = True WHERE id = $1", member.id)
+    except:
+        pass
 
 def seconds_to_dhms(seconds):
     days = seconds // 86400
@@ -41,7 +59,7 @@ async def ping(ctx):
     x = await client.db.execute("SELECT 1")
     time2 = time.time()
     db_ping = round((time2 - time1) * 1000 , ndigits=2)
-    embed = bembed("")
+    embed = bembed("", discord.Color.blue())
     embed.title = "**__BOT STATS__**"
     embed.url = "https://discord.com/oauth2/authorize?client_id=1165310965710082099&permissions=288706128&scope=bot+applications.commands"
     embed.set_footer(text=f"Use /bug to report a bug.")
