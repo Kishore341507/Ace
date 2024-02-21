@@ -23,8 +23,6 @@ class MyBot(commands.Bot):
  
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
-        self.start_time = datetime.now()
-        
         #Load Cogs
         
         for filename in os.listdir('./commands'):
@@ -35,6 +33,7 @@ class MyBot(commands.Bot):
                 for filename in os.listdir(f'./commands/{filenametemp}'):
                     if filename.endswith('.py'):
                         await self.load_extension(f'commands.{filenametemp}.{filename[:-3]}')
+        self.start_time = datetime.now()
         
 defult_prefix = ","
 
