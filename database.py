@@ -81,7 +81,7 @@ def check_perms(ctx) -> bool:
 
 def check_channel(ctx) ->bool : 
     if client.data[ctx.guild.id]['disabled'] and ctx.command.name in client.data[ctx.guild.id]['disabled'] :
-        raise commands.DisabledCommand("Command disable in Server")
+        raise commands.DisabledCommand("Command disabled in Server")
     return client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels'] 
 
 async def open_account( guild_id : int , id : int):

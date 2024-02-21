@@ -4,6 +4,7 @@ from database import *
 import time
 from dotenv import load_dotenv
 import os
+import traceback
 
 @client.event
 async def on_ready():
@@ -19,18 +20,14 @@ async def ping(ctx):
     x = await client.db.execute("SELECT 1")
     time2 = time.time()
     db_ping = round((time2 - time1) * 1000 , ndigits=2)
-    """
     embed = bembed("", discord.Color.blue())
     embed.title = "**__BOT STATS__**"
     embed.url = "https://discord.com/oauth2/authorize?client_id=1165310965710082099&permissions=288706128&scope=bot+applications.commands"
     embed.set_footer(text=f"Use /bug to report a bug.")
     embed.timestamp  = datetime.now()
-    embed.add_field(name="**Bot Ping**", value= f"{get_connection_emoji(ping)}**{ping}ms**")
-    embed.add_field(name="**Database Ping**",value=f"{get_connection_emoji(ping)}**{db_ping}ms**")
+    embed.add_field(name="**Bot Ping**", value= f"<:goodconnection:1207146803582206083>**{ping}ms**")
+    embed.add_field(name="**Database Ping**",value=f"<:goodconnection:1207146803582206083>**{db_ping}ms**")
     await ctx.reply(embed=embed)
-    """
-    await ctx.reply(embed = bembed(f'Bot : `{ping}ms`\nDatabase : `{db_ping}ms`'))
-
 
 load_dotenv()
 client.run(os.environ.get("TOKEN"))

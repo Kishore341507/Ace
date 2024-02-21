@@ -26,8 +26,8 @@ class BankRob(commands.Cog):
             elif len(self.data['participants']) >= self.data['limit']:
                 return await interaction.response.send_message("This heist has finished gathering all the heist members, they are not looking for any more participants.", ephemeral=True)
             else:
-                self.data[participants].append(interaction.user)
-                await interaction.response.edit_message(embed=bembed(f"<@{data['leader']}> has initiated a heist against <@{data['target']}>. `{len(self.data['participants'])}/{self.data['participants']}` members have joined the heist. The heist ends <t:{self.participants[ctx.guild.id]['end_timestamp']}:R>."))
+                self.data['participants'].append(interaction.user)
+                await interaction.response.edit_message(embed=bembed(f"<@{self.data['leader']}> has initiated a heist against <@{self.data['target']}>. `{len(self.data['participants'])}/{self.data['participants']}` members have joined the heist. The heist ends <t:{self.participants[interaction.guild.id]['end_timestamp']}:R>."))
                 await interaction.followup.send("You have successfully joined the heist. ✅", ephemeral = True)
 
         @button(label="Report Heist", emoji="⌚", style=discord.ButtonStyle.red, custom_id="report_heist")
@@ -35,14 +35,14 @@ class BankRob(commands.Cog):
             await interaction.response.defer()
             self.reports.append(interaction.user.id)
             if interaction.user.id == self.data['target'] or len(self.reports) >= self.data['reports']:
-                self.stop
+                self.stop()
             else:
                 interaction.response.send_message("The report has been recieved successfully.")
 
     @commands.command(aliases=['h'])
     @commands.check(check_perms)
     @cooldown(1, 1, BucketType.member)
-    async def heist(self, ctx, target:discord.Member = None, timeout: int = 15, required_members: int = 2, required_reports: int = 2):
+    async def heist(self, ctx, target:discord.Member, timeout: int = 15, required_members: int = 2, required_reports: int = 2):
         target = target or ctx.author
         if ctx.guild.id in self.participants:
             await ctx.send(embed=bembed(f"{ctx.author.mention}, a heist is already in progress at the moment.!"))
@@ -57,7 +57,7 @@ class BankRob(commands.Cog):
         await view.wait()
         for item in view.children:
             item.disabled = True
-        await msg.edit(content="**This heist has already ended.**", embed=bembed(f"{ctx.author.mention} has initiated a heist against {target.mention}. `{len(self.participants[ctx.guild.id]['participants'])}/{required_members}` members have joined the heist. The heist ended <t:{int(self.participants[ctx.guild.id]['end_timestamp'])}:R>."), view=view)
+        await msg.edit(content="**This heist has already ended.**", embed=bembed(f"{ctx.author.mention} initiated a heist against {target.mention} and {'failed' if view.result != 1 else 'succeded'}. `{len(self.participants[ctx.guild.id]['participants'])}/{required_members}` members joined the heist. The heist ended <t:{int(self.participants[ctx.guild.id]['end_timestamp'])}:R>."), view=view)
         participants = [f"<@{participant}>" for participant in view.data['participants']]
         participants = ','.join(participants)
         if view.reports and len(view.reports) > view.data['reports']:

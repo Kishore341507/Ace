@@ -7,27 +7,6 @@ from database import *
 import time
 from datetime import datetime
 
-
-# These two functions are used in uptime command
-def seconds_to_dhms(seconds):
-    days = seconds // 86400
-    seconds %= 86400
-    hours = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
-    return f"{int(days)}d {int(hours)}h {int(minutes)}m {int(seconds)}s"
-
-def get_connection_emoji(ping):
-    if ping <= 199:
-        return "<:goodconnection:1207146803582206083>"
-    elif ping > 199 and ping <= 499:
-        return "<:normalconnection:1207146802411741225>"
-    elif ping > 499 and ping <= 999:
-        return "<:lowconnection:1207146800998514719>"
-    else:
-        return "<:badconnection:1207146798674878534>"
-
 class Owner(commands.Cog):
 
     def __init__(self , client):
@@ -220,18 +199,7 @@ class Owner(commands.Cog):
     @commands.command()
     @commands.is_owner()
     async def getguild(self , ctx , guild : discord.Guild) :
-        invite = " "
-        if guild.vanity_url :
-            invite =  guild.vanity_url   
-        else :
-            try:
-                lis = await guild.invites()
-                invite = lis[0]
-            except :
-                try :
-                    invite = str(await guild.channels[0].create_invite())
-                except :
-                    pass
+        invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if await ctx.guild.invites() else await ctx.guild.channels[0].create_invite()
         embed = discord.Embed(color= 0x2b2c31 , description= f"Name : {guild.name} ({guild.id})\nOwner : {guild.owner} ({guild.owner.id})\nMembers : {guild.member_count}\nInvite : {invite}")
 
         embed.set_thumbnail(url = guild.icon)
@@ -251,25 +219,13 @@ class Owner(commands.Cog):
         data = [ ]
 
         for guild in self.client.guilds :
-            invite = " "
-            if guild.vanity_url :
-                invite =  guild.vanity_url   
-            else :
-                try:
-                    lis = await guild.invites()
-                    invite = lis[0]
-                except :
-                    try :
-                        invite = str(await guild.channels[0].create_invite())
-                    except :
-                        pass
-            
+            invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if await ctx.guild.invites() else await ctx.guild.channels[0].create_invite()
             data.append([ f"{guild.name[:17]} ({guild.id})" , f"{guild.owner.name[:17]} ({guild.owner_id})" , f"{guild.member_count:,}" , invite , (guild.me.guild_permissions).value ]) #= dis + f"{guild.name} , {guild.id} - {invite} , {guild.owner} {guild.owner_id}\n"
             total_users += guild.member_count
 
         table_str = tabulate(data, headers=[ 'Name', 'Owner' , "Members" , "Invite" , "Permissions"])
        
-        txt = open("test.txt" , "w")
+        txt = open("test.txt" , "w", encoding="utf-8")
         new_file = txt.write(table_str)
         txt.close()
         file = discord.File( "test.txt" , filename= f"{self.client.user.name}.txt"   )
@@ -343,17 +299,20 @@ class Owner(commands.Cog):
         time2 = time.time()
         db_ping = round((time2 - time1) * 1000 , ndigits=2)
         elpased_time = (datetime.now() - client.start_time).total_seconds()
-        uptime_string = seconds_to_dhms(elpased_time)
+        days = elpased_time // 86400
+        elpased_time %= 86400
+        hours = elpased_time // 3600
+        elpased_time %= 3600
+        minutes = elpased_time // 60
+        elpased_time %= 60
         embed = bembed("", discord.Color.blue())
         embed.title = "**__BOT STATS__**"
         embed.url = "https://discord.com/oauth2/authorize?client_id=1165310965710082099&permissions=288706128&scope=bot+applications.commands"
         embed.timestamp  = datetime.now()
-        embed.add_field(name="**Bot Ping**", value= f"{get_connection_emoji(ping)}**{ping}ms**")
-        embed.add_field(name="**Database Ping**",value=f"{get_connection_emoji(ping)}**{db_ping}ms**")
-        embed.add_field(name="**Uptime** ",value=f"<:timer_:1207146799970652221>**{uptime_string}**")
+        embed.add_field(name="**Bot Ping**", value= f"<:goodconnection:1207146803582206083>**{ping}ms**")
+        embed.add_field(name="**Database Ping**",value=f"<:goodconnection:1207146803582206083>**{db_ping}ms**")
+        embed.add_field(name="**Uptime** ",value=f"<:timer_:1207146799970652221>**{f"{int(days)}d {int(hours)}h {int(minutes)}m {int(elpased_time)}s"}**")
         await ctx.reply(embed=embed)
-
-
 
 async def setup(client):
    await client.add_cog(Owner(client))        
