@@ -352,37 +352,12 @@ class Economy(commands.Cog):
                 return
             mem_total = member_bal["bank"] + member_bal["cash"]
             user_cash = user_bal["cash"]
-            
-            '''
-            # Checking if the command author owns any shares in the market and adding their worth into his net balance if he does
-            if member_bal['stocks'] > 0 and self.client.data[ctx.guild.id][
-                'market'] and self.client.data[ctx.guild.id]['market']['status']:
-                docs = await client.db.fetchrow(
-                    "SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;",
-                    ctx.guild.id)
-                total_economy = docs['economy']
-                stocks_left = client.data[
-                    ctx.guild.id]['market']['stocks'] - docs['stocks']
-                current_rate = math.ceil(
-                    (total_economy / stocks_left) /
-                    2) if stocks_left != 0 else math.ceil(total_economy)
-                starting_rate = current_rate
-                member_share_value = 0
-
-                for x in range(1, member_bal['stocks'] + 1):
-                    member_share_value += current_rate
-                    total_economy = total_economy + current_rate
-                    stocks_left += 1
-                    current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
-                member_share_value = member_share_value - (starting_rate - current_rate)
-                mem_total += member_share_value
-            '''
 
             rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else defult_economy['rob']['percent'] 
             if mem_total < 5000:
                 if user_cash < 1000:
-                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , int(mem_total * rob_amount)  , ctx.author.id , ctx.guild.id) 
-                    ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {int(mem_total * rob_amount) : ,} for trying to rob a poor person."
+                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , int(abs(mem_total) * rob_amount)  , ctx.author.id , ctx.guild.id) 
+                    ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {int(abs(mem_total) * rob_amount) : ,} for trying to rob a poor person."
                     await ctx.send(embed = ecoembed)
                 else :
                     await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , int(user_cash * rob_amount)  , ctx.author.id , ctx.guild.id) 
@@ -394,8 +369,8 @@ class Economy(commands.Cog):
                 x = random.randint(1, 2 )
                 if x==1:
                     if user_cash < 1000:
-                        await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(mem_total *  rob_amount))  , ctx.author.id , ctx.guild.id) 
-                        ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(mem_total * rob_amount)): ,} for trying to rob a poor person."
+                        await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(abs(mem_total) *  rob_amount))  , ctx.author.id , ctx.guild.id) 
+                        ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} for trying to rob a poor person."
                         await ctx.send(embed = ecoembed)
                     else:
                         await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , int(user_cash * rob_amount)  , ctx.author.id , ctx.guild.id) 
@@ -404,12 +379,12 @@ class Economy(commands.Cog):
                         ecoembed.color = 0x08FC08
                         await ctx.send (embed = ecoembed)  
                 else :
-                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(mem_total *  rob_amount))  , ctx.author.id , ctx.guild.id) 
-                    ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(mem_total * rob_amount)): ,} **better luck next time.**"
+                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(abs(mem_total) *  rob_amount))  , ctx.author.id , ctx.guild.id) 
+                    ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} **better luck next time.**"
                     await ctx.send (embed = ecoembed)
             elif mem_total > 10000:
-                await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(mem_total *  rob_amount))  , ctx.author.id , ctx.guild.id) 
-                ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(mem_total * rob_amount)): ,} Rich people dont rob."
+                await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(abs(mem_total) *  rob_amount))  , ctx.author.id , ctx.guild.id) 
+                ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} Rich people dont rob."
                 await ctx.send(embed = ecoembed)
   
     
