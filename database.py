@@ -4,9 +4,10 @@ import asyncpg
 from dotenv import load_dotenv
 import os
 import json
+from datetime import datetime
+
 
 load_dotenv()
-
 class MyBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,6 +23,7 @@ class MyBot(commands.Bot):
  
         guilds = await self.db.fetch("SELECT * FROM guilds")
         self.data = { guild['id'] : dict(guild) for guild in guilds }
+        self.start_time = datetime.now()
         
         #Load Cogs
         

@@ -526,7 +526,7 @@ class EcoManager(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_perms)
-    async def removeitem(self, ctx, item_id: int):
+    async def removeitem(self, ctx, id: int):
         await self.edit_item(ctx , id)
  
 

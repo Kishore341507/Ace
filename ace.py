@@ -4,13 +4,20 @@ from database import *
 import time
 from dotenv import load_dotenv
 import os
+from datetime import datetime
 
 @client.event
 async def on_ready():
-    print(f'bot logged in named : {client.user}')
+    print(f'{client.user} has connected to Discord!')
     user = client.get_user(591011843552837655)
-    await user.send(f"{client.user} is Online Now")
+    # await user.send(f"{client.user} is Online Now")
 
+@client.event
+async def on_member_leave(member):
+    try:
+        await client.db.execute("UPDATE TABLE users SET frozen = True WHERE id = $1", member.id)
+    except:
+        pass
 
 def seconds_to_dhms(seconds):
     days = seconds // 86400
@@ -39,7 +46,7 @@ async def ping(ctx):
     x = await client.db.execute("SELECT 1")
     time2 = time.time()
     db_ping = round((time2 - time1) * 1000 , ndigits=2)
-    embed = bembed("")
+    embed = bembed("", discord.Color.blue())
     embed.title = "**__BOT STATS__**"
     embed.url = "https://discord.com/oauth2/authorize?client_id=1165310965710082099&permissions=288706128&scope=bot+applications.commands"
     embed.set_footer(text=f"Use /bug to report a bug.")
