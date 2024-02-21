@@ -91,7 +91,7 @@ class Economy(commands.Cog):
     @cooldown(1, 5, BucketType.user)
     async def bug(self, ctx, message : str , screenshot : discord.Attachment = None):
         channel  = client.get_channel(1209630599472750622)
-        invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if await ctx.guild.invites() else await ctx.guild.channels[0].create_invite()
+        invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else await (ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
         dis = f"Author: [{ctx.author.name}](https://discordapp.com/users/{ctx.author.id})\nServer: [{ctx.guild.name}]({invite or ctx.guild.id})\nMessage: {ctx.message.jump_url}\nReport: {message}"
 
         embed = bembed(dis, discord.Color.brand_red())
