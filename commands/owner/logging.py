@@ -15,7 +15,7 @@ class ErrorLogging(commands.Cog):
         else:
             traceback_msg = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
             logging_channel = client.get_channel(1209630548746706944)
-            invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if await ctx.guild.invites() else await ctx.guild.channels[0].create_invite()
+            invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else await (ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
             content = (f"Author: [{ctx.author.name}](<https://discordapp.com/users/{ctx.author.id}>)\nServer: [{ctx.guild.name}]({invite or ctx.guild.id})\nMessage: {ctx.message.jump_url}")
             try:
                 max_size = 1750

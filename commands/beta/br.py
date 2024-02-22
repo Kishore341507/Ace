@@ -16,7 +16,7 @@ class BankRob(commands.Cog):
             self.data = heist_data
             self.reports = []
      
-        @button(label="Join Heist", emoji="💰", style=discord.ButtonStyle.blurple, custom_id="join_heist")
+        @button(label="Join Heist", emoji="<:join:1210012998035308564>", style=discord.ButtonStyle.blurple, custom_id="join_heist")
         async def join_heist(self, interaction: discord.Interaction, Button: discord.Button):
             await interaction.response.defer()
             if int(datetime.now().timestamp()) > self.data["end_timestamp"]:
@@ -30,7 +30,7 @@ class BankRob(commands.Cog):
                 await interaction.response.edit_message(embed=bembed(f"<@{self.data['leader']}> has initiated a heist against <@{self.data['target']}>. `{len(self.data['participants'])}/{self.data['participants']}` members have joined the heist. The heist ends <t:{self.participants[interaction.guild.id]['end_timestamp']}:R>."))
                 await interaction.followup.send("You have successfully joined the heist. ✅", ephemeral = True)
 
-        @button(label="Report Heist", emoji="⌚", style=discord.ButtonStyle.red, custom_id="report_heist")
+        @button(label="Report Heist", emoji="<:alert:1210014135530819644>", style=discord.ButtonStyle.red, custom_id="report_heist")
         async def report_heist(self, interaction: discord.Interaction, Button: discord.Button):
             await interaction.response.defer()
             self.reports.append(interaction.user.id)
@@ -57,15 +57,20 @@ class BankRob(commands.Cog):
         await view.wait()
         for item in view.children:
             item.disabled = True
-        await msg.edit(content="**This heist has already ended.**", embed=bembed(f"{ctx.author.mention} initiated a heist against {target.mention} and {'failed' if view.result != 1 else 'succeded'}. `{len(self.participants[ctx.guild.id]['participants'])}/{required_members}` members joined the heist. The heist ended <t:{int(self.participants[ctx.guild.id]['end_timestamp'])}:R>."), view=view)
         participants = [f"<@{participant}>" for participant in view.data['participants']]
         participants = ','.join(participants)
-        if view.reports and len(view.reports) > view.data['reports']:
-            await msg.reply(f"{participants} a lot of user have suspected something suspicious was going an and the police has been made aware regarding the heist resulting in the failure of the heist.")
+        success = False
+        if view.reports and len(view.reports) >= view.data['reports'] and view.data['target'] not in view.reports:
+            await msg.reply(f"{participants} some users suspected that something suspicious was going on and the police has been made aware regarding the heist resulting in the failure of the heist.")
+        elif view.data['target'] in view.reports:
+            await msg.reply(f"{participants} it seems <@{view.data['target']}> predicted your evil plans and called the cops on you. You have been caught.")
+        
         if len(view.data['participants']) >= view.data['limit']:
-            await msg.reply(f"{participants}, the heist was successful.")
+            success = True
+            await msg.reply(f"{participants}, you escaped the cops smoothly and looted a total of {coin(ctx.guild.id)} {50000:,}.")
         else:
-            await msg.reply(f"{participants}, the heist failed.")
+            await msg.reply(f"{participants}, you were unable to escape the cops and got caught resulting in the failure of the heist.")
+        await msg.edit(content="**This heist has already ended.**", embed=bembed(f"{ctx.author.mention} initiated a heist against {target.mention} and {'failed' if success is False else 'succeded'}. `{len(self.participants[ctx.guild.id]['participants'])}/{required_members}` members joined the heist. The heist ended <t:{int(self.participants[ctx.guild.id]['end_timestamp'])}:R>."), view=view)
         self.participants.pop(ctx.guild.id, None)
 
 async def setup(client):
