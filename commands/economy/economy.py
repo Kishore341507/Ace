@@ -89,13 +89,18 @@ class Economy(commands.Cog):
     @commands.guild_only()
     # @commands.check(check_channel_pvc)
     @cooldown(1, 5, BucketType.user)
-    async def bug(self, ctx, message :str , screenshot : discord.Attachment = None):
-        user  = client.get_user(591011843552837655)
-        embed = bembed(message)
-        if screenshot :
+    async def bug(self, ctx, message : str , screenshot : discord.Attachment = None):
+        channel  = client.get_channel(1209630599472750622)
+        invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else await (ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
+        dis = f"Author: [{ctx.author.name}](https://discordapp.com/users/{ctx.author.id})\nServer: [{ctx.guild.name}]({invite or ctx.guild.id})\nMessage: {ctx.message.jump_url}\nReport: {message}"
+
+        embed = bembed(dis, discord.Color.brand_red())
+        embed.set_author(name= client.user.name, icon_url= client.user.avatar.url)
+        embed.title = ctx.author.name
+        if screenshot:
             embed.set_image(url = screenshot.url)
-        await user.send(content= f"{ctx.guild.name} , {ctx.author}" , embed = embed )
-        await ctx.send(embed = bembed("Done , Thanks for Report , we will Fix it Soon !"))
+        await channel.send(content=f"**A new bug report for {client.user.name}**", embed = embed )
+        await ctx.reply(embed = bembed("Thanks for the report, we will look into it soon and fix it appropriately!"))
          
    
     @commands.hybrid_command(aliases=["bal"])
@@ -131,8 +136,7 @@ class Economy(commands.Cog):
             embed.set_footer(
                     text=f"Requested By: {ctx.author.name} | use /bug to report a bug", icon_url=f"{ctx.author.display_avatar.url}") 
         else :
-            embed.set_footer(
-                    text=f"Use /bug to report a bug")
+            embed.set_footer(text=f"Use /bug to report a bug")
             
         await ctx.send( embed=embed  ) 
         
