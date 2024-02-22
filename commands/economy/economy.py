@@ -350,9 +350,10 @@ class Economy(commands.Cog):
                 await ctx.reply(embed=embed)
                 ctx.command.reset_cooldown(ctx)
                 return
-            if member_bal['bank'] < 0 or member_bal['cash'] < 0:
-                embed=bembed('Reset your balance first :c', discord.Color.brand_red())
+            if member_bal['bank'] < 0 :
+                embed=bembed('Balance in bank and cash should be positive :c', discord.Color.brand_red())
                 embed.set_author(name=ctx.author.display_name, icon_url= ctx.author.display_avatar)
+                embed.set_footer(text="use resetmoney command to reset your economy")
                 await ctx.reply(embed=embed)
                 ctx.command.reset_cooldown(ctx)
                 return
