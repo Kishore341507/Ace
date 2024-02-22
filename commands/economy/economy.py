@@ -346,6 +346,12 @@ class Economy(commands.Cog):
                 await ctx.reply(embed=embed)
                 ctx.command.reset_cooldown(ctx)
                 return
+            if member_bal['bank'] < 0 or member_bal['cash'] < 0:
+                embed=bembed('Reset your balance first :c', discord.Color.brand_red())
+                embed.set_author(name=ctx.author.display_name, icon_url= ctx.author.display_avatar)
+                await ctx.reply(embed=embed)
+                ctx.command.reset_cooldown(ctx)
+                return
             mem_total = member_bal["bank"] + member_bal["cash"]
             user_cash = user_bal["cash"]
 
