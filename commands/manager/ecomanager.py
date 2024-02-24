@@ -74,15 +74,17 @@ class EcoManager(commands.Cog):
             dis = ''
             if command.name in (client.data[ctx.guild.id]['disabled'] or []) :
                 client.data[ctx.guild.id]['disabled'].remove(command.name)
+                await client.db.execute("UPDATE guilds SET disabled = $1 WHERE id = $2", client.data[ctx.guild.id]['disabled'], ctx.guild.id)
                 dis = f"{command.name} is enabled in server"
             else :
                 if not  client.data[ctx.guild.id]['disabled'] :
                     client.data[ctx.guild.id]['disabled'] = []
                 client.data[ctx.guild.id]['disabled'].append(command.name)
+                await client.db.execute("UPDATE guilds SET disabled = $1 WHERE id = $2", client.data[ctx.guild.id]['disabled'], ctx.guild.id)
                 dis = f"{command.name} is disabled in server"
             await ctx.send(embed = discord.Embed(description=dis))
         elif command :
-            await ctx.send(embed = discord.Embed(description="This Command can't be disable/enable"))
+            await ctx.send(embed = discord.Embed(description="This Command can't be enabled  or disabled."))
 
 
     @commands.hybrid_command()
