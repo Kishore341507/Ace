@@ -15,17 +15,16 @@ class ErrorLogging(commands.Cog):
         else:
             traceback_msg = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
             logging_channel = client.get_channel(1209630548746706944)
-            invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else await (ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
-            content = (f"Author: [{ctx.author.name}](<https://discordapp.com/users/{ctx.author.id}>)\nServer: [{ctx.guild.name}]({invite or ctx.guild.id})\nMessage: {ctx.message.jump_url}")
+            invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else (await ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
+            content = f"**Author:** [{ctx.author.name}](<https://discordapp.com/users/{ctx.author.id}>)\n**Server:** {ctx.guild.name} - [Invite]({invite or '`Not available`'})\n**Message:** `{ctx.message.content}` - {ctx.message.jump_url}"
             try:
-                max_size = 1750
+                max_size = 1700
                 chunks = [traceback_msg[i:i+max_size] for i in range(0, len(traceback_msg), max_size)]
                 i = 1
                 for chunk in chunks:
-                    await logging_channel.send(f"{content}\nMessage no.: {i}/{len(chunks)}\n```{chunk}```")
+                    await logging_channel.send(f"{content}\n**Message no.:** {i}/{len(chunks)}\n```{chunk}```")
                     i += 1
             except Exception as e:
-                content = f"Author: [{ctx.author.name}](<https://discordapp.com/users/{ctx.author.id}>)\nServer: [{ctx.guild.name}]({invite or ctx.guild.id})\nMessage: {ctx.message.jump_url}"
                 await logging_channel.send(f"{content}```\nFailed to send the error in this channel due to Exception: {e}```")
                 print(traceback_msg)
 
