@@ -59,7 +59,7 @@ class PVC(commands.Cog):
                             pass
                         else :
                             await client.db.execute('UPDATE pvcs SET duration = 120 WHERE id = $1' , pvc['id'])
-                            await client.db.execute('UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3 ' , (int(client.data[pvc['guild_id']]["rate"] * (1/3600) * (120 - pvc['duration'] )) + 1 ), pvc['id'] , pvc['guild_id'] )
+                            await client.db.execute('UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3 ' , ( math.ceil(client.data[pvc['guild_id']]["rate"] * (1/3600) * (120 - pvc['duration'] )) ), pvc['id'] , pvc['guild_id'] )
                             continue
                     try :
                         await client.get_guild(pvc['guild_id']).get_channel(pvc['vcid']).delete()
