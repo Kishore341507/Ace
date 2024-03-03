@@ -38,7 +38,7 @@ class roulette_space(commands.Converter):
             argument = int(argument)
         except :
             pass    
-        if argument not in ["odd" , "even","red" , "black","1-18" , "19-36","1st", "2nd", "3rd","1-12" , "13-24" , "25-36",0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36]:
+        if argument not in ["odd" , "even","red" , "black","1-18" , "19-36","1st", "2nd", "3rd","1-12" , "13-24" , "25-36",1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36]:
             return None 
         else :
             return argument         
@@ -102,11 +102,8 @@ class Roulette(commands.Cog):
 
         game_limit = _max
         
-        if amount > game_limit :
+        if amount > game_limit:
             amount = game_limit    
-
-        embed = discord.Embed(color=discord.Color.blue() , description= f"You have placed a bet of {coin(ctx.guild.id)} {amount} on `{space}`.")
-        embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar)
 
         if space is None :
             embed.description = f":negative_squared_cross_mark: Invalid `<space>` argument given.\n\nUsage:\n`roulette <amount> <space>`"
@@ -116,32 +113,30 @@ class Roulette(commands.Cog):
         
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
 
-
-        if amount > bal['cash']:
-            embed.description='You do not have enough money to roulette that much'
-            await ctx.send (embed = embed)
-            return
-        elif amount <= _min:
-            embed.description=f'You cannot roulette {_min} or less'
-            await ctx.send (embed = embed)  
-            return 
-         
-        total_bet_amount = amount
-        for user in self.players :
+        total_bet_amount = 0
+        for user in self.players:
             if user['user_id'] == ctx.author.id and user['guild'] == ctx.guild.id :
                 total_bet_amount += user['amount']
-                
-        if total_bet_amount > game_limit:
-            embed.description=f'You already bet more then bet amount i.e {game_limit:,}'
-            await ctx.send (embed = embed)
-            return        
+        if total_bet_amount < game_limit:
+            more_to_bet  = game_limit - total_bet_amount
+            if amount > more_to_bet:
+                amount = more_to_bet
+        else:
+            return await ctx.send(embed=bembed(f'You already bet the max amount i.e {coin(ctx.guild.id)} {game_limit:,}', discord.Color.brand_red())) 
+
+        if amount > bal['cash']:
+            return await ctx.send(embed=bembed(f'You do not have enough money to roulette that much', discord.Color.brand_red())) 
+        elif amount <= _min:
+            return await ctx.send(embed=bembed(f'You cannot roulette {_min} or less', discord.Color.brand_red()))
         
         bucket = self.roulette_cooldown.get_bucket(ctx.message)
         retry_after = bucket.update_rate_limit()
         if retry_after is None :
                 flag = False
                 retry_after = 30 
-                
+        
+        embed = discord.Embed(color=discord.Color.blue() , description= f"You have placed a bet of {coin(ctx.guild.id)} {amount} on `{space}`.")
+        embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar)
         embed.set_footer(text= f"Time remaining: {int(retry_after)} seconds {'| if bet place after result , it will count in next result' if int(retry_after) == 0 else '' }")        
         self.players.append({"guild" : ctx.guild.id  , "channel" : ctx.channel.id , "user_id" : ctx.author.id , "amount" : int(amount) , "space" : space })
         await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id)
