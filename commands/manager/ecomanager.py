@@ -250,7 +250,7 @@ class EcoManager(commands.Cog):
 
     async def edit_item(self ,ctx , id) :
 
-        item = await client.db.fetchrow('SELECT * FROM store WHERE id = $1AND guild_id = $2' , id , ctx.guild.id)
+        item = await client.db.fetchrow('SELECT * FROM store WHERE id = $1 AND guild_id = $2' , id , ctx.guild.id)
         if not item :
             return await ctx.send( embed = bembed('No item Found'))
         
