@@ -411,7 +411,7 @@ class PVC_COMMANDS(commands.Cog):
 
             bal = await client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
             view = discord.ui.View()
-            friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] ] if bal['friends'] else None )
+            friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] if interaction.guild.get_member(id) is not None] if bal['friends'] else None )
             async def callback(interaction):
                 data = [ member.id for member in friend.values if not member.bot ]
                 await client.db.execute( "UPDATE users SET friends = $1 WHERE id = $2 AND guild_id = $3" , data , interaction.user.id , interaction.guild.id )
@@ -619,7 +619,7 @@ class PVC_COMMANDS(commands.Cog):
 
             bal = await client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
             view = discord.ui.View()
-            friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] ] if bal['friends'] else None )
+            friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] if interaction.guild.get_member(id) is not None ] if bal['friends'] else None )
             async def callback(interaction):
                 data = [ member.id for member in friend.values if not member.bot ]
                 await client.db.execute( "UPDATE users SET friends = $1 WHERE id = $2 AND guild_id = $3" , data , interaction.user.id , interaction.guild.id )
