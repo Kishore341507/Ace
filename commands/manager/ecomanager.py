@@ -265,7 +265,7 @@ class EcoManager(commands.Cog):
 
             embed.add_field(name = 'Requirement(s)' , value = " ,".join([ (ctx.guild.get_role(role_id)).mention for role_id in i['rroles'] if (ctx.guild.get_role(role_id)) ]) if i['rroles'] else "None" )
 
-            embed.add_field( name = 'Discription' , value = str(i['info']))
+            embed.add_field( name = 'Description' , value = str(i['info']))
             embed.add_field( name = 'limit' , value = f"{i['limit']}") 
             return embed
 
@@ -356,13 +356,13 @@ class EcoManager(commands.Cog):
         limit.callback = update_limit
         view.add_item(limit)
 
-        info = discord.ui.Button(label = 'Discription' )
+        info = discord.ui.Button(label = 'Description' )
         async def update_info(interaction) :
             if interaction.user != ctx.author:
                 await interaction.response.send_message("Not Your Interaction" , ephemeral = True)
                 return
-            modal = SingleInputLong("Item Discription ?",
-                                "Type Item Discription")
+            modal = SingleInputLong("Item Description ?",
+                                "Type Item Description")
             await interaction.response.send_modal(modal)
             await modal.wait()
             if modal.value:

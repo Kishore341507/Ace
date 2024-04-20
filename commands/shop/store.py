@@ -39,7 +39,7 @@ class store(commands.Cog):
 
         if i['rroles'] :
             ecoembed.add_field(name = 'Requirement(s)' , value = " ,".join([ (ctx.guild.get_role(role_id)).mention for role_id in i['rroles'] if (ctx.guild.get_role(role_id)) ]) if i['rroles'] else "None" )
-        ecoembed.add_field( name = 'Discription' , value = str(i['info']))
+        ecoembed.add_field( name = 'Description' , value = str(i['info']))
         if i['limit'] :
             ecoembed.add_field( name = 'Remaining' , value = f"{i['limit']}") 
         await ctx.send(embed = ecoembed)
@@ -61,7 +61,7 @@ class store(commands.Cog):
             limit = ''
             if x['limit'] is not None:
                 limit = f', (**{x["limit"]} Remaining**)'
-            ecoembed.add_field(name= f'{coin(ctx.guild.id) if x["currency"] == 1 else pvc_coin(ctx.guild.id)[0]} {x["price"]} - {x["name"]} , `id-{x["id"]}`' , value = f'{x["info"]}{limit}\n<:inv:1148131171885142086>', inline=False)
+            ecoembed.add_field(name= f'{coin(ctx.guild.id) if x["currency"] == 1 else pvc_coin(ctx.guild.id)[0]} {x["price"]:,} - {x["name"]} , `id-{x["id"]}`' , value = f'{x["info"]}{limit}\n<:inv:1148131171885142086>', inline=False)
         await ctx.send(embed = ecoembed) 
 
  
@@ -77,7 +77,7 @@ class store(commands.Cog):
         if id :
             item = await client.db.fetchrow('SELECT * FROM store WHERE id = $1 AND guild_id = $2', id , ctx.guild.id)
         elif name :
-            item = await client.db.fetchrow("SELECT * FROM store WHERE LOWER(name) LIKE '%' || $1 || '%' AND guild_id = $2", name , ctx.guild.id )
+            item = await client.db.fetchrow("SELECT * FROM store WHERE LOWER(name) LIKE '%' || $1 || '%' AND guild_id = $2", name.lower() , ctx.guild.id )
         
         if item is None:
             ecoembed.description = "❎ Cant Find Item In Store."
@@ -130,7 +130,7 @@ class store(commands.Cog):
                 try :
                     await ctx.author.add_roles(*[ ctx.guild.get_role(r_role) for r_role in item['roles'] if ctx.guild.get_role(r_role) ] )
                 except :
-                    await ctx.send("there is some issue in giving the roles , please inform admins to put the bot role above reward role and bot have manage role perms !")
+                    await ctx.send("There is some issue in giving the roles , please inform admins to put the bot role above reward role and bot have manage role perms !")
             
             await client.db.execute("UPDATE users SET cash = cash + $1 , bank = bank + $2 , pvc = pvc + $3 WHERE id = $4 AND guild_id = $5", item["cash"] , item['bank'] , item['pvc'] , ctx.author.id , ctx.guild.id) 
             if item['limit'] is not None :
