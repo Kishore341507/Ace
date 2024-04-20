@@ -48,10 +48,13 @@ class income(commands.Cog):
         
         output = "🤷🏾‍♂️ But Nothing To Collect"
         
-        if len(self.income_cooldown.get(ctx.guild.id,{}).get(ctx.author.id,{}) ) != 0  :
+        collects_to_remove = []
+        if len(self.income_cooldown.get(ctx.guild.id,{}).get(ctx.author.id,{}) ) != 0:
             for c in self.income_cooldown[ctx.guild.id][ctx.author.id] :
-                if self.income_cooldown[ctx.guild.id][ctx.author.id][c] < time.time( ) :
-                    del self.income_cooldown[ctx.guild.id][ctx.author.id][c]
+                if self.income_cooldown[ctx.guild.id][ctx.author.id][c] < time.time( ):
+                    collects_to_remove.append(c)
+            for c in collects_to_remove:
+                del self.income_cooldown[ctx.guild.id][ctx.author.id][c]
             output = f"Next Collect Will Be <t:{int(min(self.income_cooldown.get(ctx.guild.id,{}).get(ctx.author.id,{}).values()))}:R>"
         ecoembed.description = dis + ( (f"{bank}\n{cash}\n{pvc}") if cash + bank + pvc != "" else output )
         await ctx.send(embed = ecoembed) 
