@@ -219,7 +219,10 @@ class Owner(commands.Cog):
         data = [ ]
 
         for guild in self.client.guilds :
-            invite = guild.vanity_url or (await guild.invites())[0] if guild.me.guild_permissions.manage_guild and await guild.invites() else (await guild.channels[0].create_invite() if guild.me.guild_permissions.create_instant_invite else '')
+            try :
+                invite = guild.vanity_url or (await guild.invites())[0] if guild.me.guild_permissions.manage_guild and await guild.invites() else (await guild.channels[0].create_invite() if guild.me.guild_permissions.create_instant_invite else '')
+            except :
+                invite = "No Perms"
             data.append([ f"{guild.name[:17]} ({guild.id})" , f"{guild.owner.name[:17]} ({guild.owner_id})" , f"{guild.member_count:,}" , invite , (guild.me.guild_permissions).value ]) #= dis + f"{guild.name} , {guild.id} - {invite} , {guild.owner} {guild.owner_id}\n"
             total_users += guild.member_count
 
