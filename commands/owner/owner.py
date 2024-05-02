@@ -317,5 +317,79 @@ class Owner(commands.Cog):
         embed.add_field(name="**Uptime** ",value=f"<:timer_:1207146799970652221> **{int(days)}d {int(hours)}h {int(minutes)}m {int(elpased_time)}s**")
         await ctx.reply(embed=embed)
 
+    @commands.hybrid_group(name="updateprofile", aliases=['upp'], description="Update my profile.", case_insensitive=True)
+    @commands.is_owner()
+    @commands.guild_only()
+    async def updateprofile(self, ctx, av: bool = True, bn: bool = True):
+        if not ctx.invoked_subcommand:
+            return await ctx.invoke(self.default, av = av, bn = bn)
+        
+
+    @updateprofile.command(name="default", aliases=["restore"], description="Revert back to default profile settings")
+    @commands.is_owner()
+    @commands.guild_only()
+    async def default(self, ctx, av: bool = True, bn: bool = True):
+        try:
+            if not av and not bn:
+                return await ctx.reply("**__No changes made.__**")
+            str = ""
+            if av:
+                with open('av.gif', 'rb') as avatar:
+                    await client.user.edit(avatar=avatar.read())
+                    str = "Avatar"
+            if bn:
+                with open('banner.gif', 'rb') as banner:
+                    await client.user.edit(banner=banner.read())
+                    str = "Banner" if not av else "Avatar & Banner"
+            await ctx.reply(f'**Animated {str} updated successfully!**')
+        except Exception as e:
+            await ctx.send(e, delete_after = 5)
+
+    @updateprofile.command(name="avatar", aliases=["av"], description="Update my avatar.")
+    @commands.is_owner()
+    @commands.guild_only()
+    async def update_av(self, ctx, file: typing.Optional[discord.Attachment] = None):
+        try:
+            if ctx.message.reference is not None:
+                msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+                Rattachment = msg.attachments[0] if len(msg.attachments) > 0 else None
+            else:
+                Rattachment = None
+            file = file or Rattachment
+            if not file:
+                return await ctx.reply("**File is a required argument that is missing.**")
+            av = await file.read()
+            await client.user.edit(avatar=av)
+            return await ctx.reply("**My Avatar has been updated.**")
+        except Exception as e:
+            await ctx.send(e, delete_after = 5)
+
+    @updateprofile.command(name="banner", aliases=["bn"], description="Update my banner.")
+    @commands.is_owner()
+    @commands.guild_only()
+    async def update_bn(self, ctx, file: typing.Optional[discord.Attachment] = None):
+        try:
+            if ctx.message.reference is not None:
+                msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+                Rattachment = msg.attachments[0] if len(msg.attachments) > 0 else None
+            else:
+                Rattachment = None
+            file = file or Rattachment
+            if not file:
+                return await ctx.reply("**File is a required argument that is missing.**")
+            bn = await file.read()
+            await client.user.edit(banner=bn)
+            return await ctx.reply("**My Banner has been updated.**")
+        except Exception as e:
+            await ctx.send(e, delete_after = 5)
+
+    @commands.command(name="refresh", description="Refresh the client data.")
+    @commands.is_owner()
+    @commands.guild_only()
+    async def refresh(self, ctx):
+        guilds = await client.db.fetch("SELECT * FROM guilds")
+        client.data = {guild['id'] : dict(guild) for guild in guilds}
+        await ctx.reply("**Refreshed client data.")
+
 async def setup(client):
    await client.add_cog(Owner(client))        
