@@ -23,7 +23,7 @@ $ python3 -m pip install -U .[voice]
 ```
 ### To set up your postgresql database environment, do the following steps. 
   1. In the parent directory open migrations folder and you will see multiple sql files.
-  2. Open them in right order from V0,V1....so on and run the queries inside them in your postgresql db.Open them in right order from V0,V1....so on and run the queries inside them in your postgresql db.
+  2. Open them in right order from V0,V1....so on and run the queries inside them in your postgresql db.
   3. Now your database is all set to work with the bot. You just have to paste the DB link in .env file.
 
 ### Follow the following steps to run the main ace.py file properly
