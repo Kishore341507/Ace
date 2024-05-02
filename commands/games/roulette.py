@@ -94,7 +94,7 @@ class Roulette(commands.Cog):
     @cooldown(10, 30, BucketType.user)
     async def roulette(self , ctx  , amount : amountconverter2 , space : typing.Optional[roulette_space] = "x" ):
         flag = True
-        if space is "x":
+        if space == "x":
             space = random.randint(1, 36)  
             
         _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['max']
@@ -156,7 +156,7 @@ class Roulette(commands.Cog):
             if user["guild"] == ctx.guild.id and user["channel"] == ctx.channel.id :
                 x = ctx.guild.get_member(user['user_id'])
                 multi = self.roulette_result(result ,user)
-                if multi is not 0 :
+                if multi != 0 :
                     await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", (multi*user['amount']), x.id , ctx.guild.id)
                     # await coll.update_one({"id": x.id} , {"$inc" : {"cash": + (multi*user['amount']) , "gambler" : + int((multi*user['amount'])/100) }})
                     dis = dis + f"\n{x.mention} won {coin(ctx.guild.id)} {multi * user['amount']}"

@@ -53,7 +53,7 @@ class Owner(commands.Cog):
         else:
             data = eval(input)
         data = str(data)
-        if input.find("config") is not -1:
+        if input.find("config") != -1:
             data = "-1"
         # self.lis[0] = data
             
