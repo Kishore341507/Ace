@@ -70,7 +70,7 @@ class Roulette(commands.Cog):
     async def roulette(self , ctx  , amount : amountconverter , space : roulette_space = "random" ):
         flag = True
         if space == "random":
-            space = random.randint(1, 36)  
+            space = random.randint(0, 37)  
             
         _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['max']
         _min = client.data[ctx.guild.id]['games']['roulette']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['min']       
