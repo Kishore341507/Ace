@@ -1,8 +1,12 @@
 from discord.ext import commands     
 from database import *
 import traceback
+from commands.owner.help import *
 
 class ErrorLogging(commands.Cog):
+
+    def __init__(self):
+        self.bad_argument_cooldown_mapping = commands.CooldownMapping.from_cooldown(1, 15, commands.BucketType.member)
     
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -12,6 +16,28 @@ class ErrorLogging(commands.Cog):
         elif isinstance(error, commands.DisabledCommand):
             if client.data[ctx.guild.id]['channels'] and ctx.channel.id in client.data[ctx.guild.id]['channels']:
                 return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> This command is disabled on this server."))
+        elif isinstance(error, commands.BadArgument):
+            cooldown = self.bad_argument_cooldown_mapping.get_bucket(ctx.message)
+            retry_after = cooldown.update_rate_limit()
+            if not retry_after:
+                command = ctx.command
+                embed = bembed(">>> ", discord.Color.blue())
+                embed.set_author(name=f"Help for {command.name.title()} command.")
+                if command.description:
+                    embed.description = embed.description + f"**Description:** `{command.description}`\n"
+                if command.help:
+                    embed.description = embed.description + f"**Help:** `{command.help}`\n"
+                if command.usage:
+                    embed.description = embed.description + f"**Usage:** `{client.data[ctx.guild.id]['prefix']}{command.name} {command.usage}`\n"
+                else:
+                    embed.description = embed.description + f"**Usage:** `{client.data[ctx.guild.id]['prefix']}{command.name} {command.signature}`\n"
+                if command.cooldown:
+                        embed.description = embed.description + f"**Cooldown:** `{command.cooldown.rate} per {command.cooldown.per:.0f} seconds.`\n"
+                if command.aliases:
+                    embed.description = embed.description + f"**Aliases:** `{', '.join(alias for alias in command.aliases)}`\n"
+                await ctx.reply(content=f"**{ctx.message.author.mention} {error}**", embed=embed , view= helpCommandView())
+            else:
+                return
         else:
             traceback_msg = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
             logging_channel = client.get_channel(1209630548746706944)

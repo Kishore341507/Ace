@@ -63,14 +63,18 @@ class Roulette(commands.Cog):
 
 
     roulette_cooldown = commands.CooldownMapping.from_cooldown(1.0, 30.0, commands.BucketType.channel)
-    @commands.hybrid_command(aliases=["r"])
+    """
+    , description="Spin the roulette wheel and gamble on a given space.", 
+    help="Valid spaces include 1st, 2nd, 3rd, 1-12, 13-24, 25-36, 1-18, 19-36 and all numbers from range 0 to 36.", usage = "<amount> [space]")
+    """
+    @commands.hybrid_command(aliases=["r"]) 
     @commands.guild_only()
     @commands.check(check_channel)
     @cooldown(10, 30, BucketType.user)
     async def roulette(self , ctx  , amount : amountconverter , space : roulette_space = "random" ):
         flag = True
         if space == "random":
-            space = random.randint(0, 37)  
+            space = random.randint(0, 37)
             
         _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['max']
         _min = client.data[ctx.guild.id]['games']['roulette']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['min']       

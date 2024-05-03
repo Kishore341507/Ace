@@ -33,7 +33,7 @@ class MyHelp(commands.HelpCommand):
                 modules["Store & Income"].extend(filter_commands)
             elif cog.qualified_name in data["PVC"]:
                 modules["PVC"].extend(filter_commands)
-            elif cog.qualified_name is "Help":
+            elif cog.qualified_name == "Help":
                 pass
             else:
                 modules["Other"].extend(filter_commands)
@@ -47,15 +47,27 @@ class MyHelp(commands.HelpCommand):
     async def send_command_help(self, command) -> None:
         if check_perms(self.context):
             pass
-        elif check_perms(self.context):
-            pass
         else:
             return
         
         filter_commands = await self.filter_commands([command] , sort=True)
         if len(filter_commands) == 0 :
-            return await self.context.send( embed= discord.Embed(description="Hidden command , add in your to know more about it" , color=discord.Color.red()) , view= helpCommandView())
-        embed = discord.Embed(title=f"{command.name}" , description= f"`{self.get_command_signature(command)}`"   , color=discord.Color.blurple())
+            return await self.context.send( embed=bembed("Add bot in your own server to use this command.", discord.Color.brand_red()) , view= helpCommandView())
+        else:
+            embed = bembed(">>> ", discord.Color.blue())
+            embed.set_author(name=f"Help for {command.name.title()} command.")
+            if command.description:
+                embed.description = embed.description + f"**Description:** `{command.description}`\n"
+            if command.help:
+                embed.description = embed.description + f"**Help:** `{command.help}`\n"
+            if command.usage:
+                embed.description = embed.description + f"**Usage:** `{client.data[self.context.guild.id]['prefix']}{command.name} {command.usage}`\n"
+            else:
+                embed.description = embed.description + f"**Usage:** `{client.data[self.context.guild.id]['prefix']}{command.name} {command.signature}`\n"
+            if command.cooldown:
+                    embed.description = embed.description + f"**Cooldown:** `{command.cooldown.rate} per {command.cooldown.per:.0f} seconds.`\n"
+            if command.aliases:
+                embed.description = embed.description + f"**Aliases:** `{', '.join(alias for alias in command.aliases)}`\n"
         await self.context.send(embed=embed , view= helpCommandView())
             
     async def send_error_message(self, error: str) -> None:
