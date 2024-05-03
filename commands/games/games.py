@@ -37,9 +37,6 @@ class Games(commands.Cog):
                 amount = int(0.5 * bal["cash"])
                 if amount > _max:
                     amount=_max        
-        if bal is None:
-                await open_account( ctx.guild.id , user.id)
-                bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to coinflip that much')
         elif amount <= _min or amount > _max:

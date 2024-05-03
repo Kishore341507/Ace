@@ -7,31 +7,6 @@ import typing
 import asyncio
 from discord import app_commands
 
-class amountconverter2(commands.Converter):
-    
-    async def convert(self , ctx , argument):
-
-        if argument[-2] == "e":
-            amount = str(int(argument[:-2]) * (10** int(argument[-1])))
-        else:
-            amount = str(argument)
-
-        bal = await client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-        if bal is None:
-            await open_account(ctx.guild.id, ctx.author.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-        
-        try:
-            amount = int(amount)
-        except ValueError:
-            if amount == "all":
-                amount = int(bal["cash"] ) 
-            elif amount == "half":
-                amount = int(0.5 * bal["cash"])
-
-        return int(amount)        
-
-
 class roulette_space(commands.Converter):
     async def convert(self , ctx , argument):
         try : 
@@ -39,7 +14,7 @@ class roulette_space(commands.Converter):
         except :
             pass    
         if argument not in ["odd" , "even","red" , "black","1-18" , "19-36","1st", "2nd", "3rd","1-12" , "13-24" , "25-36",1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36]:
-            return None 
+            raise commands.BadArgument("Invalid space to bet upon.") 
         else :
             return argument         
 
@@ -92,9 +67,9 @@ class Roulette(commands.Cog):
     @commands.guild_only()
     @commands.check(check_channel)
     @cooldown(10, 30, BucketType.user)
-    async def roulette(self , ctx  , amount : amountconverter2 , space : typing.Optional[roulette_space] = "x" ):
+    async def roulette(self , ctx  , amount : amountconverter , space : roulette_space = "random" ):
         flag = True
-        if space == "x":
+        if space == "random":
             space = random.randint(1, 36)  
             
         _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['max']
@@ -102,17 +77,20 @@ class Roulette(commands.Cog):
 
         game_limit = _max
         
-        if amount > game_limit:
-            amount = game_limit    
-
-        if space is None :
-            embed.description = f":negative_squared_cross_mark: Invalid `<space>` argument given.\n\nUsage:\n`roulette <amount> <space>`"
-            embed.color = discord.Color.red()
-            await ctx.send(embed = embed)
-            return
-        
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        if bal is None:
+            await open_account( ctx.guild.id , user.id)
+            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        if amount == "all":
+            amount = bal['cash']
+        elif amount == "half":
+            amount = int(bal['cash'] * 0.5)
+        else:
+            amount = int(amount)
 
+        if amount > game_limit:
+            amount = game_limit
+        
         total_bet_amount = 0
         for user in self.players:
             if user['user_id'] == ctx.author.id and user['guild'] == ctx.guild.id :
@@ -185,10 +163,7 @@ class Roulette(commands.Cog):
             embed = discord.Embed(color=discord.Color.blue() , description= f"You are on cooldown try after {int(ctx.command.get_cooldown_retry_after(ctx)) } seconds")
             embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar)
             await ctx.send(embed = embed)
-        else : 
-            # await ctx.send(f'{error}')
-            print(error)
-            ctx.command.reset_cooldown(ctx)
+        else:
             return
 
 async def setup(client):

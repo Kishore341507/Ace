@@ -59,7 +59,8 @@ defult_economy = {
                 "crime" : {
                     "max" : 5000 ,"cooldown" : 600 ,},
                 "rob" : {
-                    "cooldown" : 600 ,"percent" : 0.8,}    }
+                    "cooldown" : 600 ,"percent" : 0.8,}
+                    }
 
 defult_games = { 
             "blackjack" : {
@@ -89,10 +90,17 @@ async def open_account( guild_id : int , id : int):
 
 class amountconverter(commands.Converter):
     async def convert(self , ctx , argument):
-        if len(argument) >= 2 and argument[-2] == "e":
-            return str(int(argument[:-2]) * (10** int(argument[-1])))
-        else:
-            return str(argument)
+        try:
+            if len(argument) >= 2 and argument[-2] == "e":
+                amount = str(int(argument[:-2]) * (10** int(argument[-1])))
+            else:
+                amount = int(argument)
+        except:
+            if argument.lower() in ["half", "all"]:
+                return argument.lower()
+            else:
+                raise commands.BadArgument("Invalid amount.")
+        return int(amount)
 
 class Confirm(discord.ui.View):
     def __init__(self , user = None , role = None):
@@ -152,7 +160,7 @@ def coin( guild_id : int ) :
             raise Exception
     except Exception:
         icon = "🪙"
-    finally :
+    finally:
         return icon
 
 def pvc_coin( guild_id : int ) :
