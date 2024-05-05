@@ -627,7 +627,7 @@ class Economy(commands.Cog):
             page = last_page
             embed, last_page = await self.generate_lb_emb(ctx.guild , ctx.author, page, type)
         view = self.leaderboardPanelView(ctx.author,None, page, last_page, type)
-        message = await ctx.send(embed=embed , view = view)
+        message = await ctx.send("Lb may not work till Intent not verifyed , will fix soon" , embed=embed , view = view)
         view.message = message
 
 async def setup(client):
