@@ -136,12 +136,13 @@ class Roulette(commands.Cog):
         utsav = []
         for user in self.players:
             if user["guild"] == ctx.guild.id and user["channel"] == ctx.channel.id :
-                x = ctx.guild.get_member(user['user_id'])
+                # x = ctx.guild.get_member(user['user_id'])
                 multi = self.roulette_result(result ,user)
                 if multi != 0 :
-                    await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", (multi*user['amount']), x.id , ctx.guild.id)
+                    # await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", (multi*user['amount']), x.id , ctx.guild.id)
+                    await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", (multi*user['amount']), user['user_id'] , ctx.guild.id) # temp
                     # await coll.update_one({"id": x.id} , {"$inc" : {"cash": + (multi*user['amount']) , "gambler" : + int((multi*user['amount'])/100) }})
-                    dis = dis + f"\n{x.mention} won {coin(ctx.guild.id)} {multi * user['amount']}"
+                    dis = dis + f"\n<@{user['user_id']}> won {coin(ctx.guild.id)} {multi * user['amount']}"
 
                 utsav.append(user)
 
