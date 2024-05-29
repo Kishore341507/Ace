@@ -49,7 +49,7 @@ async def get_prefix(client , message):
 
 
 intents = discord.Intents.default()
-# intents.members = True
+intents.members = True
 intents.message_content = True
 client = MyBot(command_prefix= get_prefix , strip_after_prefix =True, case_insensitive=True, intents=intents , help_command= None)
 
