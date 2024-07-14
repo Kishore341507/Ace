@@ -102,6 +102,7 @@ class MyView(View):
             
             # await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, interaction.user.id, interaction.guild.id)
             # await economy.update_one({"id": interaction.user.id} , {"$inc" : {"cash": +amount}})
+            await self.ctx.send("The Russian Roulette game ended.\n\n**No Winners.**")
             self.ctx.command.reset_cooldown(self.ctx)
             self.started = True
 

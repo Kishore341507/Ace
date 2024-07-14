@@ -70,7 +70,7 @@ class Roulette(commands.Cog):
     @commands.hybrid_command(aliases=["r"]) 
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(10, 30, BucketType.user)
+    @cooldown(3, 10, BucketType.user)
     async def roulette(self , ctx  , amount : amountconverter , space : roulette_space = "random" ):
         flag = True
         if space == "random":

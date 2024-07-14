@@ -111,7 +111,7 @@ class Games(commands.Cog):
             elif amount == "half":
                 amount = int(0.5 * bal["cash"])
                 if amount > st_amount:
-                    amount=st_amount          
+                    amount=st_amount
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to slots that much')
         elif amount <= _min or amount > st_amount:

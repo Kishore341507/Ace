@@ -93,7 +93,7 @@ class EcoManager(commands.Cog):
         try:
             amount = int(amount)
         except ValueError:
-            await ctx.send(discord.Embed(description="Not a valid amount input!"), delete_after=5)
+            await ctx.send(embed=discord.Embed(description="Not a valid amount input!"), delete_after=5)
             return
         location = str(location).lower()
         if location == "pvc":
