@@ -1,7 +1,5 @@
-from typing import Optional
 import discord
 from discord.ext import commands, tasks
-from database import *
 from pytz import timezone
 from discord.ext.commands import BucketType, cooldown
 import math
@@ -9,8 +7,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import io
-
-
+from database import client
+from utils import bembed, open_account, coin, check_channel, check_perms
 
 class MarketInfo(discord.ui.View) :
 

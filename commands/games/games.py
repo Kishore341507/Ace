@@ -1,10 +1,11 @@
 import discord
-from discord.ext import commands 
-from database import *
+from discord.ext import commands
 import asyncio
 from discord.ext.commands import BucketType, cooldown
 import random
 import typing
+from database import client
+from utils import bembed, coin, open_account, default_games, check_channel, amountconverter
 
 
 class Games(commands.Cog):
@@ -23,8 +24,8 @@ class Games(commands.Cog):
         
              
         user = ctx.author
-        _max = client.data[ctx.guild.id]['games']['coinflip']['max'] if client.data[ctx.guild.id]['games'] else defult_games['coinflip']['max']
-        _min = client.data[ctx.guild.id]['games']['coinflip']['min'] if client.data[ctx.guild.id]['games'] else defult_games['coinflip']['min']
+        _max = client.data[ctx.guild.id]['games']['coinflip']['max'] if client.data[ctx.guild.id]['games'] else default_games['coinflip']['max']
+        _min = client.data[ctx.guild.id]['games']['coinflip']['min'] if client.data[ctx.guild.id]['games'] else default_games['coinflip']['min']
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
         try:
             amount = int(amount)
@@ -83,8 +84,8 @@ class Games(commands.Cog):
         ecoembed = discord.Embed(color=  0x08FC08)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         
-        _max = client.data[ctx.guild.id]['games']['slots']['max'] if client.data[ctx.guild.id]['games'] else defult_games['slots']['max']
-        _min = client.data[ctx.guild.id]['games']['slots']['min'] if client.data[ctx.guild.id]['games'] else defult_games['slots']['min']
+        _max = client.data[ctx.guild.id]['games']['slots']['max'] if client.data[ctx.guild.id]['games'] else default_games['slots']['max']
+        _min = client.data[ctx.guild.id]['games']['slots']['min'] if client.data[ctx.guild.id]['games'] else default_games['slots']['min']
         
         all = ctx.guild.emojis
         if len(all) < 3 :
@@ -145,8 +146,8 @@ class Games(commands.Cog):
         ecoembed = discord.Embed(color= discord.Color.green())
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         
-        _max = client.data[ctx.guild.id]['games']['roll']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roll']['max']
-        _min = client.data[ctx.guild.id]['games']['roll']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roll']['min']
+        _max = client.data[ctx.guild.id]['games']['roll']['max'] if client.data[ctx.guild.id]['games'] else default_games['roll']['max']
+        _min = client.data[ctx.guild.id]['games']['roll']['min'] if client.data[ctx.guild.id]['games'] else default_games['roll']['min']
         
         user = ctx.author
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)

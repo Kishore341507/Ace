@@ -1,5 +1,5 @@
 from discord.ext import commands, tasks
-from database import *
+from database import client
 
 class Guild(commands.Cog):
 

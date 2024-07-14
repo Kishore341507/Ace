@@ -1,16 +1,17 @@
+import discord
 from discord.ext import commands
-import asyncio      
-from database import *
+from database import client
+from utils import bembed
 import time
+import datetime
 from dotenv import load_dotenv
 import os
-import traceback
 
 @client.event
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
-    user = client.get_user(591011843552837655)
-    await user.send(f"{client.user} is Online Now")
+    # user = client.get_user(591011843552837655)
+    # await user.send(f"{client.user} is Online Now")
 
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)

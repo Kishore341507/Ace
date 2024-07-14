@@ -1,12 +1,12 @@
 import discord
 from discord.ext import commands
-from database import *
 import asyncio 
 from discord.ext.commands import BucketType, cooldown
 import random
 from discord.ui import Button , View
 import time
-
+from database import client
+from utils import bembed, coin, open_account, check_channel, amountconverter, default_games
 
 class MyView(View):
     
@@ -124,8 +124,8 @@ class russian_roulette(commands.Cog):
             await open_account(ctx.guild.id, ctx.author.id)
             bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
             
-        _max = client.data[ctx.guild.id]["games"]["russian-roulette"]["max"] if client.data[ctx.guild.id]["games"] else defult_economy["russian-roulette"]["max"]
-        _min = client.data[ctx.guild.id]["games"]["russian-roulette"]["min"] if client.data[ctx.guild.id]["games"] else defult_economy["russian-roulette"]["min"]
+        _max = client.data[ctx.guild.id]["games"]["russian-roulette"]["max"] if client.data[ctx.guild.id]["games"] else default_games["russian-roulette"]["max"]
+        _min = client.data[ctx.guild.id]["games"]["russian-roulette"]["min"] if client.data[ctx.guild.id]["games"] else default_games["russian-roulette"]["min"]
         
         try:
             amount = int(amount)

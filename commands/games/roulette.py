@@ -1,11 +1,11 @@
 import discord
 from discord.ext import commands
-from database import *
 import random
 from discord.ext.commands import BucketType, cooldown
-import typing
 import asyncio
 from discord import app_commands
+from database import client
+from utils import bembed, coin, open_account, check_channel, amountconverter, default_games
 
 class roulette_space(commands.Converter):
     async def convert(self , ctx , argument):
@@ -40,7 +40,7 @@ class Roulette(commands.Cog):
             return 2
         elif user["space"] == "1-18" and result["number"] in range(1,19):
             return 2 
-        elif user["space"] == "19-36" and result["number"] in range(19,37):
+        elif user["space"] == "19-36" and result["number"] in range(19,36):
             return 2
         elif user["space"] == "1st" and result["number"] in [1,4,7,10,13,16,19,22,25,28,31,34]:
             return 3
@@ -54,9 +54,9 @@ class Roulette(commands.Cog):
             return 3
         elif user["space"] == "13-24" and result["number"] in range(13,25):
             return 3
-        elif user["space"] == "25-36" and result["number"] in range(25,37):
+        elif user["space"] == "25-36" and result["number"] in range(25,36):
             return 3
-        elif user["space"] in range(0,37) and result["number"] == user["space"] :
+        elif user["space"] in range(0,36) and result["number"] == user["space"] :
             return 36
         else :
             return 0 
@@ -74,10 +74,10 @@ class Roulette(commands.Cog):
     async def roulette(self , ctx  , amount : amountconverter , space : roulette_space = "random" ):
         flag = True
         if space == "random":
-            space = random.randint(0, 37)
+            space = random.randint(0, 36)
             
-        _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['max']
-        _min = client.data[ctx.guild.id]['games']['roulette']['min'] if client.data[ctx.guild.id]['games'] else defult_games['roulette']['min']       
+        _max = client.data[ctx.guild.id]['games']['roulette']['max'] if client.data[ctx.guild.id]['games'] else default_games['roulette']['max']
+        _min = client.data[ctx.guild.id]['games']['roulette']['min'] if client.data[ctx.guild.id]['games'] else default_games['roulette']['min']       
 
         game_limit = _max
         

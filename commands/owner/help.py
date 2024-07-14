@@ -2,7 +2,8 @@ from typing import Any, List, Mapping, Optional
 import discord
 from discord.ext import commands
 from discord.ui import Button, View
-from database import *
+from database import client
+from utils import bembed, check_channel, check_perms, default_prefix
 
 class MyHelp(commands.HelpCommand):
     
@@ -16,8 +17,8 @@ class MyHelp(commands.HelpCommand):
             return
         
         embed = discord.Embed(title="Help Commands" , color=discord.Color.blurple() )
-        data = {"Economy " : [ "Economy" , "Market" ] , "Games" : ["Bj" , "Games" , "Roulette" , "russian_roulette" ] , "Manager" : ["EcoManager" , "Settings" ] , "Store & Income" : ["store" , "income" ] ,  "PVC" : [ "PVC" , "PVC_COMMANDS"] }
-        modules = { "Economy" : [] , "Games" : [] , "Manager" : [], "Store & Income" : [] , "PVC" : [] , "Other" : [] }
+        data = {"Economy " : [ "Economy" , "Market" ] , "Games" : ["Bj" , "Games" , "Roulette" , "russian_roulette" ] , "Manager" : ["EcoManager" , "Settings" ] , "Store & Income" : ["store" , "income" ] ,  "PVC" : [ "PVC" , "PVC_COMMANDS"], "Owner": ["Owner"] }
+        modules = { "Economy" : [] , "Games" : [] , "Manager" : [], "Store & Income" : [] , "PVC" : [] , "Other" : [] , "Owner": []}
         for cog , commands  in mapping.items() :
             filter_commands = await self.filter_commands(commands , sort=True)
             
@@ -35,6 +36,8 @@ class MyHelp(commands.HelpCommand):
                 modules["PVC"].extend(filter_commands)
             elif cog.qualified_name == "Help":
                 pass
+            elif cog.qualified_name in data["Owner"]:
+                modules["Owner"].extend(filter_commands)
             else:
                 modules["Other"].extend(filter_commands)
           
@@ -52,7 +55,7 @@ class MyHelp(commands.HelpCommand):
         
         filter_commands = await self.filter_commands([command] , sort=True)
         if len(filter_commands) == 0 :
-            return await self.context.send( embed=bembed("Add bot in your own server to use this command.", discord.Color.brand_red()) , view= helpCommandView())
+            return await self.context.send( embed=bembed("You cannot use this command.", discord.Color.brand_red()) , view= helpCommandView())
         else:
             embed = bembed(">>> ", discord.Color.blue())
             embed.set_author(name=f"Help for {command.name.title()} command.")
@@ -61,9 +64,9 @@ class MyHelp(commands.HelpCommand):
             if command.help:
                 embed.description = embed.description + f"**Help:** `{command.help}`\n"
             if command.usage:
-                embed.description = embed.description + f"**Usage:** `{client.data[self.context.guild.id]['prefix']}{command.name} {command.usage}`\n"
+                embed.description = embed.description + f"**Usage:** `{client.data[self.context.guild.id]['prefix'] or default_prefix}{command.name} {command.usage}`\n"
             else:
-                embed.description = embed.description + f"**Usage:** `{client.data[self.context.guild.id]['prefix']}{command.name} {command.signature}`\n"
+                embed.description = embed.description + f"**Usage:** `{client.data[self.context.guild.id]['prefix'] or default_prefix}{command.name} {command.signature}`\n"
             if command.cooldown:
                     embed.description = embed.description + f"**Cooldown:** `{command.cooldown.rate} per {command.cooldown.per:.0f} seconds.`\n"
             if command.aliases:

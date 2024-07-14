@@ -1,24 +1,25 @@
 import discord
 from discord.ext import commands
-from database import *
 import math
+from database import client
+from utils import bembed, coin, pvc_coin, check_perms, default_economy, default_games, default_prefix
 
 class singleInputModal(discord.ui.Modal, title='...'):
 
-  def __init__(self, question, placeholder,min=None, max=None , defult = None , required = True ):
+  def __init__(self, question, placeholder,min=None, max=None , default = None , required = True ):
     super().__init__()
     self.question = question
     self.placeholder = placeholder
     self.min = min
     self.max = max
     self.value = None
-    self.defult = defult
+    self.default = default
     self.required = required
     self.input = discord.ui.TextInput(label=self.question,
                                       placeholder=self.placeholder,
                                       min_length=self.min,
                                       max_length=self.max,
-                                      default= self.defult ,
+                                      default= self.default ,
                                       required=self.required)
                                       
     self.add_item(self.input)
@@ -48,20 +49,20 @@ class singleInputLongModal(discord.ui.Modal):
 class multiInputModal(discord.ui.Modal, title='...'):
 
   def __init__(self, questions: list, placeholders: list, min: list,
-               max: list , defults : list = None):
+               max: list , defaults : list = None):
     super().__init__()
     self.questions = questions
     self.placeholders = placeholders
-    self.defults = defults
-    if not defults :
-      self.defults = [None] * len(questions)
+    self.defaults = defaults
+    if not defaults :
+      self.defaults = [None] * len(questions)
     self.values = []
 
     for i in range(len(questions)):
       self.input = discord.ui.TextInput(
           label=self.questions[i],
           placeholder=self.placeholders[i],
-          default= self.defults[i],
+          default= self.defaults[i],
           min_length=min[i],
           max_length=max[i]
       )
@@ -195,7 +196,7 @@ class Settings(commands.Cog):
 
   async def botSettingsMessage(guild: discord.Guild):
     # Fetching bot prefix
-    bot_prefix = client.data[guild.id]['prefix'] or defult_prefix
+    bot_prefix = client.data[guild.id]['prefix'] or default_prefix
 
     # Fetching casino manager role
     if client.data[guild.id]["manager"] and guild.get_role(
@@ -291,7 +292,7 @@ class Settings(commands.Cog):
         elif selection == 1:
           # Creating and sending the modal to update the bot prefix
           modal = singleInputModal("Enter new prefix.",
-                                   "The length of input should be 1", 0, 1 , client.data[interaction.guild.id]["prefix"] or defult_prefix)
+                                   "The length of input should be 1", 0, 1 , client.data[interaction.guild.id]["prefix"] or default_prefix)
           modal.title = "Change the prefix for the bot."
           await interaction.response.send_modal(modal)
           await modal.wait()
@@ -406,7 +407,7 @@ class Settings(commands.Cog):
   
   async def economySettingsMessage(guild: discord.Guild):
     
-    client.data[guild.id]['economy'] = { **defult_economy ,  **(client.data[guild.id]['economy'] if client.data[guild.id]['economy'] else {})}
+    client.data[guild.id]['economy'] = { **default_economy ,  **(client.data[guild.id]['economy'] if client.data[guild.id]['economy'] else {})}
 
     # Fetching the economy coin
     economy_coin = coin(guild.id)
@@ -654,7 +655,7 @@ class Settings(commands.Cog):
                 "Cooldown (in Minutes)",
                 "Min Ammount",
                 "Max Amount"
-            ], ["Enter cooldown amount.","Enter Min Cash amount.", "Enter Max Cash amount."], [1, 1 , 1], [8, 8 , 8] , [ str(int((client.data[interaction.guild.id]['economy']['work']['cooldown'] if client.data[interaction.guild.id]['economy'] else defult_economy['work']['cooldown']) / 60 ) ) , str(client.data[interaction.guild.id]['economy']['work']['min'] if client.data[interaction.guild.id]['economy'] else defult_economy['work']['min'] ) , str(client.data[interaction.guild.id]['economy']['work']['max'] if client.data[interaction.guild.id]['economy'] else defult_economy['work']['max']) ])
+            ], ["Enter cooldown amount.","Enter Min Cash amount.", "Enter Max Cash amount."], [1, 1 , 1], [8, 8 , 8] , [ str(int((client.data[interaction.guild.id]['economy']['work']['cooldown'] if client.data[interaction.guild.id]['economy'] else default_economy['work']['cooldown']) / 60 ) ) , str(client.data[interaction.guild.id]['economy']['work']['min'] if client.data[interaction.guild.id]['economy'] else default_economy['work']['min'] ) , str(client.data[interaction.guild.id]['economy']['work']['max'] if client.data[interaction.guild.id]['economy'] else default_economy['work']['max']) ])
             modal.title = "Work Command Settings"
             await interaction.response.send_modal(modal)
             await modal.wait()
@@ -691,7 +692,7 @@ class Settings(commands.Cog):
               modal = multiInputModal([
                   "Cooldown (in Minutes)",
                   "Max Amount"
-              ], ["Enter cooldown amount.","Enter Max Cash amount."], [1, 1], [8, 8] , [ str(int((client.data[interaction.guild.id]['economy']['crime']['cooldown'] if client.data[interaction.guild.id]['economy'] else defult_economy['crime']['cooldown']) / 60 ) ) , str(client.data[interaction.guild.id]['economy']['crime']['max'] if client.data[interaction.guild.id]['economy'] else defult_economy['crime']['max']) ])
+              ], ["Enter cooldown amount.","Enter Max Cash amount."], [1, 1], [8, 8] , [ str(int((client.data[interaction.guild.id]['economy']['crime']['cooldown'] if client.data[interaction.guild.id]['economy'] else default_economy['crime']['cooldown']) / 60 ) ) , str(client.data[interaction.guild.id]['economy']['crime']['max'] if client.data[interaction.guild.id]['economy'] else default_economy['crime']['max']) ])
               modal.title = "Crime Command Settings"
               await interaction.response.send_modal(modal)
               await modal.wait()
@@ -728,7 +729,7 @@ class Settings(commands.Cog):
           modal = multiInputModal([
               "Cooldown (in Minutes)",
               "Percent (%)"
-          ], ["Enter cooldown amount.","Enter Percent."], [1, 1], [8, 2] , [ str(int((client.data[interaction.guild.id]['economy']['rob']['cooldown'] if client.data[interaction.guild.id]['economy'] else defult_economy['rob']['cooldown']) / 60 ) ) , str(int((client.data[interaction.guild.id]['economy']['rob']['percent'] if client.data[interaction.guild.id]['economy'] else defult_economy['rob']['percent']) * 100)) ])
+          ], ["Enter cooldown amount.","Enter Percent."], [1, 1], [8, 2] , [ str(int((client.data[interaction.guild.id]['economy']['rob']['cooldown'] if client.data[interaction.guild.id]['economy'] else default_economy['rob']['cooldown']) / 60 ) ) , str(int((client.data[interaction.guild.id]['economy']['rob']['percent'] if client.data[interaction.guild.id]['economy'] else default_economy['rob']['percent']) * 100)) ])
           
           modal.title = "Rob Command Settings"
           await interaction.response.send_modal(modal)
@@ -775,7 +776,7 @@ class Settings(commands.Cog):
   
   async def gameSettingsMessage(guild: discord.Guild):
     
-    client.data[guild.id]['games'] = { **defult_games ,  **(client.data[guild.id]['games'] if client.data[guild.id]['games'] else {})}
+    client.data[guild.id]['games'] = { **default_games ,  **(client.data[guild.id]['games'] if client.data[guild.id]['games'] else {})}
 
     # Creating the embed for Economy settings message
     embed = discord.Embed(title="Game Settings")

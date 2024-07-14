@@ -1,11 +1,11 @@
 import discord
 from discord.ext import commands , tasks
-from database import *
 from discord.ext.commands import BucketType, cooldown
 import re
 import typing
 import math
-import asyncio
+from database import client
+from utils import bembed, open_account, pvc_coin, ConfirmView
 
 class DurationConverter(commands.Converter):
     async def convert(self ,  ctx , argument = '1h'):
@@ -112,7 +112,7 @@ class PVC(commands.Cog):
                     await channel.send( embed = bembed(f"The Maximum time of PVC you can create is {client.data[member.guild.id]['pvc_max']} Hrs"))
                     return None 
 
-                view = Confirm(member) 
+                view = ConfirmView(member) 
                 await channel.send( embed = bembed(f'Want To Extend Your PVC ? , This will charge you {pvc_coin(member.guild.id)[0]} **{ int( (duration[0]/3600) * rate) }** {pvc_coin(member.guild.id)[1]} !') , view = view)
                 await view.wait()
                 if view.value : 
@@ -135,7 +135,7 @@ class PVC(commands.Cog):
 
         elif info is None and bal['pvc'] >= int( (duration[0]/3600) * rate):
             
-            view = Confirm(member)
+            view = ConfirmView(member)
             if duration[0] != 120 :
                 await channel.send( embed= bembed(f"This will charge you {pvc_coin(member.guild.id)[0]} **{ int( (duration[0]/3600) * rate) }** {pvc_coin(member.guild.id)[1]}'s !"), view = view)
                 await view.wait()

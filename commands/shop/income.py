@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
-from database import *
 from discord.ext.commands import BucketType, cooldown
 import time 
+from database import client
+from utils import bembed, open_account, pvc_coin, coin, check_channel
 
 class income(commands.Cog):
 

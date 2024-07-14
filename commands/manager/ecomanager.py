@@ -1,11 +1,10 @@
 import discord
 from discord.ext import commands
-from database import *
-from comp.converters import TimeConverter
 import typing
-from discord.ui import Button, View
+from discord.ui import View
 from discord import app_commands
-from datetime import datetime
+from database import client
+from utils import bembed, check_perms, coin, pvc_coin, open_account, amountconverter, ConfirmView, TimeConverter
  
 class SingleInput(discord.ui.Modal, title='...'):
     def __init__(self, question, placeholder):
@@ -319,7 +318,7 @@ class EcoManager(commands.Cog):
             if interaction.user != ctx.author:
                 await interaction.response.send_message("Not Your Interaction" , ephemeral = True)
                 return
-            temp_view = Confirm()
+            temp_view = ConfirmView()
             await interaction.response.send_message("Want to Switch Currency ?" , view = temp_view , ephemeral = True)
             await temp_view.wait()
             if temp_view.value :
@@ -474,7 +473,7 @@ class EcoManager(commands.Cog):
             if interaction.user != ctx.author:
                 await interaction.response.send_message("Not Your Interaction" , ephemeral = True)
                 return
-            temp_view = Confirm()
+            temp_view = ConfirmView()
             await interaction.response.send_message("Want to DELETE this Item ?" , view = temp_view , ephemeral = True)
             await temp_view.wait()
             if temp_view.value :
@@ -535,11 +534,11 @@ class EcoManager(commands.Cog):
     @commands.hybrid_command()
     @commands.check(check_perms)
     async def reseteconomy(self, ctx , cash : typing.Optional[bool] = True , bank : typing.Optional[bool] = True , pvc : typing.Optional[bool] = True , stocks : typing.Optional[bool] = True):
-        view = Confirm(ctx.author)
+        view = ConfirmView(ctx.author)
         await ctx.send(embed = bembed("Do You Really want To reset Economy ?") , view = view )
         await view.wait()
         if view.value :
-            view1 = Confirm(ctx.author)
+            view1 = ConfirmView(ctx.author)
             await ctx.send(embed = bembed("Are You Sure ?") , view = view1 )
             await view1.wait()
             if view1.value :
@@ -1037,7 +1036,7 @@ class EcoManager(commands.Cog):
                 if cooldown :
                     await client.db.execute('UPDATE income SET cooldown = $1 WHERE role_id =$2 AND guild_id = $3', cooldown[0] , role.id, ctx.guild.id)
                 if pvc is None and cash is None and bank is None :
-                    view = Confirm(ctx.author)
+                    view = ConfirmView(ctx.author)
                     await ctx.send(f"Do You Want To Delete Role Income For {role.name}" , view= view)
                     await view.wait()
                     if view.value :

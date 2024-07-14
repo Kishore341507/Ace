@@ -1,14 +1,14 @@
 from http import client
 import discord
-from discord.ext import commands 
-from database import *
+from discord.ext import commands
 from discord.ui import Button, View
 from discord.ext.commands import BucketType, cooldown
 import random
 import typing
 from datetime import datetime
-from comp.ui import *
 import math
+from database import client
+from utils import bembed, coin, pvc_coin, default_economy, open_account, check_channel, check_perms, amountconverter
 
 
 class Confirm(discord.ui.View):
@@ -57,7 +57,7 @@ class Economy(commands.Cog):
         if client.data[ctx.guild.id]['economy'] :
             return commands.Cooldown(1, client.data[ctx.guild.id]['economy'][str(ctx.command.name)]['cooldown'])
         else :
-            return commands.Cooldown(1, defult_economy[str(ctx.command.name)]['cooldown'])
+            return commands.Cooldown(1, default_economy[str(ctx.command.name)]['cooldown'])
     
 #------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                            AUTOCOINS     
@@ -246,7 +246,7 @@ class Economy(commands.Cog):
         ecoembed = discord.Embed(color=  0x08FC08)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
         
-        amount = (random.randint( client.data[ctx.guild.id]['economy']['work']['min'] if client.data[ctx.guild.id]['economy'] else defult_economy['work']['min'] , client.data[ctx.guild.id]['economy']['work']['max'] if client.data[ctx.guild.id]['economy'] else defult_economy['work']['max'])) 
+        amount = (random.randint( client.data[ctx.guild.id]['economy']['work']['min'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['min'] , client.data[ctx.guild.id]['economy']['work']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['max'])) 
            
         x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
         if "0" in x :
@@ -279,7 +279,7 @@ class Economy(commands.Cog):
     async def crime(self , ctx):
         ecoembed = discord.Embed()
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
-        crime_amount = client.data[ctx.guild.id]['economy']['crime']['max'] if client.data[ctx.guild.id]['economy'] else defult_economy['crime']['max']   
+        crime_amount = client.data[ctx.guild.id]['economy']['crime']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['crime']['max']   
         amount = (random.randint(-int(crime_amount/2) , crime_amount))    
         x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
         if "0" in x :
@@ -359,7 +359,7 @@ class Economy(commands.Cog):
             mem_total = member_bal["bank"] + member_bal["cash"]
             user_cash = user_bal["cash"]
 
-            rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else defult_economy['rob']['percent'] 
+            rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else default_economy['rob']['percent'] 
             if mem_total < 5000:
                 if user_cash < 1000:
                     await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , int(abs(mem_total) * rob_amount)  , ctx.author.id , ctx.guild.id) 

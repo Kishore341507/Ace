@@ -1,11 +1,11 @@
 import discord
 from discord.ext import commands
 import asyncio
-from database import *
 from discord.ext.commands import BucketType, cooldown
 from datetime import datetime
-# import traceback
 import typing
+from database import client
+from utils import bembed, check_perms, ConfirmView, pvc_coin
 
 class SelectUer(discord.ui.View):
     def __init__(self , user = None , role = None):
@@ -84,11 +84,11 @@ class PVC_COMMANDS(commands.Cog):
                 return
             
             id = int(select.values[0])
-            view1 = Confirm()
+            view1 = ConfirmView()
             await interaction.response.send_message( embed = bembed(f"Are You Sure ? You want to delete <#{id}> ?") , view = view1 ,ephemeral = True)
             await view1.wait()
             if view1.value :
-                view2 = Confirm()
+                view2 = ConfirmView()
                 await interaction.followup.send( embed = bembed(f"Do You Want To Refund {pvc_coin(ctx.guild.id)[1]}'s To User ?") , view = view2 ,  ephemeral = True)
                 await view2.wait()
                 if view2.value :
@@ -106,7 +106,7 @@ class PVC_COMMANDS(commands.Cog):
                 await interaction.response.send_message( embed = bembed("Not Your Interaction"), ephemeral = True)
                 return
 
-            view0 = Confirm()
+            view0 = ConfirmView()
             await interaction.response.send_message( embed = bembed("Only Delete the Empty PVC's ? **(1/3)**\nConfirm : delete only empty pvc's\nCencel : All pvc's") , view = view0 ,ephemeral = True)
             await view0.wait()
             if view0.value :
@@ -116,11 +116,11 @@ class PVC_COMMANDS(commands.Cog):
             else :
                 return
 
-            view1 = Confirm()
+            view1 = ConfirmView()
             await interaction.response.send_message( embed = bembed("Are You Sure ? **(2/3)**") , view = view1 ,ephemeral = True)
             await view1.wait()
             if view1.value :
-                view2 = Confirm()
+                view2 = ConfirmView()
                 await interaction.followup.send( embed = bembed(f"Do You Want To Rrfund {pvc_coin(ctx.guild.id)[1]}'s To User ? **(3/3)**") , view = view2 ,  ephemeral = True)
                 await view2.wait()
                 if view2.value :
@@ -231,7 +231,7 @@ class PVC_COMMANDS(commands.Cog):
         owner = ctx.guild.get_channel(info['vcid'])
         if owner is None :
             return
-        view = Confirm(owner)      
+        view = ConfirmView(owner)      
         await ctx.reply( embed = bembed(f'{owner.mention} , {ctx.author} want to join your vc !') , view = view)
         await view.wait()
         if view.value :
@@ -466,7 +466,7 @@ class PVC_COMMANDS(commands.Cog):
             if info == None or ctx.guild.get_channel(info['vcid']) is None :
                 return
 
-            confirm = Confirm(ctx.author)
+            confirm = ConfirmView(ctx.author)
             await interaction.response.send_message( embed = bembed(f"Want To Delete Your PVC ? will get {pvc_coin(interaction.guild.id)[0]} {int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) : ,} back ") , view = confirm , ephemeral = True)
             await confirm.wait()
             if confirm.value :
@@ -695,7 +695,7 @@ class PVC_COMMANDS(commands.Cog):
                 await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
                 return
             
-            confirm = Confirm(interaction.user)
+            confirm = ConfirmView(interaction.user)
             await interaction.response.send_message( embed = bembed(f"Want To Delete Your PVC ? will get {pvc_coin(interaction.guild.id)[0]} {int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) : ,} back ") , view = confirm , ephemeral = True)
             await confirm.wait()
             if confirm.value :

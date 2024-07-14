@@ -3,16 +3,17 @@ import os
 from discord.ext import commands
 import typing
 from tabulate import tabulate
-from database import *
 import time
 from datetime import datetime
+from database import client
+from utils import bembed
 
 class Owner(commands.Cog):
 
     def __init__(self , client):
         self.client = client
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(description="Owner only command.")
     @commands.is_owner()
     async def setactivity(self , ctx , activity : typing.Optional[typing.Literal['unknown', 'playing' , 'streaming' , 'listening' , 'watching' , 'custom' , 'competing' ]] , status : typing.Optional[typing.Literal['online' , 'offline' , 'dnd' , 'idle']] , emoji : discord.PartialEmoji = None , * ,  input : str ):
         status_set = None
@@ -45,10 +46,10 @@ class Owner(commands.Cog):
         embed = discord.Embed(color= 0x2b2c31 , description = "Bot Presence Updated" )
         await ctx.send(embed = embed)
 
-    @commands.hybrid_command()
+    @commands.command()
     @commands.is_owner()
-    async def eval(self, ctx, type: typing.Optional[bool] = False, *, input: str):
-        if type:
+    async def eval(self, ctx, to_await: typing.Optional[bool] = False, output: typing.Optional[bool] = True, *, input: str):
+        if to_await:
             data = await eval(input)
         else:
             data = eval(input)
@@ -56,32 +57,34 @@ class Owner(commands.Cog):
         if input.find("config") != -1:
             data = "-1"
         # self.lis[0] = data
-            
-        max_size = 1000
+
+        max_size = 900
         if len(str(data)) > max_size:
             data_list = [data[i:i + max_size] for i in range(0, len(data), max_size)]
         else:
             data_list = [data]
-        embeds = []
-        embeds.append(bembed().add_field(name="**Input**", value=f"```py\n{input}```"))
-        i = 1
-        edited_first_embed = False
+            embeds = []
+            embeds.append(bembed(color=client.my_hex).add_field(name="**Input**",
+                                            value=f"```py\n{input}\n```"))
+            i = 1
+            edited_first_embed = False
 
         for data in data_list:
             if not edited_first_embed:
-                embeds[0].add_field(name=f"Output {i}", value=f"```py\n{data}```", inline=False)
+                embeds[0].add_field(name=f"Output {i}", value=f"```py\n{data}\n```", inline=False)
                 edited_first_embed = True
                 i += 1
-            else:
-                print(i)
-                embeds.append(bembed().add_field(name=f"**Output {i}**", value=f"```py\n{data}```"))
-                i += 1
-        await ctx.send(embeds=embeds)
-
- 
-    @eval.error
-    async def error123(self , ctx , error):
-        await ctx.author.send(error)
+        else:
+            embeds.append(bembed(color=client.my_hex).add_field(name=f"**Output {i}**", value=f"```py\n{data}```"))
+            i += 1
+        em = []
+        for embed in embeds:
+            em.append(embed)
+            if len(em) == 5:
+                await ctx.send(embeds=em)
+                em = []
+        if len(em) !=0:
+            await ctx.send(embeds = em)
 
     @commands.command()
     @commands.is_owner() 
@@ -165,7 +168,7 @@ class Owner(commands.Cog):
                             break
         if file :                       
             await self.unload_fun(file)
-            await ctx.send( embed = discord.Embed(color= 0x2b2c31 , description=f'**{file}** Loaded' )) 
+            await ctx.send( embed = discord.Embed(color= 0x2b2c31 , description=f'**{file}** Unloaded' )) 
 
     async def reload_fun(self , extension):
         await self.client.reload_extension(f'commands.{extension}')
@@ -190,7 +193,7 @@ class Owner(commands.Cog):
                             break
         if file :                       
             await self.reload_fun(file)
-            await ctx.send( embed = discord.Embed(color= 0x2b2c31 , description=f'**{file}** Loaded' )) 
+            await ctx.send( embed = discord.Embed(color= 0x2b2c31 , description=f'**{file}** Reloaded' )) 
 
     @reload.error
     async def reload_error(self ,ctx , error):
@@ -317,7 +320,7 @@ class Owner(commands.Cog):
         embed.add_field(name="**Uptime** ",value=f"<:timer_:1207146799970652221> **{int(days)}d {int(hours)}h {int(minutes)}m {int(elpased_time)}s**")
         await ctx.reply(embed=embed)
 
-    @commands.hybrid_group(name="updateprofile", aliases=['upp'], description="Update my profile.", case_insensitive=True)
+    @commands.group(name="updateprofile", aliases=['me'], description="Update my profile.", case_insensitive=True)
     @commands.is_owner()
     @commands.guild_only()
     async def updateprofile(self, ctx, av: bool = True, bn: bool = True):
@@ -392,4 +395,4 @@ class Owner(commands.Cog):
         await ctx.reply("**Refreshed client data.")
 
 async def setup(client):
-   await client.add_cog(Owner(client))        
+   await client.add_cog(Owner(client))

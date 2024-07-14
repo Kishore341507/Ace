@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
-from database import *
 import random
 from discord.ext.commands import BucketType, cooldown
+from database import client
+from utils import coin, open_account, check_channel, amountconverter, default_games
 
 
 class BjButton(discord.ui.Button['bjview']):
@@ -179,8 +180,8 @@ class Bj(commands.Cog):
     async def bj(self, ctx, amount: amountconverter):
         await ctx.defer()
         
-        _max = client.data[ctx.guild.id]['games']['blackjack']['max'] if client.data[ctx.guild.id]['games'] else defult_games['blackjack']['max']
-        _min = client.data[ctx.guild.id]['games']['blackjack']['min'] if client.data[ctx.guild.id]['games'] else defult_games['blackjack']['min']
+        _max = client.data[ctx.guild.id]['games']['blackjack']['max'] if client.data[ctx.guild.id]['games'] else default_games['blackjack']['max']
+        _min = client.data[ctx.guild.id]['games']['blackjack']['min'] if client.data[ctx.guild.id]['games'] else default_games['blackjack']['min']
         
         bj_amount = _max
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
