@@ -3,7 +3,7 @@ from discord.ext import commands
 from database import client
 from utils import bembed
 import time
-import datetime
+from datetime import datetime
 from dotenv import load_dotenv
 import os
 
