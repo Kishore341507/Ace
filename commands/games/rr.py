@@ -64,7 +64,7 @@ class MyView(View):
         
         bal2 = await client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
         if bal2 is None:
-            await interaction.response.edit_message("ok")
+            await interaction.response.send_message("ok")
         elif interaction.user == author:
             await interaction.response.send_message("you cant !!" , ephemeral=True)
         elif interaction.user in player:
@@ -100,7 +100,7 @@ class MyView(View):
         elif interaction.user == self.author and len(player)==1:
             await interaction.response.edit_message(view = None)
             
-            await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, interaction.user.id, interaction.guild.id)
+            # await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, interaction.user.id, interaction.guild.id)
             # await economy.update_one({"id": interaction.user.id} , {"$inc" : {"cash": +amount}})
             self.ctx.command.reset_cooldown(self.ctx)
             self.started = True
@@ -116,7 +116,6 @@ class russian_roulette(commands.Cog):
     @commands.hybrid_command(aliases=["rr"])
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(1, 120, BucketType.guild)
     async def russianroulette(self , ctx , amount: amountconverter ):
     
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
@@ -139,11 +138,11 @@ class russian_roulette(commands.Cog):
                 if amount > _max:
                     amount=_max 
         if amount > bal['cash']:
-            await ctx.send('You do not have enough money to rr in you **cash**')
+            await ctx.send('You do not have enough money to rr in your **cash**')
             ctx.command.reset_cooldown(ctx)
-        elif amount <= _min:
-            await ctx.send(f'You cannot rr {_min} or less')
-            ctx.command.reset_cooldown(ctx)   
+        elif amount <= _min or amount > _max:
+            await ctx.send(embed=bembed(f'You cannot rr less than and equal to {coin(ctx.guild.id)} {_min:,} or more than {coin(ctx.guild.id)} {_max:,}', discord.Color.brand_red()).set_author(ctx.author)) 
+            ctx.command.reset_cooldown(ctx)
         else: 
             await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id) 
             view = MyView(timeout=240 , amount= amount , author = ctx.author , ctx = ctx)

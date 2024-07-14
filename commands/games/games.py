@@ -19,10 +19,8 @@ class Games(commands.Cog):
     @commands.hybrid_command(aliases=["cf"])
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(2, 60, BucketType.user)
+    @cooldown(1, 6, BucketType.member)
     async def flip(self , ctx , amount : amountconverter  ,  side : typing.Literal[ 'head', 'tail' , 'h','t' ] = "head"):
-        
-             
         user = ctx.author
         _max = client.data[ctx.guild.id]['games']['coinflip']['max'] if client.data[ctx.guild.id]['games'] else default_games['coinflip']['max']
         _min = client.data[ctx.guild.id]['games']['coinflip']['min'] if client.data[ctx.guild.id]['games'] else default_games['coinflip']['min']
@@ -79,7 +77,7 @@ class Games(commands.Cog):
     @commands.hybrid_command(aliases=["st"])
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(1, 3, BucketType.user)
+    @cooldown(1, 6, BucketType.member)
     async def slot( self , ctx , amount : amountconverter ):
         ecoembed = discord.Embed(color=  0x08FC08)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
@@ -120,19 +118,32 @@ class Games(commands.Cog):
                 await ctx.send(f'You cannot slot {_min} , less or more then {st_amount}') 
         else :
                 if first == second == third:
-                    ecoembed.description=f"you won {coin(ctx.guild.id)} {3*amount}\n\n{outupt}" 
+                    ecoembed.description=f"You won {coin(ctx.guild.id)} {3*amount}\n\n{outupt}" 
                     await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
+                    ecoembed.color =  discord.Color.brand_green()
                     await ctx.send(embed=ecoembed)
                 elif first == second or second  == third:
-                    ecoembed.description=f"you won {coin(ctx.guild.id)} {int(1.5*amount)} \n\n{outupt}"
+                    ecoembed.description=f"You won {coin(ctx.guild.id)} {int(1.5*amount)} \n\n{outupt}"
                     await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , (int(0.5*amount)) , ctx.author.id , ctx.guild.id) 
+                    ecoembed.color =  discord.Color.brand_green()
                     await ctx.send(embed=ecoembed)
                 else:
-                    ecoembed.description=f"you lost {coin(ctx.guild.id)} {amount}\n\n{outupt}" 
+                    ecoembed.description=f"You lost {coin(ctx.guild.id)} {amount}\n\n{outupt}" 
                     await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-                    ecoembed.color =  discord.Color.red()
+                    ecoembed.color =  discord.Color.brand_red()
                     await ctx.send(embed=ecoembed)
-                     
+    
+    @slot.error
+    @commands.guild_only()
+    @commands.check(check_channel)
+    async def slot_error(self,ctx , error):
+        ecoembed = discord.Embed(color= 0xF90651)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        if isinstance(error, commands.CommandOnCooldown):
+            sec = int(error.retry_after)
+            ecoembed.description = f"⌚ | You are on cooldown try again in {sec}seconds."
+            await ctx.send (embed = ecoembed)
+            return
 
 
 #------------------------------------------------xxx--------------------------------------------------------------------------------
