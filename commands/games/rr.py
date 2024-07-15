@@ -117,6 +117,7 @@ class russian_roulette(commands.Cog):
     @commands.hybrid_command(aliases=["rr"])
     @commands.guild_only()
     @commands.check(check_channel)
+    @commands.cooldown(1, 120, commands.BucketType.guild)
     async def russianroulette(self , ctx , amount: amountconverter ):
     
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
