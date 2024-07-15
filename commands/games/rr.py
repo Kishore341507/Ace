@@ -51,7 +51,7 @@ class MyView(View):
                     else :
                         item = next(y)
                         ecoembed.description = f"**{item}** pulls the trigger... and survives!"
-                        ecoembed.color = discord.Color.green()
+                        ecoembed.color = discord.Color.brand_green()
                         await self.ctx.send(embed=ecoembed)
     
     @discord.ui.button(label = "Join" , style=discord.ButtonStyle.green )
@@ -100,9 +100,9 @@ class MyView(View):
         elif interaction.user == self.author and len(player)==1:
             await interaction.response.edit_message(view = None)
             
-            # await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, interaction.user.id, interaction.guild.id)
+            await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", amount, interaction.user.id, interaction.guild.id)
             # await economy.update_one({"id": interaction.user.id} , {"$inc" : {"cash": +amount}})
-            await self.ctx.send("The Russian Roulette game ended.\n\n**No Winners.**")
+            await self.ctx.send("The Russian Roulette game ended.\n\n**Not enought Participants.**")
             self.ctx.command.reset_cooldown(self.ctx)
             self.started = True
 
