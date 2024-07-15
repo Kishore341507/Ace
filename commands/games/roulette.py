@@ -40,7 +40,7 @@ class Roulette(commands.Cog):
             return 2
         elif user["space"] == "1-18" and result["number"] in range(1,19):
             return 2 
-        elif user["space"] == "19-36" and result["number"] in range(19,36):
+        elif user["space"] == "19-36" and result["number"] in range(19,37):
             return 2
         elif user["space"] == "1st" and result["number"] in [1,4,7,10,13,16,19,22,25,28,31,34]:
             return 3
@@ -52,11 +52,9 @@ class Roulette(commands.Cog):
             return 3
         elif user["space"] == "13-24" and result["number"] in range(13,25):
             return 3
-        elif user["space"] == "13-24" and result["number"] in range(13,25):
+        elif user["space"] == "25-36" and result["number"] in range(25,37):
             return 3
-        elif user["space"] == "25-36" and result["number"] in range(25,36):
-            return 3
-        elif user["space"] in range(0,36) and result["number"] == user["space"] :
+        elif user["space"] in range(0,37) and result["number"] == user["space"] :
             return 36
         else :
             return 0 
