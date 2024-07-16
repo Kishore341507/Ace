@@ -410,7 +410,7 @@ class Economy(commands.Cog):
             return
         if isinstance(error, commands.MemberNotFound): 
             ctx.command.reset_cooldown(ctx)
-            await ctx.send(embed = discord.Embed( description= "Can't find user !!!", discord.Color.brand_red()))
+            await ctx.send(embed = discord.Embed( description= "Can't find user !!!", color=discord.Color.brand_red()))
             return      
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(embed = discord.Embed( description= "Not enough arguments passed !!!"))
