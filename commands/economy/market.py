@@ -228,6 +228,7 @@ class Market(commands.Cog):
   @commands.check(check_channel)
   @commands.check(check_market)
   @cooldown(1, 10, BucketType.member)
+  @commands.max_concurrency(1, BucketType.guild, wait=True)
   async def buystocks(self, ctx, amount: str):
     
     total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
@@ -247,7 +248,7 @@ class Market(commands.Cog):
     total_cost = buy_stocks(amount, current_stocks, total_economy)
 
     if bal['bank'] < total_cost:
-      await ctx.send(embed=bembed(f"<:pixel_error:1187995377891278919> Failed: You dont have enough Money, You need {coin(ctx.guild.id)}{total_cost}:,"))
+      await ctx.send(embed=bembed(f"<:pixel_error:1187995377891278919> Failed: You dont have enough Money, You need {coin(ctx.guild.id)} {total_cost:,}."))
       return
     else:
       await self.client.db.execute('UPDATE users SET bank = bank - $1, stocks = stocks + $2 WHERE id = $3 AND guild_id = $4', total_cost, amount, ctx.author.id, ctx.guild.id)
@@ -284,6 +285,7 @@ class Market(commands.Cog):
   @commands.check(check_channel)
   @commands.check(check_market)
   @cooldown(1, 10, BucketType.member)
+  @commands.max_concurrency(1, BucketType.guild, wait=True)
   async def sellstocks(self, ctx, amount: str):
     total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
     amount, total_economy, sold_stocks, bal = await amountConverterMarket(ctx.author.id, ctx.guild.id, amount, "sell", total_stocks)
