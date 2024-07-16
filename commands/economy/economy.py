@@ -81,13 +81,13 @@ class Economy(commands.Cog):
             pass
 
 #------------------------------------------------xxx--------------------------------------------------------------------------------
-#                                              BALANCE
+#                                              Extra
 
  
     @commands.hybrid_command(aliases=["report"])
     @commands.guild_only()
     # @commands.check(check_channel_pvc)
-    @cooldown(1, 5, BucketType.user)
+    @cooldown(1, 5, BucketType.member)
     async def bug(self, ctx, screenshot: typing.Optional[discord.Attachment] = None, *, message):
         channel  = client.get_channel(1209630599472750622)
         invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else await (ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
@@ -100,12 +100,35 @@ class Economy(commands.Cog):
             embed.set_image(url = screenshot.url)
         await channel.send(content=f"**A new bug report for {client.user.name}**", embed = embed )
         await ctx.reply(embed = bembed("Thanks for the report, we will look into it soon and fix it appropriately!"))
-         
-   
+        
+        
+    @commands.hybrid_command(aliases=["up"])
+    @commands.guild_only()
+    @commands.check(check_channel)
+    @cooldown(1, 5, BucketType.member)
+    async def userprofile(self,ctx,user:typing.Optional[discord.Member]=None):
+        user = user or ctx.author
+        embed = discord.Embed(color=0x00000 , description = user.mention, timestamp = datetime.now())
+        embed.set_author(name = user, icon_url = user.display_avatar)
+        embed.add_field(name = "User ID", value = int(user.id))
+        embed.add_field(name = "Joined Discord", value = f"<t:{int(user.created_at.timestamp())}:F>\n<t:{int(user.created_at.timestamp())}:R>", inline = False)
+        embed.add_field(name = "Joined Server", value = f"<t:{int(user.joined_at.timestamp())}:F>\n<t:{int(user.joined_at.timestamp())}:R>", inline = False)
+        embed.add_field(name = "Highest Role", value = (user.top_role).mention, inline = False)
+        embed.set_thumbnail(url = user.display_avatar)
+        req = await client.http.request(discord.http.Route("GET", "/users/{uid}", uid=user.id))
+        banner_id = req["banner"]
+        banner_url = ""
+        if banner_id:
+            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}.gif?size=1024"
+        embed.set_image(url=banner_url)
+        await ctx.send(embed=embed) 
+#------------------------------------------------xxx--------------------------------------------------------------------------------
+#                                              Balance
+
     @commands.hybrid_command(aliases=["bal"])
     @commands.guild_only()
     @commands.check(check_channel_pvc)
-    @cooldown(1, 5, BucketType.user)
+    @cooldown(1, 5, BucketType.member)
     async def balance(self, ctx, user: discord.Member = None):
         user = user or ctx.author
         bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
@@ -138,28 +161,6 @@ class Economy(commands.Cog):
             embed.set_footer(text=f"Use /bug to report a bug")
             
         await ctx.send( embed=embed  ) 
-        
-        
-    @commands.hybrid_command(aliases=["up"])
-    @commands.guild_only()
-    @commands.check(check_channel)
-    @cooldown(1, 5, BucketType.user)
-    async def userprofile(self,ctx,user:typing.Optional[discord.Member]=None):
-        user = user or ctx.author
-        embed = discord.Embed(color=0x00000 , description = user.mention, timestamp = datetime.now())
-        embed.set_author(name = user, icon_url = user.display_avatar)
-        embed.add_field(name = "User ID", value = int(user.id))
-        embed.add_field(name = "Joined Discord", value = f"<t:{int(user.created_at.timestamp())}:F>\n<t:{int(user.created_at.timestamp())}:R>", inline = False)
-        embed.add_field(name = "Joined Server", value = f"<t:{int(user.joined_at.timestamp())}:F>\n<t:{int(user.joined_at.timestamp())}:R>", inline = False)
-        embed.add_field(name = "Highest Role", value = (user.top_role).mention, inline = False)
-        embed.set_thumbnail(url = user.display_avatar)
-        req = await client.http.request(discord.http.Route("GET", "/users/{uid}", uid=user.id))
-        banner_id = req["banner"]
-        banner_url = ""
-        if banner_id:
-            banner_url = f"https://cdn.discordapp.com/banners/{user.id}/{banner_id}.gif?size=1024"
-        embed.set_image(url=banner_url)
-        await ctx.send(embed=embed) 
           
 #------------------------------------------------xxx--------------------------------------------------------------------------------
 #                                              WITHDRAW
@@ -167,7 +168,7 @@ class Economy(commands.Cog):
     @commands.hybrid_command(aliases=["with"])
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(1, 5, BucketType.user)
+    @cooldown(1, 5, BucketType.member)
     async def withdraw(self, ctx, amount: amountconverter ):
         user = ctx.author
         ecoembed = discord.Embed(color= 0xF90651 )
@@ -201,7 +202,7 @@ class Economy(commands.Cog):
     @commands.hybrid_command(aliases=["dep"])
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(3, 3, BucketType.user)
+    @cooldown(1, 2, BucketType.member)
     async def deposit(self, ctx, amount:  amountconverter ):
         user = ctx.author
         ecoembed = discord.Embed(color= 0x08FC08)
@@ -241,7 +242,7 @@ class Economy(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @commands.dynamic_cooldown( cooldown_funtion , type = BucketType.member)
+    @commands.dynamic_cooldown(cooldown_funtion, type = BucketType.member)
     async def work(self , ctx):
         ecoembed = discord.Embed(color=  0x08FC08)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
@@ -326,7 +327,8 @@ class Economy(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @commands.dynamic_cooldown( cooldown_funtion , BucketType.member  )
+    @commands.dynamic_cooldown( cooldown_funtion , BucketType.member)
+    @commands.max_concurrency(1, BucketType.guild, wait=True)
     async def rob(self, ctx, user:   discord.Member):
         ecoembed = discord.Embed(color= 0xF90651)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
@@ -352,7 +354,7 @@ class Economy(commands.Cog):
             if member_bal['bank'] < 0 or member_bal['cash'] < 0:
                 embed=bembed('Balance in bank and cash should be positive :c', discord.Color.brand_red())
                 embed.set_author(name=ctx.author.display_name, icon_url= ctx.author.display_avatar)
-                embed.set_footer(text="use resetmoney command to reset your economy")
+                embed.set_footer(text="Use resetmoney command to reset your economy.")
                 await ctx.reply(embed=embed)
                 ctx.command.reset_cooldown(ctx)
                 return
@@ -408,7 +410,7 @@ class Economy(commands.Cog):
             return
         if isinstance(error, commands.MemberNotFound): 
             ctx.command.reset_cooldown(ctx)
-            await ctx.send(embed = discord.Embed( description= "cant find user !!!"))
+            await ctx.send(embed = discord.Embed( description= "Can't find user !!!", discord.Color.brand_red()))
             return      
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(embed = discord.Embed( description= "Not enough arguments passed !!!"))
@@ -420,7 +422,7 @@ class Economy(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(1, 2, BucketType.user)
+    @cooldown(1, 2, BucketType.member)
     async def give(self, ctx, user: discord.Member , amount:  amountconverter ):
         ecoembed = discord.Embed(color=  0xF90651)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
@@ -446,13 +448,11 @@ class Economy(commands.Cog):
             ecoembed.description = 'You cannot send 0 or less'
             await ctx.send (embed = ecoembed)
         else:
-            
             await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
             x = await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
             if "0" in x :
                 await open_account(ctx.guild.id , user.id)
                 await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
-            
             ecoembed.description = f'You have sent {coin(ctx.guild.id)} {amount :,} to {user}'
             ecoembed.color = 0x08FC08
             await ctx.send (embed = ecoembed)
@@ -463,7 +463,7 @@ class Economy(commands.Cog):
     @commands.hybrid_command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(3,300 , BucketType.user)
+    @cooldown(3, 300, BucketType.member)
     async def resetmoney(self , ctx , user : discord.Member = None):
         
         if user and check_perms(ctx) :
@@ -617,7 +617,7 @@ class Economy(commands.Cog):
     @commands.hybrid_command(aliases=["lb"])
     @commands.guild_only()
     @commands.check(check_channel_pvc)
-    @cooldown(3, 60, BucketType.user)
+    @cooldown(3, 60, BucketType.member)
     async def leaderboard(self , ctx ,page: typing.Optional[int] = 1, type : str = "total" ):
         if self.client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id and ( self.client.data[ctx.guild.id]['channels'] != None and ctx.channel.id not in self.client.data[ctx.guild.id]['channels'] ):
             type = 'pvc'
