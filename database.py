@@ -52,7 +52,7 @@ class MyBot(commands.Bot):
         print(f"Finished loading all the Cogs.")
         self.start_time = datetime.now()
         try:
-            self.error_logging_ch = await self.fetch_channel(1224915641094504601)
+            self.error_logging_ch = await self.fetch_channel(1209630548746706944)
         except discord.errors.Forbidden:
             await self.unload_extension('commands.owner.logging')
 

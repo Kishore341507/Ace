@@ -235,6 +235,9 @@ class Market(commands.Cog):
     amount, total_economy, sold_stocks, bal = await amountConverterMarket(ctx.author.id, ctx.guild.id, amount, "buy", total_stocks)
     current_stocks = total_stocks - sold_stocks
     
+    if amount > 100000:
+      return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> Failed: You cannot buy more than 100,000 shares at once."))
+
     if bal['cash'] < 0:
       await ctx.command.reset_cooldown(ctx)
       return await ctx.send(embed=bembed('<:pixel_error:1187995377891278919> Failed: Your Cash should not be in negative.'))
@@ -290,6 +293,9 @@ class Market(commands.Cog):
     total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
     amount, total_economy, sold_stocks, bal = await amountConverterMarket(ctx.author.id, ctx.guild.id, amount, "sell", total_stocks)
     user_shares = bal['stocks']
+
+    if amount > 100000:
+      return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> Failed: You cannot sell more than 100,000 shares at once."))
 
     if not user_shares or user_shares <= 0: 
       return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> Failed: You do not own any shares to sell."))
@@ -390,6 +396,9 @@ class Market(commands.Cog):
     total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
     amount, total_economy, sold_stocks, bal = await amountConverterMarket(ctx.author.id, ctx.guild.id, shares, "buy", total_stocks)
     current_stocks = total_stocks - sold_stocks
+
+    if amount > 100000:
+      return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> Failed: You cannot buy/sell more than 100,000 shares at once."))
 
     if amount > current_stocks:
       return await ctx.send(embed=bembed('<:pixel_error:1187995377891278919> Failed: Not enough shares available in the market.'))

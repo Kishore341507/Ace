@@ -10,8 +10,11 @@ import os
 @client.event
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
-    # user = client.get_user(591011843552837655)
-    # await user.send(f"{client.user} is Online Now")
+    # send message to the logging channel
+    embed = bembed("Bot is online!", discord.Color.green())
+    embed.set_footer(text="Bot is now online.")
+    embed.timestamp = datetime.now()
+    await client.error_logging_ch.send(embed=embed)
 
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
