@@ -162,8 +162,6 @@ class Market(commands.Cog):
   @commands.check(check_market)
   @cooldown(1, 5, BucketType.member)
   async def market(self, ctx):
-    if ctx.guild.id not in self.stock_data:
-      self.stock_data[ctx.guild.id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
     total_stocks = self.client.data[ctx.guild.id]['market']['stocks']
     docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;", ctx.guild.id)
     
@@ -174,6 +172,8 @@ class Market(commands.Cog):
     current_rate = math.ceil((total_economy / max(1, current_stocks)) * 1 / 2)
     embed = discord.Embed(description=f"**__Market Details__**\n\nCurrent Value  : {coin(ctx.guild.id)} {current_rate}\n\n**__Market Stats__**")
 
+    if ctx.guild.id not in self.stock_data:
+      self.stock_data[ctx.guild.id] = { 'data' : [current_rate] , 'time' : [datetime.now().timestamp()] }
     self.stock_data[ctx.guild.id]['data'].append(round((total_economy / max(1, current_stocks) * 1 / 2) , 2))
     self.stock_data[ctx.guild.id]['time'].append(datetime.now().timestamp())
 
