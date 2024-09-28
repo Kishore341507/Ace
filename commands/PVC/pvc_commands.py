@@ -150,7 +150,7 @@ class PVC_COMMANDS(commands.Cog):
     @commands.command()
     @commands.guild_only()
     @commands.check(check_channel)
-    @cooldown(1, 600, BucketType.member)
+    @cooldown(1, 300, BucketType.member)
     async def rename(self , ctx , * , name : str):
         
         info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
@@ -250,9 +250,7 @@ class PVC_COMMANDS(commands.Cog):
         
         def check(ctx) ->bool : 
             return (client.data[ctx.guild.id]['pvc']) and (client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id or client.data[ctx.guild.id]['channels'] is None or len(client.data[ctx.guild.id]['channels']) == 0  or ctx.channel.id in client.data[ctx.guild.id]['channels']) 
- 
-        print(check(ctx))
-        print(ctx.channel.id == info['vcid'])
+
         if not check(ctx) and not ctx.channel.id == ctx.guild.get_channel(info['vcid']).id :
             return 
         # async def updateinfo() :
@@ -706,6 +704,30 @@ class PVC_COMMANDS(commands.Cog):
                     pass
                 await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) , interaction.user.id , interaction.guild.id )
 
+        @discord.ui.button(emoji= '📢' , custom_id="pvc:public", row=2)
+        async def public(self, interaction: discord.Interaction , button: discord.ui.Button,):
+            info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            if not client.data[interaction.guild.id]['pvc_public'] :
+                await interaction.response.send_message(embed =bembed(f"Public PVC is Disabled in server") , ephemeral=True)
+                return
+            
+            if info == None or interaction.guild.get_channel(info['vcid']) is None :
+                await interaction.response.send_message(embed =bembed(f"Create a PVC first with `pvc <duration>` command") , ephemeral=True)
+                return
+            if interaction.guild.get_channel(info['vcid']) and interaction.guild.get_channel(info['vcid']).permissions_for( interaction.guild.default_role).connect :
+                overwrite = interaction.guild.get_channel(info['vcid']).overwrites_for(interaction.guild.default_role)
+                overwrite.update(connect = False)
+                overwrites = {**interaction.guild.get_channel(info['vcid']).overwrites , interaction.guild.default_role : overwrite }
+                await interaction.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = 0 )
+                await interaction.response.send_message( embed = bembed("VC is Private Now") , ephemeral = True)
+            elif interaction.guild.get_channel(info['vcid']) and interaction.guild.get_channel(info['vcid']).permissions_for( interaction.guild.default_role).connect == False:
+                overwrite = interaction.guild.get_channel(info['vcid']).overwrites_for(interaction.guild.default_role)
+                overwrite.update(connect = True)
+                overwrites = {**interaction.guild.get_channel(info['vcid']).overwrites , interaction.guild.default_role : overwrite }
+                await interaction.guild.get_channel(info['vcid']).edit(overwrites = overwrites , user_limit = client.data[interaction.guild.id]['pvc_public'] if client.data[interaction.guild.id]['pvc_public'] != 100 else 0 )
+                await interaction.response.send_message( embed = bembed(f"VC is Public Now") , ephemeral = True )
+
+
     @commands.hybrid_command(aliases = ['panel'])
     @commands.guild_only()
     @cooldown(1, 10, BucketType.guild)
@@ -715,9 +737,10 @@ class PVC_COMMANDS(commands.Cog):
 
         embed.set_author(name='PVC Panel', icon_url=ctx.guild.icon)
         embed.title = "Click on the buttons to perform actions\n"
-        embed.add_field(name=" " , value="<:info:1188641528554455070> : Pvc Information\n\n<:add:1188641489392238662> : Add User\n\n<:remove:1188641493422977085> : Remove User\n\n👁️ : Hide/Unhide" )
+        embed.add_field(name=" " , value="<:info:1188641528554455070> : Pvc Information\n\n<:add:1188641489392238662> : Add User\n\n<:remove:1188641493422977085> : Remove User\n\n👁️ : Hide/Unhide\n\n📢 : Public/Private")
         embed.add_field(name=" " , value="<:users:1188641484895961228> : Add/Remove Friends\n\n🛺 : Auto Mode\n\n👑 : Transfer Ownership\n\n<:bin:1188639295423139950> : Delete PVC" )
         view = PVC_COMMANDS.PanelView()
+            
         await ctx.send(embed = embed , view = view)
     
     

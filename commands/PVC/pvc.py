@@ -149,6 +149,11 @@ class PVC(commands.Cog):
                 member : discord.PermissionOverwrite(connect=True ,  view_channel = True)
                 }
 
+                if client.data[member.guild.id]['pvc_perms'] :
+                    for role in client.data[member.guild.id]['pvc_perms'] :
+                        if member.guild.get_role(int(role)) :
+                            overwrites[member.guild.get_role(int(role))] = discord.PermissionOverwrite.from_pair( discord.Permissions( client.data[member.guild.id]['pvc_perms'][role]['allow']) , discord.Permissions( client.data[member.guild.id]['pvc_perms'][role]['deny']) )
+
                 if copy_channel and copy_channel.members != 0 :
                     for i , vc_member in enumerate(copy_channel.members , 1) :
                         if i > 10 :

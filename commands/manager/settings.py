@@ -1154,6 +1154,16 @@ class Settings(commands.Cog):
                     value=join_to_create_pvc_channel,
                     inline=False)
     embed.add_field(name="PVC Category", value=pvc_category, inline=False)
+    perms_value = ''
+    if client.data[guild.id]["pvc_perms"]:
+      for role in client.data[guild.id]["pvc_perms"]:
+        if guild.get_role(int(role)):
+          perms_value += guild.get_role(int(role)).mention + '\n' + 'Allow :' +' ,'.join([i[0] for i in discord.Permissions(client.data[guild.id]["pvc_perms"][role]['allow']) if i[1] == True]) + '\n' + 'Deny :' +' ,'.join([i[0] for i in discord.Permissions(client.data[guild.id]["pvc_perms"][role]['deny']) if i[1] == True]) + '\n'
+    
+    if perms_value != '' and len(perms_value) < 999:
+      embed.add_field(name="PVC Role Permissions", value=perms_value, inline=False)
+
+    embed.add_field(name="Public PVC", value= f'vc limit : {client.data[guild.id]['pvc_public']}' if client.data[guild.id]['pvc_public']!=0 else 'Off' , inline=False)
 
     # Creating the view for PVC settings
     class pvcSettingsView(discord.ui.View):
@@ -1222,7 +1232,15 @@ class Settings(commands.Cog):
               discord.SelectOption(label="PVC Category",
                                    emoji="<:settings:1187254549828882562>",
                                    description="Change the category for pvc.",
-                                   value="7")
+                                   value="7"),
+              discord.SelectOption(label="PVC Role Permissions",
+                                   emoji="<:settings:1187254549828882562>",
+                                   description="Set Role Permissions in PVC.",
+                                   value="8") ,                   
+              discord.SelectOption(label="Public PVC",
+                                   emoji="<:settings:1187254549828882562>",
+                                   description="Set Public PVC Settings.",
+                                   value="9")                     
           ],
           custom_id="pvc_setings_select")
       async def pvc_setings_select(self, interaction: discord.Interaction,
@@ -1475,13 +1493,153 @@ class Settings(commands.Cog):
               ephemeral=True)
           await view1.wait()
 
+
           # Updating the original message
           embed, view = await Settings.pvcSettingsMessage(self.guild)
           view.user_id = self.user_id
           view.message = self.message
           await interaction.message.edit(embed=embed, view=view)
           return
+        
+        # PVC Role Permissions
+        elif selection == 8:
 
+          async def button_callback(interaction):
+            role = pvc_permission_role_select.values
+            allowed_perms = pvc_allowed_permissions_select.values
+            denied_perms = pvc_denied_permissions_select.values
+
+            if not client.data[interaction.guild.id]["pvc_perms"]  :
+              client.data[interaction.guild.id]["pvc_perms"] = {}
+
+            if len(role) == 0:
+              await interaction.response.send_message(
+                  embed=bembed("No role selected."),
+                  ephemeral=True)
+              return
+            elif len(allowed_perms) == 0 and len(denied_perms) == 0:
+              client.data[interaction.guild.id]["pvc_perms"].pop(
+                  str(role[0].id), None)
+              await client.db.execute(
+                  'UPDATE guilds SET pvc_perms = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]["pvc_perms"],
+                  interaction.guild.id)
+              await interaction.response.edit_message(
+                  embed=bembed("Role permissions reset."), view=None)
+              view1.stop()
+              return
+            elif list(set(allowed_perms).intersection(denied_perms)):
+              await interaction.response.send_message(
+                  embed=bembed(
+                      "You can't allow and deny the same permission. remove the common permissions from one of the options."),
+                  ephemeral=True
+              )
+              return
+            else :
+              client.data[interaction.guild.id]["pvc_perms"][str(role[0].id)] = {
+                  "allow": discord.Permissions(**{ i : True for i in allowed_perms}).value,
+                  "deny": discord.Permissions(**{ i : True for i in denied_perms}).value
+              }
+              await client.db.execute(
+                  'UPDATE guilds SET pvc_perms = $1 WHERE id = $2',
+                  client.data[interaction.guild.id]["pvc_perms"],
+                  interaction.guild.id)
+              
+              await interaction.response.edit_message(
+                  embed=bembed("Role permissions updated."), view=None)
+              view1.stop()
+              return
+             
+          async def pvc_allowed_permissions_select_callback(interaction) :
+            await interaction.response.defer()
+          
+          async def pvc_denied_permissions_select_callback(interaction) :
+            await interaction.response.defer()
+          
+          async def pvc_permission_role_select_callback(interaction) :
+            await interaction.response.defer()
+          
+          
+          pvc_permission_role_select = discord.ui.RoleSelect(
+              placeholder="Select a role to set permissions for PVC.")
+          pvc_permission_role_select.callback = pvc_permission_role_select_callback
+
+          all_perms = discord.Permissions.voice()
+          # all_perms.view_channel = True
+          options = [discord.SelectOption(label=perm[0].replace('_', ' ').title() , value=perm[0]) for perm in all_perms if perm[1] == True]
+          options.insert(0,discord.SelectOption(label="View Channel", value="read_messages"))
+
+          pvc_allowed_permissions_select = discord.ui.Select(
+              placeholder="Select the permissions to allow for the role.",
+              options= options ,
+              min_values=1,
+              max_values= min(25,len(options)),
+              custom_id="pvc_allowed_permissions_select")
+          pvc_allowed_permissions_select.callback = pvc_allowed_permissions_select_callback
+
+          pvc_denied_permissions_select = discord.ui.Select(
+              placeholder="Select the permissions to deny for the role.",
+              options= options,
+              min_values=1,
+              max_values=min(25,len(options)),
+              custom_id="pvc_denied_permissions_select")
+          pvc_denied_permissions_select.callback = pvc_denied_permissions_select_callback
+          
+          view1 = discord.ui.View().add_item(pvc_permission_role_select).add_item(pvc_allowed_permissions_select).add_item(pvc_denied_permissions_select)
+          button = discord.ui.Button(style=discord.ButtonStyle.green, label="Done")
+          button.callback = button_callback
+          view1.add_item(button)
+          await interaction.response.send_message(
+              embed=bembed("Use the dropdown below.").set_footer(text="Select the role and remove all Allow/Deny permissions to reset the role permissions."),
+              view=view1,
+              ephemeral=True)
+          await view1.wait()
+          
+          # Updating the original message
+          embed, view = await Settings.pvcSettingsMessage(self.guild)
+          view.user_id = self.user_id
+          view.message = self.message
+          await interaction.message.edit(embed=embed, view=view)
+          return
+        
+        # Public PVC
+        elif selection == 9:
+          modal = multiInputModal([
+              "Vc limit (100 mean unlimited , 0 mean Off)",
+          ], [
+              "Vc limit input should be in numbers",
+          ], [1], [None] , [ str(client.data[interaction.guild.id]['pvc_public']) ])
+          modal.title = "Public Limits Settings"
+          await interaction.response.send_modal(modal)
+          await modal.wait()
+
+          # Checking if the inputs are valid and updating the PVC limits in database
+          has_value_error = False
+          for value in modal.values:
+            try:
+              value = int(value)
+              if value < 0:
+                has_value_error = True
+            except Exception:
+              has_value_error = True
+
+          if has_value_error:
+            await interaction.followup.send("Invalid input detected.",
+                                            ephemeral=True)
+            return
+          else:
+            client.data[interaction.guild.id]['pvc_public'] = int(modal.values[0])
+            await client.db.execute(
+                'UPDATE guilds SET pvc_public = $1 WHERE id = $2',
+                int(modal.values[0]), interaction.guild.id)
+            
+          # Updating the original message
+          embed, view = await Settings.pvcSettingsMessage(self.guild)
+          view.user_id = self.user_id
+          view.message = self.message
+          await interaction.message.edit(embed=embed, view=view)
+          return
+          
         else:
           await interaction.response.send_message(embed=bembed(
               f"<:pixel_error:1187995377891278919> Interaction Failed: Unknown error"
