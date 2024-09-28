@@ -118,6 +118,7 @@ class Market(commands.Cog):
               docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;",guild_id)
             except Exception as e:
               self.client.data[guild_id]['market'] = { 'status' : False  }
+              
               continue  
             total_economy = docs['economy']
             sold_stocks = docs['stocks']
