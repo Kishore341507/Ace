@@ -114,7 +114,11 @@ class Market(commands.Cog):
   async def stock_data_update(self):
       for guild_id in self.client.data:
         if self.client.data[guild_id]['market'] and self.client.data[guild_id]['market']['status'] is True:
-            docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;",guild_id)
+            try :
+              docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;",guild_id)
+            except Exception as e:
+              self.client.data[guild_id]['market'] = { 'status' : False , 'stocks' : 0 }
+              continue  
             total_economy = docs['economy']
             sold_stocks = docs['stocks']
             

@@ -215,6 +215,16 @@ class Owner(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
+    async def leaveguilds(self , ctx) :
+        for guild in self.client.guilds :
+            # leave if member count is less than 1000
+            if guild.member_count < 1000 and guild.id not in [ 1147762977395724330 , 1147763137823637634 , 995100985494089789 ] :
+                await ctx.send(f"leaving {guild.name} ({guild.id})")
+                await guild.leave()
+        await ctx.send("done")
+        
+    @commands.command()
+    @commands.is_owner()
     async def status(self , ctx , leave : bool = False):
 
         total_users = 0
