@@ -42,7 +42,7 @@ class MyBot(commands.Bot):
         #Load Cogs
         
         for filename in os.listdir('./commands'):
-            if filename.endswith('.py'):
+            if filename.endswith('.py') and filename != 'market.py':
                 await self.load_extension( f'commands.{filename[:-3]}')
             elif not filename.endswith('.py'):
                 filenametemp =  filename
