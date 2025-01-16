@@ -26,7 +26,7 @@ async def ping(ctx):
     db_ping = round((time2 - time1) * 1000 , ndigits=2)
     embed = bembed("", discord.Color.blue())
     embed.title = "**__BOT STATS__**"
-    embed.url = "https://discord.com/oauth2/authorize?client_id=1165310965710082099&permissions=288706128&scope=bot+applications.commands"
+    # embed.url = "https://discord.com/oauth2/authorize?client_id=1165310965710082099&permissions=288706128&scope=bot+applications.commands"
     embed.set_footer(text=f"Use /bug to report a bug.")
     embed.timestamp  = datetime.now()
     embed.add_field(name="**Bot Ping**", value= f"<:goodconnection:1207146803582206083>**{ping}ms**")
