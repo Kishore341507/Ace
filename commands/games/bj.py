@@ -54,8 +54,8 @@ class BjButton(discord.ui.Button['bjview']):
         view.ctx.command.reset_cooldown(view.ctx)
         if winner == 1:
             view.embed.color = 0x47d220
-            await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", 2 * view.amount, view.ctx.author.id, interaction.guild.id)
-            # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"cash": + ( 2 * view.amount)}})
+            await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3", 2 * view.amount, view.ctx.author.id, interaction.guild.id)
+            # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"pvc": + ( 2 * view.amount)}})
             await interaction.response.edit_message(embed=view.embed, view=view)
 
         elif winner == -1:
@@ -63,8 +63,8 @@ class BjButton(discord.ui.Button['bjview']):
             await interaction.response.edit_message(embed=view.embed, view=view)
 
         else:
-            await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", view.amount, view.ctx.author.id, interaction.guild.id)
-            # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"cash": + view.amount}})
+            await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3", view.amount, view.ctx.author.id, interaction.guild.id)
+            # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"pvc": + view.amount}})
             await interaction.response.edit_message(embed=view.embed, view=view)
 
 
@@ -192,14 +192,14 @@ class Bj(commands.Cog):
             amount = int(amount)
         except ValueError:
             if amount == "all":
-                amount = bal["cash"]
+                amount = bal["pvc"]
                 if amount > bj_amount:
                     amount = bj_amount
             elif amount == "half":
-                amount = int(0.5 * bal["cash"])
+                amount = int(0.5 * bal["pvc"])
                 if amount > bj_amount:
                     amount = bj_amount
-        if amount > bal['cash']:
+        if amount > bal['pvc']:
             await ctx.send('You do not have enough money to BJ that much')
             ctx.command.reset_cooldown(ctx)
             return
@@ -271,7 +271,7 @@ class Bj(commands.Cog):
                         value=f"{pTotal}\n\nScore: {sum(pCardNum)}", inline=True)
         embed.add_field(name=f"**Dealer Hand**",
                         value=f"{y[0]} <:BACK:1147778438359429120>\n\nScore: {dCardNum[0]}\n", inline=True)
-        await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id)
+        await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id)
         view = bjview(timeout=180, ctx=ctx, cards=self.cards, dCARD=dCARD,
                       dCardNum=dCardNum, pCARD=pCARD, pCardNum=pCardNum, embed=embed, amount=amount)
         await ctx.send(embed=embed, view=view)
