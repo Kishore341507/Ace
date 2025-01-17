@@ -17,7 +17,8 @@ class ErrorLogging(commands.Cog):
             return
         elif isinstance(error, commands.DisabledCommand):
             if client.data[ctx.guild.id]['channels'] and ctx.channel.id in client.data[ctx.guild.id]['channels']:
-                return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> This command is disabled on this server."))
+                return 
+                # return await ctx.send(embed=bembed("<:pixel_error:1187995377891278919> This command is disabled on this server."))
         elif isinstance(error, (commands.BadArgument, ValueError, commands.errors.BadLiteralArgument)):
             cooldown = self.bad_argument_cooldown_mapping.get_bucket(ctx.message)
             retry_after = cooldown.update_rate_limit()
