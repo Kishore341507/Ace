@@ -12,9 +12,12 @@ class Owner(commands.Cog):
 
     def __init__(self , client):
         self.client = client
+    
+    def cog_check(self, ctx):
+        return ctx.author.id == 591011843552837655
 
     @commands.hybrid_command(description="Owner only command.")
-    @commands.is_owner()
+    # @commands.is_owner()
     async def setactivity(self , ctx , activity : typing.Optional[typing.Literal['unknown', 'playing' , 'streaming' , 'listening' , 'watching' , 'custom' , 'competing' ]] , status : typing.Optional[typing.Literal['online' , 'offline' , 'dnd' , 'idle']] , emoji : discord.PartialEmoji = None , * ,  input : str ):
         status_set = None
         activity_set = None
@@ -46,48 +49,48 @@ class Owner(commands.Cog):
         embed = discord.Embed(color= 0x2b2c31 , description = "Bot Presence Updated" )
         await ctx.send(embed = embed)
 
+    # @commands.command()
+    # @commands.is_owner()
+    # async def eval(self, ctx, to_await: typing.Optional[bool] = False, output: typing.Optional[bool] = True, *, input: str):
+    #     if to_await:
+    #         data = await eval(input)
+    #     else:
+    #         data = eval(input)
+    #     data = str(data)
+    #     if input.find("config") != -1:
+    #         data = "-1"
+    #     # self.lis[0] = data
+
+    #     max_size = 900
+    #     if len(str(data)) > max_size:
+    #         data_list = [data[i:i + max_size] for i in range(0, len(data), max_size)]
+    #     else:
+    #         data_list = [data]
+    #         embeds = []
+    #         embeds.append(bembed(color=client.my_hex).add_field(name="**Input**",
+    #                                         value=f"```py\n{input}\n```"))
+    #         i = 1
+    #         edited_first_embed = False
+
+    #     for data in data_list:
+    #         if not edited_first_embed:
+    #             embeds[0].add_field(name=f"Output {i}", value=f"```py\n{data}\n```", inline=False)
+    #             edited_first_embed = True
+    #             i += 1
+    #     else:
+    #         embeds.append(bembed(color=client.my_hex).add_field(name=f"**Output {i}**", value=f"```py\n{data}```"))
+    #         i += 1
+    #     em = []
+    #     for embed in embeds:
+    #         em.append(embed)
+    #         if len(em) == 5:
+    #             await ctx.send(embeds=em)
+    #             em = []
+    #     if len(em) !=0:
+    #         await ctx.send(embeds = em)
+
     @commands.command()
-    @commands.is_owner()
-    async def eval(self, ctx, to_await: typing.Optional[bool] = False, output: typing.Optional[bool] = True, *, input: str):
-        if to_await:
-            data = await eval(input)
-        else:
-            data = eval(input)
-        data = str(data)
-        if input.find("config") != -1:
-            data = "-1"
-        # self.lis[0] = data
-
-        max_size = 900
-        if len(str(data)) > max_size:
-            data_list = [data[i:i + max_size] for i in range(0, len(data), max_size)]
-        else:
-            data_list = [data]
-            embeds = []
-            embeds.append(bembed(color=client.my_hex).add_field(name="**Input**",
-                                            value=f"```py\n{input}\n```"))
-            i = 1
-            edited_first_embed = False
-
-        for data in data_list:
-            if not edited_first_embed:
-                embeds[0].add_field(name=f"Output {i}", value=f"```py\n{data}\n```", inline=False)
-                edited_first_embed = True
-                i += 1
-        else:
-            embeds.append(bembed(color=client.my_hex).add_field(name=f"**Output {i}**", value=f"```py\n{data}```"))
-            i += 1
-        em = []
-        for embed in embeds:
-            em.append(embed)
-            if len(em) == 5:
-                await ctx.send(embeds=em)
-                em = []
-        if len(em) !=0:
-            await ctx.send(embeds = em)
-
-    @commands.command()
-    @commands.is_owner() 
+    # @commands.is_owner() 
     async def files(self , ctx):
         files = [ ]
         for filename in os.listdir('./commands'):
@@ -101,14 +104,14 @@ class Owner(commands.Cog):
         await ctx.send(embed = discord.Embed(color= 0x2b2c31, description= "\n".join(files) ))
 
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def disableall(self , ctx , command):
         command = self.client.get_command(command)
         command.update(enabled=False)
         await ctx.send(embed = discord.Embed(color= 0x2b2c31 , description=f'Disabled {command.name}')) 
 
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def enableall(self , ctx , command):
         command = self.client.get_command(command)
         command.update(enabled=False)
@@ -119,7 +122,7 @@ class Owner(commands.Cog):
 
 
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def load(self , ctx , extension):
         
         file = None
@@ -149,7 +152,7 @@ class Owner(commands.Cog):
         await ctx.author.send(f"{error}")
 
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def unload(self , ctx , extension):
         
         file = None
@@ -175,7 +178,7 @@ class Owner(commands.Cog):
 
 
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def reload(self , ctx , extension):
         file = None
         
@@ -197,7 +200,8 @@ class Owner(commands.Cog):
 
     @reload.error
     async def reload_error(self ,ctx , error):
-        await ctx.author.send(f"{error}")
+        # await ctx.author.send(f"{error}")
+        return
 
     @commands.command()
     @commands.is_owner()
@@ -214,7 +218,7 @@ class Owner(commands.Cog):
         await ctx.author.send(f"{error}")
 
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def leaveguilds(self , ctx) :
         for guild in self.client.guilds :
             # leave if member count is less than 1000
@@ -224,7 +228,7 @@ class Owner(commands.Cog):
         await ctx.send("done")
         
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def status(self , ctx , leave : bool = False):
 
         total_users = 0
@@ -252,7 +256,7 @@ class Owner(commands.Cog):
         await ctx.author.send(f"{error}")
 
     @commands.command()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def leaveguild(self , ctx , *guilds : discord.Guild) :
         await ctx.send(f'''leaving guild(s) **{' ,'.join([ str(f"**{guild.name} ({guild.id})**") for guild in guilds  ])}** type YES to continue....''')
 
@@ -269,7 +273,7 @@ class Owner(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def sync(
       self , ctx, guilds: commands.Greedy[discord.Object], spec: typing.Optional[typing.Literal["~", "*", "^"]] = None) -> None:
       if not guilds:
@@ -307,7 +311,7 @@ class Owner(commands.Cog):
 
     @commands.command()
     @commands.guild_only()
-    @commands.is_owner()
+    # @commands.is_owner()
     async def uptime(self, ctx):
         ping = round(client.latency * 1000 , ndigits=2)
         time1 = time.time()

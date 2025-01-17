@@ -135,18 +135,19 @@ class Economy(commands.Cog):
         if bal is None:
                 await open_account(ctx.guild.id , user.id)
                 bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash + bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , ctx.guild.id ,  user.id)
+        rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (pvc) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , ctx.guild.id ,  user.id)
+        # rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash + bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , ctx.guild.id ,  user.id)
         embed = discord.Embed(
                 timestamp=ctx.message.created_at,
                 title=f"{user.name}'s Balance",
                 color= 0xF7C906 )
         embed.description =f"[Leaderboard Rank: #{rank}](https://tickap.com/user/{user.id})"       
-        embed.add_field(
-                name="Cash",
-                value=f"{coin(ctx.guild.id)} {bal['cash']:,}", )
-        embed.add_field(
-                name="Bank",
-                value=f"{coin(ctx.guild.id)} {bal['bank']:,}", )
+        # embed.add_field(
+        #         name="Cash",
+        #         value=f"{coin(ctx.guild.id)} {bal['cash']:,}", )
+        # embed.add_field(
+        #         name="Bank",
+        #         value=f"{coin(ctx.guild.id)} {bal['bank']:,}", )
         if client.data[ctx.guild.id]['pvc'] :
             if client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id and ( client.data[ctx.guild.id]['channels'] != None and ctx.channel.id not in client.data[ctx.guild.id]['channels'] ):
                 embed.clear_fields()
@@ -621,7 +622,10 @@ class Economy(commands.Cog):
     async def leaderboard(self , ctx ,page: typing.Optional[int] = 1, type : str = "total" ):
         if self.client.data[ctx.guild.id]['pvc_channel'] == ctx.channel.id and ( self.client.data[ctx.guild.id]['channels'] != None and ctx.channel.id not in self.client.data[ctx.guild.id]['channels'] ):
             type = 'pvc'
-      
+
+        # type always pvc 
+        type = 'pvc'
+
         embed, last_page = await self.generate_lb_emb(ctx.guild , ctx.author, page, type)
         if not embed.description:
             page = last_page

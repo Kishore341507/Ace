@@ -86,8 +86,8 @@ class helpCommandView(View):
         server_inv_button = Button(label="Support server",
                                     style=discord.ButtonStyle.url,
                                     url="https://discord.gg/WevmU9Wsba")
-        self.add_item(bot_inv_button)
-        self.add_item(server_inv_button)
+        # self.add_item(bot_inv_button)
+        # self.add_item(server_inv_button)
 
 class Help(commands.Cog):
 
