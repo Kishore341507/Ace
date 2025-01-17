@@ -3,7 +3,7 @@ from discord.ext import commands
 import random
 from discord.ext.commands import BucketType, cooldown
 from database import client
-from utils import coin, open_account, check_channel, amountconverter, default_games
+from utils import coin, open_account, check_channel, amountconverter, default_games , pvc_coin
 
 
 class BjButton(discord.ui.Button['bjview']):
@@ -130,10 +130,10 @@ class bjview(discord.ui.View):
             dTotal += f"{x[0]}"
 
         if player_bust:
-            self.embed.description = f"Result: Dealer wins , Player BUST (- {coin(self.ctx.guild.id)} {self.amount})"
+            self.embed.description = f"Result: Dealer wins , Player BUST (- {pvc_coin(self.ctx.guild.id)[0]} {self.amount})"
             return -1
         elif dealer_bust:
-            self.embed.description = f"Result: Player wins , Dealer BUST (+ {coin(self.ctx.guild.id)} {self.amount})"
+            self.embed.description = f"Result: Player wins , Dealer BUST (+ {pvc_coin(self.ctx.guild.id)[0]} {self.amount})"
             self.embed.set_field_at(
                 1, name=f"Dealer Hand", value=f"{dTotal}\n\nScore: {sum(self.dCardNum)}", inline=True)
             return 1
@@ -143,21 +143,21 @@ class bjview(discord.ui.View):
                 1, name=f"Dealer Hand", value=f"{dTotal}\n\nScore: {sum(self.dCardNum)}", inline=True)
             return 0
         elif player_blackjack:
-            self.embed.description = f"Result: Player wins , its Blackjack (+ {coin(self.ctx.guild.id)} {self.amount})"
+            self.embed.description = f"Result: Player wins , its Blackjack (+ {pvc_coin(self.ctx.guild.id)[0]} {self.amount})"
             return 1
         elif dearler_blackjack:
-            self.embed.description = f"Result: Dearler wins , its Blackjack (- {coin(self.ctx.guild.id)} {self.amount})"
+            self.embed.description = f"Result: Dearler wins , its Blackjack (- {pvc_coin(self.ctx.guild.id)[0]} {self.amount})"
             self.embed.set_field_at(
                 1, name=f"Dealer Hand", value=f"{dTotal}\n\nScore: {sum(self.dCardNum)}", inline=True)
             return -1
         elif total_player < 21 and total_dealer < 21:
             if total_player > total_dealer:
-                self.embed.description = f"Result: Player wins (+ {coin(self.ctx.guild.id)} {self.amount})"
+                self.embed.description = f"Result: Player wins (+ {pvc_coin(self.ctx.guild.id)[0]} {self.amount})"
                 self.embed.set_field_at(
                     1, name=f"Dealer Hand", value=f"{dTotal}\n\nScore: {sum(self.dCardNum)}", inline=True)
                 return 1
             elif total_dealer > total_player:
-                self.embed.description = f"Result: Dearler wins (- {coin(self.ctx.guild.id)} {self.amount})"
+                self.embed.description = f"Result: Dearler wins (- {pvc_coin(self.ctx.guild.id)[0]} {self.amount})"
                 self.embed.set_field_at(
                     1, name=f"Dealer Hand", value=f"{dTotal}\n\nScore: {sum(self.dCardNum)}", inline=True)
                 return -1
