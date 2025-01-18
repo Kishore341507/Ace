@@ -39,7 +39,7 @@ class Games(commands.Cog):
         if amount > bal['pvc']:
                 await ctx.send('You do not have enough money')
         elif amount <= _min or amount > _max:
-                await ctx.send(f'You cannot bet {_min} , less or more then {_max}') 
+                await ctx.send(f'You cannot bet {_min} , less or more than {_max}') 
         else:
                 # embed = bembed(f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe ddakji flips... <a:coinflip:1205817149612884028>")
                 embed = bembed(f"You spent {pvc_coin(ctx.guild.id)[0]} **{amount:,}** and chose **{side}**\nThe ddakji flips...")
@@ -95,7 +95,7 @@ class Games(commands.Cog):
     #     if amount > bal['cash']:
     #             await ctx.send('You do not have enough money')
     #     elif amount <= _min or amount > _max:
-    #             await ctx.send(f'You cannot bet {_min} , less or more then {_max}') 
+    #             await ctx.send(f'You cannot bet {_min} , less or more than {_max}') 
     #     else:
     #             embed = bembed(f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe ddakji flips... <a:coinflip:1205817149612884028>")
     #             await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
@@ -150,7 +150,7 @@ class Games(commands.Cog):
     #     if amount > bal['cash']:
     #             await ctx.send('You do not have enough money to coinflip that much')
     #     elif amount <= _min or amount > _max:
-    #             await ctx.send(f'You cannot flip {_min} , less or more then {_max}') 
+    #             await ctx.send(f'You cannot flip {_min} , less or more than {_max}') 
     #     else:
     #             embed = bembed(f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1205817149612884028>")
     #             await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
@@ -226,7 +226,7 @@ class Games(commands.Cog):
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to slots that much')
         elif amount <= _min or amount > st_amount:
-                await ctx.send(f'You cannot slot {_min} , less or more then {st_amount}') 
+                await ctx.send(f'You cannot slot {_min} , less or more than {st_amount}') 
         else :
                 if first == second == third:
                     ecoembed.description=f"You won {coin(ctx.guild.id)} {3*amount}\n\n{outupt}" 
@@ -300,7 +300,7 @@ class Games(commands.Cog):
         if amount > bal['pvc']:
                 await ctx.send('You do not have enough money')
         elif amount <= _min or amount > _max:
-                await ctx.send(f'You cannot bet {_min} , less or more then {_max}') 
+                await ctx.send(f'You cannot bet {_min} , less or more than {_max}') 
         else:
             # x = random.randint(1, 6)
             #  select a random from 🪨 , 📃 and ✂️
@@ -360,7 +360,7 @@ class Games(commands.Cog):
     #     if amount > bal['cash']:
     #             await ctx.send('You do not have enough money')
     #     elif amount <= _min or amount > _max:
-    #             await ctx.send(f'You cannot bet {_min} , less or more then {_max}') 
+    #             await ctx.send(f'You cannot bet {_min} , less or more than {_max}') 
     #     else:
     #         # x = random.randint(1, 6)
     #         #  select a random from 🪨 , 📃 and ✂️
@@ -410,7 +410,7 @@ class Games(commands.Cog):
     #     if amount > bal['cash']:
     #             await ctx.send('You do not have enough money to roll that much')
     #     elif amount <= _min or amount > _max:
-    #             await ctx.send(f'You cannot roll {_min} , less or more then {_max}') 
+    #             await ctx.send(f'You cannot roll {_min} , less or more than {_max}') 
     #     else:
     #         x = random.randint(1, 6)
     #         if rang == "even" and x in [2,4,6]:

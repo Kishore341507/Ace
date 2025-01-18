@@ -159,8 +159,16 @@ class Economy(commands.Cog):
             embed.set_footer(
                     text=f"Requested By: {ctx.author.name} | use /bug to report a bug", icon_url=f"{ctx.author.display_avatar.url}") 
         else :
-            embed.set_footer(text=f"Use /bug to report a bug")
-            
+            # embed.set_footer(text=f"Use /bug to report a bug")
+            randomNum = random.randint(1, 3)
+            if randomNum == 1:
+                embed.set_footer(text=f"try 3Patti game with !blinds command")
+            elif randomNum == 2:
+                # embed.set_footer(text=f"Bored? try !work command")
+                pass
+            elif randomNum == 3:
+                embed.set_footer(text=f"Blackjack is now added")
+
         await ctx.send( embed=embed  ) 
           
 #------------------------------------------------xxx--------------------------------------------------------------------------------
@@ -250,11 +258,11 @@ class Economy(commands.Cog):
         
         amount = (random.randint( client.data[ctx.guild.id]['economy']['work']['min'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['min'] , client.data[ctx.guild.id]['economy']['work']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['max'])) 
            
-        x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
+        x =  await self.client.db.execute('UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
         if "0" in x :
             await open_account( ctx.guild.id , ctx.author.id)
-            await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
-        ecoembed.description = f"good work , you get {coin(ctx.guild.id)} **{amount:,}** cash"  
+            await self.client.db.execute('UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
+        ecoembed.description = f"good work , you get {pvc_coin(ctx.guild.id)[0]} **{amount:,}**"  
         await ctx.send(embed = ecoembed)  
 
     @work.error

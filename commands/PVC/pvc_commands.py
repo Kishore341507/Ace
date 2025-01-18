@@ -873,7 +873,7 @@ class PVC_COMMANDS(commands.Cog):
     #             await economy.update_one({"info_id" : ctx.author.id } , {"$inc": {"info_time" : + (amount*60) }}) 
     #             await economy.update_one({"id" : ctx.author.id } , {"$inc": {"pvc" : -(int((amount*multiplier[unit])* rate))}})
     #             time = (await economy.find_one({"id" : ctx.author.id }))["info_time"] 
-    #             await ctx.reply(f"Time inc. now you have more then {time}min")
+    #             await ctx.reply(f"Time inc. now you have more than {time}min")
     #         except asyncio.TimeoutError:
     #             await ctx.reply("transetion cenceled")      
     #     else:
