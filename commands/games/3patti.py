@@ -341,7 +341,7 @@ class patti(commands.Cog):
         
         if len(self.players.get(channel , [ ])) == 0:
             view = join_blind(30, self , author , amount)
-            msg = await channel.send(embed = discord.Embed(description=f"<a:811261898360094730:1063182356913078362> Waiting For Other Player (Ends In <t:{int(datetime.now().timestamp()+30)}:R>)" , color=0x2a2c30) , view = view)
+            msg = await channel.send(embed = discord.Embed(description=f"<a:dcload:1330518199372091473> Waiting For Other Player (Ends In <t:{int(datetime.now().timestamp()+30)}:R>)" , color=0x2a2c30) , view = view)
             element = {"user" : author , 'channel' : channel , "message" : msg , 'bank_amount' : bank_amount }
             
             try : 
