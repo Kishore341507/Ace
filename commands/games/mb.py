@@ -13,6 +13,11 @@ from database import *
 import traceback
 from utils import  check_channel
 
+async def get_bal(user_id , guild_id) :
+    bal = await client.db.fetchrow('SELECT cash , pvc FROM users WHERE id = $1 AND guild_id = $2 ', user_id , guild_id)
+    return bal or {"cash" : 0 , "pvc" : 0}
+
+
 class myview(discord.ui.View):
 
     def __init__(self , timeout , users , player_iter , current , amount , embed):
@@ -161,6 +166,10 @@ class myview(discord.ui.View):
         for user in self.users :
             if user == winner :
                 self.embed.add_field(name = f"{user.name} 👑" , value= f"Last Bet : +{self.users[user]['amounts'][0]:,}\n\nTotal Bet : {self.users[user]['amounts'][1]:,}\n\n{' '.join(self.users[user]['player_cards'])}\n{self.result_text}")
+                total_amount = 0
+                for user in self.users :
+                    total_amount += self.users[user]["amounts"][1]
+                await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3", total_amount, winner.id , winner.guild.id)
                 continue
             self.embed.add_field(name = user.name , value= f"Last Bet : +{self.users[user]['amounts'][0]:,}\n\nTotal Bet : {self.users[user]['amounts'][1]:,}\n\n{' '.join(self.users[user]['player_cards'])}")
         #self.embed.description = f"{self.user[0]['user']} vs {self.user[1]['user']}\n\n{winner.name} **wins** `{self.amounts[self.user[0]['user']][1] + self.amounts[self.user[1]['user']][1]:,}`"
@@ -187,11 +196,23 @@ class myview(discord.ui.View):
             await interaction.response.send_message(f"{self.current}'s Turn" , ephemeral = True)
             return 
  
+        cur_amount = (await get_bal(self.current.id , interaction.guild.id ))['pvc']
+        to_debit = self.betamount * 2 if self.users[self.current]['blind_info'] else self.betamount
+
+        if to_debit >  cur_amount :
+            self.embed.set_footer(text= f"🛑 {self.current.name} You Can't Bet 2x Now , Bet 1x Or Show")
+            await interaction.response.edit_message(embed = self.embed)
+            self.embed.set_footer(text=None)
+            return  
+
         self.betamount *= 2  
         if not self.users[self.current]['blind_info'] :
             self.users[self.current]["amounts"][1] += int(self.betamount/2)
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount/2), self.current.id , interaction.guild.id)
         else :    
             self.users[self.current]["amounts"][1] += self.betamount
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
+
         self.users[self.current]["amounts"][0] = self.betamount
         self.current = next(self.player_iter)
         self.get_embed()
@@ -205,10 +226,21 @@ class myview(discord.ui.View):
             await interaction.response.send_message(f"{self.current}'s Turn" , ephemeral = True)
             return
         
+        cur_amount = (await get_bal(self.current.id , interaction.guild.id ))['pvc']
+        to_debit = self.betamount if self.users[self.current]['blind_info'] else int(self.betamount/2)
+
+        if to_debit >  cur_amount :
+            self.embed.set_footer(text= f"🛑 {self.current.name} No More Money, Last option Is Pack")
+            await interaction.response.edit_message(embed = self.embed)
+            self.embed.set_footer(text=None)
+            return
+
         if not self.users[self.current]['blind_info'] :
             self.users[self.current]["amounts"][1] += int(self.betamount/2)
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount/2), self.current.id , interaction.guild.id)
         else :    
             self.users[self.current]["amounts"][1] += self.betamount
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
             
         self.users[self.current]["amounts"][0] = self.betamount
         self.current = next(self.player_iter)
@@ -216,7 +248,7 @@ class myview(discord.ui.View):
         await interaction.response.edit_message(embed = self.embed)
         
         
-        
+
     @discord.ui.button( label = "Show" , style = discord.ButtonStyle.gray) 
     async def show(self , interaction , button):    
         if interaction.user != self.current:
@@ -229,10 +261,22 @@ class myview(discord.ui.View):
             self.embed.set_footer(text= " ")
             return    
         
+
+        cur_amount = (await get_bal(self.current.id , interaction.guild.id ))['pvc']
+        to_debit = self.betamount if self.users[self.current]['blind_info'] else int(self.betamount/2)
+
+        if to_debit >  cur_amount :
+            self.embed.set_footer(text= f"🛑 {self.current.name} No More Money , Last option Is Pack")
+            await interaction.response.edit_message(embed = self.embed)
+            self.embed.set_footer(text=None)
+            return
+
         if not self.users[self.current]['blind_info'] :
             self.users[self.current]["amounts"][1] += int(self.betamount/2)
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount/2), self.current.id , interaction.guild.id)
         else :    
             self.users[self.current]["amounts"][1] += self.betamount
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
             
         self.users[self.current]["amounts"][0] = self.betamount
         
@@ -290,10 +334,21 @@ class myview(discord.ui.View):
             self.embed.set_footer(text= " ")
             return    
         
+        cur_amount = (await get_bal(self.current.id , interaction.guild.id ))['pvc']
+        to_debit = self.betamount if self.users[self.current]['blind_info'] else int(self.betamount/2)
+
+        if to_debit >  cur_amount :
+            self.embed.set_footer(text= f"🛑 {self.current.name} No More Money , Last option Is Pack")
+            await interaction.response.edit_message(embed = self.embed)
+            self.embed.set_footer(text=None)
+            return
+        
         if not self.users[self.current]['blind_info'] :
             self.users[self.current]["amounts"][1] += int(self.betamount/2)
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount/2), self.current.id , interaction.guild.id)
         else :    
             self.users[self.current]["amounts"][1] += self.betamount 
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
         self.users[self.current]["amounts"][0] = self.betamount
         
         current_player = self.current
@@ -376,7 +431,15 @@ class Mb(commands.Cog):
         
     async def blind_fun(self , channel , author , amount ):
         
-        amount = 1000
+        amount = amount
+
+        bal = await get_bal(author.id ,  channel.guild.id)
+        
+        if bal['pvc'] < amount :
+            await channel.send(f"{author.mention} Don't have Enough Money" , delete_after = 3)
+            return
+        else : 
+            bank_amount = bal['pvc']
         
         try :
             if author in self.players[channel] :
@@ -384,12 +447,18 @@ class Mb(commands.Cog):
                 return
             if len(self.players[channel]) < 5 :
                 self.players[channel][author] = {"amounts" : [amount , amount] , "compair" : None , 'blind_info' : False , 'player_cards' : [] , "in_game" : True , "status" : ' ' }
+                
+                await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", amount, author.id, channel.guild.id)
+
                 await channel.send(f"{author.mention} joined the game {len(self.players[channel])}/4 " , delete_after = 3 )
             else :
                 await channel.send(f"{author.mention} game is full , try after some time" , delete_after = 3 )    
         except KeyError :     
             self.players[channel] = {}
             self.players[channel][author] = {"amounts" : [amount , amount] , "compair" : None , 'blind_info' : False , 'player_cards' : [] , "in_game" : True ,  "status" : ' ' }
+            
+            await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", amount, author.id, channel.guild.id)
+
             # self.players["channel"]["user"] = {"a" : 5 , "b" : 6}
         # if len(self.players[channel]) == 0:
             view = join_blind(30, self , author , amount)
@@ -398,13 +467,15 @@ class Mb(commands.Cog):
             await asyncio.sleep(30)
             
             if  len(self.players[channel]) == 1 :
+                if author in self.players[channel] :
+                    await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3", amount, author.id, channel.guild.id)
                 self.players.pop(channel)
                 await msg.edit(embed = discord.Embed(description="No match found") , view = None)
                 return
             else : 
                 users = self.players[channel]
                 self.players.pop(channel)
-                embed = discord.Embed(description= f"Game total Bet - {len(users)*amount:,}\nGame Current Bet - {amount}")
+                embed = discord.Embed(description= f"Game total Bet - **{len(users)*amount:,}**\nGame Current Bet - {amount}")
                 # embed.set_thumbnail( url = "https://media.discordapp.net/attachments/976542645801328681/1067027599387283526/sky247_logo_1.png")
                 
                 player_iter = cycle(users)
@@ -425,7 +496,7 @@ class Mb(commands.Cog):
     @commands.hybrid_command()#aliases = ['blinds' , '3patti'])
     @commands.check(check_channel)
     @commands.cooldown(1, 40 , BucketType.user)
-    async def mb(self , ctx , amount : typing.Literal[100 , 1000 , 10000] = 1000):
+    async def mb(self , ctx , amount : typing.Literal[10 ,100 , 1000 , 10000] = 10):
 
         '''
         This game is not part of economy system , economy will be added soon
@@ -440,7 +511,7 @@ class Mb(commands.Cog):
             await ctx.send(embed = discord.Embed(description= f"You are on cooldown , retry in {int(error.retry_after)}seconds.") , delete_after=3)
         else : 
             full_error = traceback.format_exception(error)
-            await ctx.author.send(full_error)    
+            # await ctx.author.send(full_error)    
          
 
 async def setup(client):

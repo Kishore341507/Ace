@@ -396,7 +396,7 @@ class patti(commands.Cog):
             await ctx.send(embed = discord.Embed(description= f"You are on cooldown , retry in {int(error.retry_after)}seconds.") , delete_after=3)
         else : 
             print(traceback.format_exc())
-            await ctx.author.send(error)    
+            # await ctx.author.send(error)    
          
 
 async def setup(client):
