@@ -277,6 +277,37 @@ class Economy(commands.Cog):
             ecoembed.description = f"⌚ | why to much work rest for {min}min {sec}seconds."
             await ctx.send (embed = ecoembed)
             return    
+
+    @commands.hybrid_command()
+    @commands.guild_only()
+    @commands.check(check_channel)
+    # @commands.dynamic_cooldown(cooldown_funtion, type = BucketType.member)
+    @commands.cooldown(1, 86400, BucketType.member)
+    async def daily(self , ctx):
+        ecoembed = discord.Embed(color=  0x08FC08)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        
+        amount = (random.randint( client.data[ctx.guild.id]['economy']['work']['min'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['min'] , client.data[ctx.guild.id]['economy']['work']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['max'])) 
+           
+        x =  await self.client.db.execute('UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
+        if "0" in x :
+            await open_account( ctx.guild.id , ctx.author.id)
+            await self.client.db.execute('UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
+        ecoembed.description = f"Daily collected , you get {pvc_coin(ctx.guild.id)[0]} **{amount:,}**"  
+        await ctx.send(embed = ecoembed)  
+
+    @daily.error
+    @commands.guild_only()
+    @commands.check(check_channel)
+    async def work_error(self,ctx , error):
+        ecoembed = discord.Embed(color= 0xF90651)
+        ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
+        if isinstance(error, commands.CommandOnCooldown):
+            sec = int(error.retry_after)
+            min , sec = divmod(sec, 60)
+            ecoembed.description = f"⌚ | why to much work rest for {min}min {sec}seconds."
+            await ctx.send (embed = ecoembed)
+            return    
         
 
 # ------------------------------------------------xxx--------------------------------------------------------------------------------
