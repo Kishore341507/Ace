@@ -86,10 +86,10 @@ class EcoManager(commands.Cog):
             await ctx.send(embed = discord.Embed(description="This Command can't be enabled  or disabled."))
 
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(aliases=['addpaws'])
     @commands.guild_only()
     @commands.check(check_perms)
-    async def addmoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "bank"):
+    async def addmoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "pvc"):
         try:
             amount = int(amount)
         except ValueError:
@@ -166,10 +166,10 @@ class EcoManager(commands.Cog):
                 await msg.edit(embed=bembed(f"<:checkmark:1194449772044623872> Added {eco} {amount} into {len(role.members)} account(s).", discord.Color.brand_green()))
 
 
-    @commands.hybrid_command()
+    @commands.hybrid_command( aliases=['removepaws'])
     @commands.guild_only()
     @commands.check(check_perms)
-    async def removemoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "bank"):
+    async def removemoney(self, ctx, target: typing.Union[discord.Member, discord.Role],  amount: amountconverter,  location: typing.Literal['bank', 'cash', 'pvc', 'shares'] = "pvc"):
         try:
             amount = int(amount)
         except ValueError:
