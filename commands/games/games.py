@@ -458,7 +458,7 @@ class Games(commands.Cog):
         msg = await self.client.wait_for('message', check=check)
 
         embed = discord.Embed(description = f"Congratulation {msg.author.mention}! You guessed the number **{number}**" , color= 0x2b2c31)
-        await msg.reply(embed = embed)
+        await msg.reply( ctx.author.mention , embed = embed)
         await msg.pin()
 
         # remove send message perms from everyone 
