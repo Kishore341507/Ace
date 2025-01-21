@@ -11,12 +11,14 @@ from itertools import cycle
 import random
 from database import *
 import traceback
-from utils import  check_channel
+from utils import  check_channel , pvc_coin
 
 async def get_bal(user_id , guild_id) :
     bal = await client.db.fetchrow('SELECT cash , pvc FROM users WHERE id = $1 AND guild_id = $2 ', user_id , guild_id)
     return bal or {"cash" : 0 , "pvc" : 0}
 
+chips = "<:chips:1331285259668553818>"
+chip = "<:chip:1331285237795262627>"
 
 class myview(discord.ui.View):
 
@@ -33,8 +35,7 @@ class myview(discord.ui.View):
         self.result_text = " "
         self.time = time.time()
 
-        
-        
+
         for i in range(3):
             for user in self.users:
                 item = random.choice(self.cards)
@@ -99,7 +100,6 @@ class myview(discord.ui.View):
     #Find Winner    
     def winner(self):
     
-    
         for user in self.users:
             value_lis = []
             colour_lis = [] 
@@ -120,7 +120,7 @@ class myview(discord.ui.View):
             elif (colour_lis[0] ==  colour_lis[1] ==  colour_lis[2]) :
                 self.users[user]["compair"] = (3 ,value_lis[2] , value_lis[1] , value_lis[0] )                  
                 self.result_text = "(Color)"
-            elif value_lis[0] == value_lis[1] or value_lis[1] == value_lis[2] :
+            elif value_lis[0] == value_lis[1] or value_lis[1] == value_lis[2]:
                 self.users[user]["compair"] = (2 , value_lis[1] , sum(value_lis) ,  0)
                 self.result_text = "(Pair)"
             else :
@@ -152,26 +152,26 @@ class myview(discord.ui.View):
         for user in self.users :
             total_amount += self.users[user]["amounts"][1]
             
-        self.embed.description =  f"Game total Bet - {total_amount:,}\nGame Current Bet - {self.betamount:,}"
+        self.embed.description =  f"{chips} : **{total_amount:,}**\n{chip} : **{self.betamount:,}**"
          
         self.embed.clear_fields()
         for user in self.users :
             if user == self.current :
-                self.embed.add_field( name = f"{user.name} {self.users[user]['status']} *<t:{int(datetime.now().timestamp() + 30)}:R>" , value = f"{self.y(self.users[user]['blind_info'])}Last Bet : +{self.users[user]['amounts'][0]:,}\n\nTotal Bet : {self.users[user]['amounts'][1]:,}")
+                self.embed.add_field( name = f"{user.name} {self.users[user]['status']} *<t:{int(datetime.now().timestamp() + 30)}:R>" , value = f"{self.y(self.users[user]['blind_info'])}{chip} : `{self.users[user]['amounts'][0]:,}`\n{chips} : `{self.users[user]['amounts'][1]:,}`\n{pvc_coin(user.guild.id)[0]} : `{self.users[user]['amounts'][2]:,}`")
                 continue
-            self.embed.add_field( name = f"{user.name} {self.users[user]['status']}" , value = f"{self.y(self.users[user]['blind_info'])}Last Bet : +{self.users[user]['amounts'][0]:,}\n\nTotal Bet : {self.users[user]['amounts'][1]:,}") 
+            self.embed.add_field( name = f"{user.name} {self.users[user]['status']}" , value = f"{self.y(self.users[user]['blind_info'])}{chip} : `{self.users[user]['amounts'][0]:,}`\n{chips} : `{self.users[user]['amounts'][1]:,}`\n{pvc_coin(user.guild.id)[0]} : `{self.users[user]['amounts'][2]:,}`")
     
     async def winner_update(self , winner):
         self.embed.clear_fields()
         for user in self.users :
             if user == winner :
-                self.embed.add_field(name = f"{user.name} 👑" , value= f"Last Bet : +{self.users[user]['amounts'][0]:,}\n\nTotal Bet : {self.users[user]['amounts'][1]:,}\n\n{' '.join(self.users[user]['player_cards'])}\n{self.result_text}")
+                self.embed.add_field(name = f"{user.name} 👑" , value= f"{chip} : `{self.users[user]['amounts'][0]:,}`\n{chips} : `{self.users[user]['amounts'][1]:,}`\n{pvc_coin(user.guild.id)[0]} : `{self.users[user]['amounts'][2]:,}`\n\n{' '.join(self.users[user]['player_cards'])}\n{self.result_text}")
                 total_amount = 0
                 for user in self.users :
                     total_amount += self.users[user]["amounts"][1]
                 await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3", total_amount, winner.id , winner.guild.id)
                 continue
-            self.embed.add_field(name = user.name , value= f"Last Bet : +{self.users[user]['amounts'][0]:,}\n\nTotal Bet : {self.users[user]['amounts'][1]:,}\n\n{' '.join(self.users[user]['player_cards'])}")
+            self.embed.add_field(name = user.name , value= f"{chip} : `{self.users[user]['amounts'][0]:,}`\n{chips} : `{self.users[user]['amounts'][1]:,}`\n{pvc_coin(user.guild.id)[0]} : `{self.users[user]['amounts'][2]:,}`\n\n{' '.join(self.users[user]['player_cards'])}")
         #self.embed.description = f"{self.user[0]['user']} vs {self.user[1]['user']}\n\n{winner.name} **wins** `{self.amounts[self.user[0]['user']][1] + self.amounts[self.user[1]['user']][1]:,}`"
         for child in self.children:
             child.disabled = True   
@@ -200,7 +200,7 @@ class myview(discord.ui.View):
         to_debit = self.betamount * 2 if self.users[self.current]['blind_info'] else self.betamount
 
         if to_debit >  cur_amount :
-            self.embed.set_footer(text= f"🛑 {self.current.name} You Can't Bet 2x Now , Bet 1x Or Show")
+            self.embed.set_footer(text= f"⚠️ {self.current.name} You Can't Bet 2x Now , Bet 1x Or Show")
             await interaction.response.edit_message(embed = self.embed)
             self.embed.set_footer(text=None)
             return  
@@ -213,7 +213,9 @@ class myview(discord.ui.View):
             self.users[self.current]["amounts"][1] += self.betamount
             await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
 
-        self.users[self.current]["amounts"][0] = self.betamount
+        # self.users[self.current]["amounts"][0] = self.betamount
+        self.users[self.current]["amounts"][0] = to_debit  #added on 21/01/2025
+        self.users[self.current]['amounts'][2] = cur_amount - to_debit
         self.current = next(self.player_iter)
         self.get_embed()
         # await self.update_embed(self.current)
@@ -242,11 +244,11 @@ class myview(discord.ui.View):
             self.users[self.current]["amounts"][1] += self.betamount
             await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
             
-        self.users[self.current]["amounts"][0] = self.betamount
+        self.users[self.current]["amounts"][0] = to_debit
+        self.users[self.current]['amounts'][2] = cur_amount - to_debit
         self.current = next(self.player_iter)
         self.get_embed()
         await interaction.response.edit_message(embed = self.embed)
-        
         
 
     @discord.ui.button( label = "Show" , style = discord.ButtonStyle.gray) 
@@ -278,7 +280,8 @@ class myview(discord.ui.View):
             self.users[self.current]["amounts"][1] += self.betamount
             await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
             
-        self.users[self.current]["amounts"][0] = self.betamount
+        self.users[self.current]["amounts"][0] = to_debit
+        self.users[self.current]['amounts'][2] = cur_amount - to_debit
         
         self.current = next(self.player_iter)
         
@@ -321,7 +324,7 @@ class myview(discord.ui.View):
       
         await interaction.response.send_message(' '.join(self.users[interaction.user]['player_cards']) , ephemeral = True )            
 
-    @discord.ui.button( label = "Side Show" , style = discord.ButtonStyle.red , row = 1) 
+    @discord.ui.button( label = "Side Show"  , row = 1) 
     async def side_show(self , interaction , button):
         
         if interaction.user != self.current:
@@ -349,7 +352,8 @@ class myview(discord.ui.View):
         else :    
             self.users[self.current]["amounts"][1] += self.betamount 
             await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", int(self.betamount), self.current.id , interaction.guild.id)
-        self.users[self.current]["amounts"][0] = self.betamount
+        self.users[self.current]["amounts"][0] = to_debit
+        self.users[self.current]['amounts'][2] = cur_amount - to_debit
         
         current_player = self.current
         next_player = next(self.player_iter)
@@ -368,9 +372,10 @@ class myview(discord.ui.View):
         self.embed.set_footer(text= " ")
         
     
-    @discord.ui.button( label = "?" , style = discord.ButtonStyle.red  , row = 1) 
+    @discord.ui.button( label = "Help"  , row = 1 , emoji= "❓")
     async def Replay(self , interaction , button):
-        await interaction.response.send_message( "**Blinds Rules**\n\nThe Aces have been ranked as the highest with 2 being the lowest. The goal is to have the top 3-card hand and increase the pot before the game ends. The rankings are as follows:\n\nRanking of the cards from highest to lowest:\n\n ||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​|| _ _ _ _ _ _ https://cdn.discordapp.com/attachments/1059511042604015696/1066562988590514246/image.png" , ephemeral = True )
+        data = f"\n\n**Abbreviations** :\n{chip} : `Last max bet of user/table`\n{chips} : `Total bet amount of user/table`\n{pvc_coin(interaction.guild.id)[0]} : `Remaining balance for user`"
+        await interaction.response.send_message( f"{data}\n\n**Blinds Rules**\n\nThe Aces have been ranked as the highest with 2 being the lowest. The goal is to have the top 3-card hand and increase the pot before the game ends. The rankings are as follows:\n\nRanking of the cards from highest to lowest: ||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​||||​|| _ _ _ _ _ _ https://cdn.discordapp.com/attachments/1059511042604015696/1066562988590514246/image.png" , ephemeral = True )
         return
 
     async def interaction_check(self, interaction):
@@ -446,7 +451,7 @@ class Mb(commands.Cog):
                 await channel.send(F"{author.mention} You are already in game" , delete_after = 3)
                 return
             if len(self.players[channel]) < 5 :
-                self.players[channel][author] = {"amounts" : [amount , amount] , "compair" : None , 'blind_info' : False , 'player_cards' : [] , "in_game" : True , "status" : ' ' }
+                self.players[channel][author] = {"amounts" : [0 , amount , bank_amount-amount] , "compair" : None , 'blind_info' : False , 'player_cards' : [] , "in_game" : True , "status" : ' ' }
                 
                 await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", amount, author.id, channel.guild.id)
 
@@ -455,14 +460,17 @@ class Mb(commands.Cog):
                 await channel.send(f"{author.mention} game is full , try after some time" , delete_after = 3 )    
         except KeyError :     
             self.players[channel] = {}
-            self.players[channel][author] = {"amounts" : [amount , amount] , "compair" : None , 'blind_info' : False , 'player_cards' : [] , "in_game" : True ,  "status" : ' ' }
+            self.players[channel][author] = {"amounts" : [0 , amount , bank_amount-amount] , "compair" : None , 'blind_info' : False , 'player_cards' : [] , "in_game" : True ,  "status" : ' ' }
             
             await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", amount, author.id, channel.guild.id)
 
             # self.players["channel"]["user"] = {"a" : 5 , "b" : 6}
         # if len(self.players[channel]) == 0:
             view = join_blind(30, self , author , amount)
-            msg = await channel.send(embed = discord.Embed(description=f"<a:dcload:1330518199372091473> waiting for other player (exp <t:{int(datetime.now().timestamp()+30)}:R>)") , view = view)
+            embed = discord.Embed(description=f"<a:dcload:1330518199372091473> waiting for other player for {pvc_coin(channel.guild.id)[0]} {amount} {pvc_coin(channel.guild.id)[1]} game (expire <t:{int(datetime.now().timestamp()+30)}:R>)")
+            embed.description += f"\n\n**Abbreviations** :\n{chip} : `Last max bet of user/table`\n{chips} : `Total bet amount of user/table`\n{pvc_coin(channel.guild.id)[0]} : `Remaining balance for user`"
+            # embed.set_footer(text= f"Players : 1/4")
+            msg = await channel.send(embed = embed , view = view)
             
             await asyncio.sleep(30)
             
@@ -475,18 +483,17 @@ class Mb(commands.Cog):
             else : 
                 users = self.players[channel]
                 self.players.pop(channel)
-                embed = discord.Embed(description= f"Game total Bet - **{len(users)*amount:,}**\nGame Current Bet - {amount}")
-                # embed.set_thumbnail( url = "https://media.discordapp.net/attachments/976542645801328681/1067027599387283526/sky247_logo_1.png")
+                embed = discord.Embed(description= f"{chips} : **{len(users)*amount:,}**\n{chip} : **{amount:,}**")
                 
                 player_iter = cycle(users)
                 current = next(player_iter)
                 for user in users :
                     if user == current :
-                        embed.add_field(name = f"{user.name} *<t:{int(datetime.now().timestamp() + 30)}:R>" , value= f"*Last Bet : +{amount:,}\n\nTotal Bet : {amount:,}"  )
+                        embed.add_field(name = f"{user.name} *<t:{int(datetime.now().timestamp() + 30)}:R>" , value= f"{chip} : `{0:,}`\n{chips} : `{amount:,}`\n{pvc_coin(channel.guild.id)[0]} : `{users[user]['amounts'][2]:,}`")
                         continue
-                    embed.add_field(name = f"{user.name}" , value= f"*Last Bet : +{amount:,}\n\nTotal Bet : {amount:,}" )
-            # embed.add_field(name = f"{author.name} *<t:{int(datetime.now().timestamp() + 30)}:R>" , value= f"*Last Bet : +{amount:,}\n\nTotal Bet : {amount:,}")
-            # embed.add_field(name = element['user'].name , value= f"*Last Bet : +{amount:,}\n\nTotal Bet : {amount:,}")
+                    embed.add_field(name = f"{user.name}" , value= f"{chip} : `{0:,}`\n{chips} : `{amount:,}`\n{pvc_coin(channel.guild.id)[0]} : `{users[user]['amounts'][2]:,}`")
+            # embed.add_field(name = f"{author.name} *<t:{int(datetime.now().timestamp() + 30)}:R>" , value= f"*{chip} : +{amount:,}\n\n{chips} : {amount:,}")
+            # embed.add_field(name = element['user'].name , value= f"*{chip} : +{amount:,}\n\n{chips} : {amount:,}")
                 view = myview(timeout = None , users = users , player_iter = player_iter , current = current , amount = amount , embed = embed) 
                 msg1 = await channel.send( f" ".join([i.mention for i in users]) ,embed = embed, view = view)  #f" ".join([i.mention for i in users])
                 view.msg = msg1
