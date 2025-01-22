@@ -493,7 +493,7 @@ class Economy(commands.Cog):
             if "0" in x :
                 await open_account(ctx.guild.id , user.id)
                 await self.client.db.execute('UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
-            ecoembed.description = f'You have sent {coin(ctx.guild.id)} {amount :,} to {user}'
+            ecoembed.description = f'You have sent {pvc_coin(ctx.guild.id)[0]} {amount :,} to {user}'
             ecoembed.color = 0x08FC08
             await ctx.send (embed = ecoembed)
 
