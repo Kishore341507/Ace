@@ -472,7 +472,7 @@ class Economy(commands.Cog):
                 await open_account(ctx.guild.id , ctx.author.id)
                 member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
         
-        mem_cash = member_bal["cash"]
+        mem_cash = member_bal["pvc"]
         
         try:
             amount = int(amount)
@@ -488,11 +488,11 @@ class Economy(commands.Cog):
             ecoembed.description = 'You cannot send 0 or less'
             await ctx.send (embed = ecoembed)
         else:
-            await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-            x = await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
+            await self.client.db.execute('UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
+            x = await self.client.db.execute('UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
             if "0" in x :
                 await open_account(ctx.guild.id , user.id)
-                await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
+                await self.client.db.execute('UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
             ecoembed.description = f'You have sent {coin(ctx.guild.id)} {amount :,} to {user}'
             ecoembed.color = 0x08FC08
             await ctx.send (embed = ecoembed)
