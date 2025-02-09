@@ -143,11 +143,28 @@ class PVC(commands.Cog):
             #create vc 
                 pvc_category = client.data[member.guild.id]["pvc_category"]
 
-                overwrites = {
-                member.guild.me : discord.PermissionOverwrite(view_channel= True , connect = True ) ,   
-                member.guild.default_role: discord.PermissionOverwrite(connect=False , stream = True) ,
-                member : discord.PermissionOverwrite(connect=True ,  view_channel = True)
-                }
+                overwrites = {}
+                if pvc_category and member.guild.get_channel(pvc_category) :
+                    overwrites = member.guild.get_channel(pvc_category).overwrites
+
+                if member.guild.me not in overwrites :
+                    overwrites[member.guild.me] = discord.PermissionOverwrite(view_channel= True , connect = True )
+                else :
+                    overwrites[member.guild.me].update(view_channel= True , connect = True )
+                if member.guild.default_role not in overwrites :
+                    overwrites[member.guild.default_role] = discord.PermissionOverwrite(connect=False , stream = True)
+                else :
+                    overwrites[member.guild.default_role].update(connect=False )
+                if member not in overwrites :
+                    overwrites[member] = discord.PermissionOverwrite(connect=True ,  view_channel = True)
+                else :
+                    overwrites[member].update(connect=True ,  view_channel = True)
+
+                # overwrites = {
+                # member.guild.me : discord.PermissionOverwrite(view_channel= True , connect = True ) ,   
+                # member.guild.default_role: discord.PermissionOverwrite(connect=False , stream = True) ,
+                # member : discord.PermissionOverwrite(connect=True ,  view_channel = True)
+                # }
 
                 if client.data[member.guild.id]['pvc_perms'] :
                     for role in client.data[member.guild.id]['pvc_perms'] :
