@@ -197,7 +197,7 @@ class PVC(commands.Cog):
                     await channel.send( embed = bembed(f"{member} your vc created named {PVC.mention} for `{duration[1]}` , Manage With pvcinfo Command!"))   
                 return PVC
             else :
-                await channel.send(embed = bembed("transetion cenceled"))   
+                await channel.send(embed = bembed("PVC Creation Cancelled!"))   
                 return None 
         elif duration[0] <= 120 :
             return None
