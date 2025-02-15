@@ -450,7 +450,10 @@ class Games(commands.Cog):
         await ctx.channel.set_permissions(ctx.guild.default_role , send_messages = True)
         embed = discord.Embed(description = message , color= 0x2b2c31)
         msg0  = await ctx.send(embed = embed)
-        await msg0.pin()
+        try :
+            await msg0.pin()
+        except :
+            pass
 
         def check(m):
             return m.content == str(number) and m.channel == ctx.channel
@@ -459,7 +462,10 @@ class Games(commands.Cog):
 
         embed = discord.Embed(description = f"Congratulation {msg.author.mention}! You guessed the number **{number}**" , color= 0x2b2c31)
         await msg.reply( ctx.author.mention , embed = embed)
-        await msg.pin()
+        try :
+            await msg.pin()
+        except :
+            pass
 
         # remove send message perms from everyone 
         await ctx.channel.set_permissions(ctx.guild.default_role , send_messages = False)
