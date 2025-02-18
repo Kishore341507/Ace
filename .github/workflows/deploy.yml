@@ -1,0 +1,25 @@
+name: Deploy to Google Cloud VM
+
+on:
+  push:
+    branches:
+      - aui
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 34.75.110.48 >> ~/.ssh/known_hosts
+
+      - name: Pull latest code on VM
+        run: |
+          ssh -i ~/.ssh/id_rsa kamal_kishore@34.75.110.48 "cd /home/kamal_kishore/Ace && git pull"
