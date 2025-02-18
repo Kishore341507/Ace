@@ -7,6 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 
+# added new line
 @client.event
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
