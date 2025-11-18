@@ -18,8 +18,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 34.75.110.48 >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.GCP_VM_IP }} >> ~/.ssh/known_hosts
 
       - name: Pull latest code on VM
         run: |
-          ssh -i ~/.ssh/id_rsa kamal_kishore@34.75.110.48 "cd /home/kamal_kishore/Ace && git pull"
+          ssh -i ~/.ssh/id_rsa ${{ secrets.GCP_USERNAME }}@${{ secrets.GCP_VM_IP }} "cd /home/${{ secrets.GCP_USERNAME }}/Ace && git pull"

@@ -1,6 +1,13 @@
 # Casino and PVC bot for Discord
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+
 > [!NOTE]
 > The bot currently supports Python 3.11 correctly and might malfunction a bit with python 3.12.
+
+> [!IMPORTANT]
+> Before deploying this bot, make sure to read the [SECURITY.md](SECURITY.md) file for important security considerations.
 
 ## Key Features
 
@@ -28,15 +35,29 @@ $ python3 -m pip install -U .[voice]
 
 ### Follow the following steps to run the main ace.py file properly
   1. In the parent directory create a file named .env
-  2. Open the file and write the following contents inside to
+  2. Open the file and write the following contents inside:
      - TOKEN = "xyz...." [This is your discord bot application token, paste it here.]
      - DB = "abc...." [This is your Postgresql database connection url.]
-     - The file should look something like this
+     - ERROR_CHANNEL_ID = "123..." [Optional: Discord channel ID for error logging]
+     - BUG_REPORT_CHANNEL_ID = "456..." [Optional: Discord channel ID for bug reports]
+     - The file should look something like this:
      ```py
         TOKEN = "NzExNTIxNTg2NDMwNTIxNTc1.Xs1NTw................2aNV1eyO3s"
         DB = "postgresql://username:password@host:port/database"
+        ERROR_CHANNEL_ID = "1234567890123456789"
+        BUG_REPORT_CHANNEL_ID = "9876543210987654321"
      ```
   3. Now your bot environment is all set up.
+
+### GitHub Actions Deployment (Optional)
+If you want to use the GitHub Actions workflow for deployment, configure these secrets in your GitHub repository:
+  - `GCP_SSH_PRIVATE_KEY` - Your SSH private key for server access
+  - `GCP_VM_IP` - Your server's IP address
+  - `GCP_USERNAME` - Your SSH username
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this project.
 
 ## Links
 
@@ -44,3 +65,7 @@ $ python3 -m pip install -U .[voice]
 - [Invite me to your server](https://tickap.com/bots)
 - [TickAp Support Server](https://discord.gg/KeDwvbU5Zf)
 - [Discord.py documentation](https://discordpy.readthedocs.io/en/latest/index.html)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
