@@ -51,9 +51,13 @@ class MyBot(commands.Bot):
                         await self.load_extension(f'commands.{filenametemp}.{filename[:-3]}')
         print(f"Finished loading all the Cogs.")
         self.start_time = datetime.now()
-        try:
-            self.error_logging_ch = await self.fetch_channel(1209630548746706944)
-        except discord.errors.Forbidden:
+        error_channel_id = os.environ.get("ERROR_CHANNEL_ID")
+        if error_channel_id:
+            try:
+                self.error_logging_ch = await self.fetch_channel(int(error_channel_id))
+            except (discord.errors.Forbidden, discord.errors.NotFound, ValueError):
+                await self.unload_extension('commands.owner.logging')
+        else:
             await self.unload_extension('commands.owner.logging')
 
 async def get_prefix(client , message):

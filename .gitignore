@@ -8,9 +8,29 @@
 
 #ignore python build files
 __pycache__
+*.pyc
+*.py[cod]
+*$py.class
 
-#vertual env
+#virtual env
 .venv
+venv/
+env/
+ENV/
 
 #ignore directory
 extra
+
+# Test data files
+test.txt
+test_*.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -7,6 +7,7 @@ import random
 import typing
 from datetime import datetime
 import math
+import os
 from database import client
 from utils import bembed, coin, pvc_coin, default_economy, open_account, check_channel, check_perms, amountconverter
 
@@ -89,7 +90,16 @@ class Economy(commands.Cog):
     # @commands.check(check_channel_pvc)
     @cooldown(1, 5, BucketType.member)
     async def bug(self, ctx, screenshot: typing.Optional[discord.Attachment] = None, *, message):
-        channel  = client.get_channel(1209630599472750622)
+        bug_channel_id = os.environ.get("BUG_REPORT_CHANNEL_ID")
+        if not bug_channel_id:
+            await ctx.reply(embed = bembed("Bug reporting is not configured for this bot.", discord.Color.red()))
+            return
+        
+        channel = client.get_channel(int(bug_channel_id))
+        if not channel:
+            await ctx.reply(embed = bembed("Bug reporting channel not found.", discord.Color.red()))
+            return
+            
         invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else await (ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
         dis = f"Author: [{ctx.author.name}](https://discordapp.com/users/{ctx.author.id})\nServer: [{ctx.guild.name}]({invite or ctx.guild.id})\nMessage: {ctx.message.jump_url}\nReport: {message}"
 
