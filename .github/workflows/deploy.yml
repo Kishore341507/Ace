@@ -1,4 +1,6 @@
 name: Auto Deploy to VM on Push
+permissions:
+  contents: read
 
 on:
   push:
