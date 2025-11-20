@@ -69,7 +69,7 @@ class PVC(commands.Cog):
                 else:
                     await client.db.execute('DELETE FROM pvcs WHERE  vcid = $1' , pvc['vcid'])
 
-        if client.user.id == 1165310965710082099 :
+        if client.user.name == 'Ace' :
             await client.db.execute('UPDATE pvcs SET duration = duration - 120')
 
 
