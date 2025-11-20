@@ -51,9 +51,9 @@ $ python3 -m pip install -U .[voice]
 
 ### GitHub Actions Deployment (Optional)
 If you want to use the GitHub Actions workflow for deployment, configure these secrets in your GitHub repository:
-  - `GCP_SSH_PRIVATE_KEY` - Your SSH private key for server access
-  - `GCP_VM_IP` - Your server's IP address
-  - `GCP_USERNAME` - Your SSH username
+  - `VM_SSH_KEY` - Your SSH private key for server access
+  - `VM_HOST` - Your server's IP address
+  - `VM_USER` - Your SSH username
 
 ## Contributing
 
