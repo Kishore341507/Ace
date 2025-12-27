@@ -6,6 +6,9 @@
 # Ignore .json files
 *.json
 
+# Ignore pyenv files
+.python-version
+
 #ignore python build files
 __pycache__
 *.pyc
