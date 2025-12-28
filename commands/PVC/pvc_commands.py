@@ -320,13 +320,15 @@ class PVC_COMMANDS(commands.Cog):
             for member in data :
                 try :
                     del overwrites[member]
-                except : pass
-            
-            # Remove from voice channel if connected
-            if member.voice and member.voice.channel == vc_channel:
-                try:
-                    await member.move_to(None)
-                except :pass
+                except Exception:
+                    pass
+                
+                # Remove from voice channel if connected
+                if member.voice and member.voice.channel == vc_channel:
+                    try:
+                        await member.move_to(None)
+                    except discord.HTTPException:
+                        pass
 
             if overwrites != ctx.guild.get_channel(info['vcid']).overwrites :
                 await ctx.guild.get_channel(info['vcid']).edit( overwrites = overwrites )
