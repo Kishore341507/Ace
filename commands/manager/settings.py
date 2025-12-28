@@ -1163,7 +1163,7 @@ class Settings(commands.Cog):
     if perms_value != '' and len(perms_value) < 999:
       embed.add_field(name="PVC Role Permissions", value=perms_value, inline=False)
 
-    embed.add_field(name="Public PVC", value= f'vc limit : {client.data[guild.id]['pvc_public']}' if client.data[guild.id]['pvc_public']!=0 else 'Off' , inline=False)
+    embed.add_field(name="Public PVC", value= f'vc limit : {client.data[guild.id]["pvc_public"]}' if client.data[guild.id]["pvc_public"]!=0 else 'Off' , inline=False)
 
     # Creating the view for PVC settings
     class pvcSettingsView(discord.ui.View):

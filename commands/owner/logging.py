@@ -45,7 +45,17 @@ class ErrorLogging(commands.Cog):
                 return
         else:
             traceback_msg = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
-            invite = ctx.guild.vanity_url or (await ctx.guild.invites())[0] if ctx.guild.me.guild_permissions.manage_guild and await ctx.guild.invites() else (await ctx.guild.channels[0].create_invite() if ctx.guild.me.guild_permissions.create_instant_invite else '')
+            invite = ''
+            if ctx.guild.vanity_url:
+                invite = ctx.guild.vanity_url
+            elif ctx.guild.me.guild_permissions.manage_guild:
+                guild_invites = await ctx.guild.invites()
+                if guild_invites:
+                    invite = guild_invites[0]
+            if not invite and ctx.guild.me.guild_permissions.create_instant_invite:
+                text_channel = next((c for c in ctx.guild.channels if isinstance(c, discord.TextChannel)), None)
+                if text_channel is not None:
+                    invite = await text_channel.create_invite()
             content = f"**Author:** [{ctx.author.name}](<https://discordapp.com/users/{ctx.author.id}>)\n**Server:** {ctx.guild.name} - [Invite]({invite or '`Not available`'})\n**Message:** `{ctx.message.content}` - {ctx.message.jump_url}"
             try:
                 max_size = 1700
