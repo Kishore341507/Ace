@@ -54,7 +54,7 @@ class BjButton(discord.ui.Button['bjview']):
         view.ctx.command.reset_cooldown(view.ctx)
         if winner == 1:
             view.embed.color = 0x47d220
-            await client.cache.increment_user_balance(interaction.guild.id, view.ctx.author.id, cash=(2 * view.amount))
+            await client.cache.increment_user_balance(interaction.guild.id, view.ctx.author.id, cash=(2 * view.amount), reason="Blackjack win")
             # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"cash": + ( 2 * view.amount)}})
             await interaction.response.edit_message(embed=view.embed, view=view)
 
@@ -63,7 +63,7 @@ class BjButton(discord.ui.Button['bjview']):
             await interaction.response.edit_message(embed=view.embed, view=view)
 
         else:
-            await client.cache.increment_user_balance(interaction.guild.id, view.ctx.author.id, cash=view.amount)
+            await client.cache.increment_user_balance(interaction.guild.id, view.ctx.author.id, cash=view.amount, reason="Blackjack tie")
             # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"cash": + view.amount}})
             await interaction.response.edit_message(embed=view.embed, view=view)
 
@@ -268,7 +268,7 @@ class Bj(commands.Cog):
                         value=f"{pTotal}\n\nScore: {sum(pCardNum)}", inline=True)
         embed.add_field(name=f"**Dealer Hand**",
                         value=f"{y[0]} <:BACK:1147778438359429120>\n\nScore: {dCardNum[0]}\n", inline=True)
-        await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
+        await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, reason="Blackjack bet")
         view = bjview(timeout=180, ctx=ctx, cards=self.cards, dCARD=dCARD,
                       dCardNum=dCardNum, pCARD=pCARD, pCardNum=pCardNum, embed=embed, amount=amount)
         await ctx.send(embed=embed, view=view)

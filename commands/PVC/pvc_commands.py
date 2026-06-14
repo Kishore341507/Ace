@@ -73,7 +73,7 @@ class PVC_COMMANDS(commands.Cog):
             except :
                 pass
             if refund :
-                await client.cache.increment_user_balance(ctx.guild.id, info['id'], pvc=int((info['duration'] - 180 ) * (client.data[ctx.guild.id]['rate']/3600)))
+                await client.cache.increment_user_balance(ctx.guild.id, info['id'], pvc=int((info['duration'] - 180 ) * (client.data[ctx.guild.id]['rate']/3600)), reason="PVC deletion refund")
     
 
         view = discord.ui.View()
@@ -484,7 +484,7 @@ class PVC_COMMANDS(commands.Cog):
                    await client.db.execute("DELETE FROM pvcs WHERE vcid = $1" , info['vcid'])
                 except :
                     pass
-                await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, pvc=int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)))
+                await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, pvc=int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)), reason="PVC deletion refund")
                 await ctx.message.delete()
         delete_pvc = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='<:bin:1188639295423139950>' , row = 2 )
         delete_pvc.callback = update_delete_pvc
@@ -714,7 +714,7 @@ class PVC_COMMANDS(commands.Cog):
                    await interaction.guild.get_channel(info['vcid']).delete()
                 except :
                     pass
-                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, pvc=int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)))
+                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, pvc=int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)), reason="PVC deletion refund")
 
         @discord.ui.button(emoji= '📢' , custom_id="pvc:public", row=2)
         async def public(self, interaction: discord.Interaction , button: discord.ui.Button,):

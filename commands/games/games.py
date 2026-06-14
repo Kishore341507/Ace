@@ -42,13 +42,13 @@ class Games(commands.Cog):
                 await ctx.send(f'You cannot flip {_min} , less or more then {_max}') 
         else:
                 embed = bembed(f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1205817149612884028>")
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, reason="Coinflip bet")
                 result = random.choice(['head','tail'])
                 result_side = "<:tickapCoin:1191976654042570792>"
                 msg = await ctx.send(content = ctx.author.mention, embed=embed)
                 await asyncio.sleep(random.randint(1,4))
                 if result == side:
-                  await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(2*amount))
+                  await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(2*amount), reason="Coinflip win")
                   embed.description = f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you Won {coin(ctx.guild.id)} **{amount*2:,}**"
                   embed.color = discord.Color.brand_green()
                   await msg.edit(embed=embed)
@@ -115,17 +115,17 @@ class Games(commands.Cog):
         else :
                 if first == second == third:
                     ecoembed.description=f"You won {coin(ctx.guild.id)} {3*amount}\n\n{outupt}" 
-                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(2*amount))
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(2*amount), reason="Slots jackpot win")
                     ecoembed.color =  discord.Color.brand_green()
                     await ctx.send(embed=ecoembed)
                 elif first == second or second  == third:
                     ecoembed.description=f"You won {coin(ctx.guild.id)} {int(1.5*amount)} \n\n{outupt}"
-                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(int(0.5*amount)))
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(int(0.5*amount)), reason="Slots win")
                     ecoembed.color =  discord.Color.brand_green()
                     await ctx.send(embed=ecoembed)
                 else:
                     ecoembed.description=f"You lost {coin(ctx.guild.id)} {amount}\n\n{outupt}" 
-                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, reason="Slots bet loss")
                     ecoembed.color =  discord.Color.brand_red()
                     await ctx.send(embed=ecoembed)
     
@@ -177,19 +177,19 @@ class Games(commands.Cog):
         else:
             x = random.randint(1, 6)
             if rang == "even" and x in [2,4,6]:
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount, reason="Dice roll win")
                 ecoembed.description= f"You win {coin(ctx.guild.id)} {2 * amount :,}\n:game_die: You rolled **{x}**"
                 await ctx.send(embed = ecoembed)
             elif rang == "odd" and x in [1,3,5]:    
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount, reason="Dice roll win")
                 ecoembed.description= f"You win {coin(ctx.guild.id)} {2 * amount :,}\n:game_die: You rolled **{x}**"
                 await ctx.send(embed = ecoembed)
             elif rang in [1,2,3,4,5,6] and x == rang :
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(4*amount))
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(4*amount), reason="Dice roll jackpot win")
                 ecoembed.description= f"You win {coin(ctx.guild.id)} {5 * amount :,}\n:game_die: You rolled **{x}**"
                 await ctx.send(embed = ecoembed)
             else:
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, reason="Dice roll bet loss")
                 ecoembed.description= f"You lose {coin(ctx.guild.id)}{amount: ,}\n:game_die: You rolled **{x}**"
                 ecoembed.color = discord.Color.red()
                 await ctx.send(embed = ecoembed)

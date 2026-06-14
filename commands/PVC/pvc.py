@@ -59,7 +59,7 @@ class PVC(commands.Cog):
                             pass
                         else :
                             await client.db.execute('UPDATE pvcs SET duration = 120 WHERE id = $1' , pvc['id'])
-                            await client.cache.increment_user_balance(pvc['guild_id'], pvc['id'], pvc=-( math.ceil(client.data[pvc['guild_id']]["rate"] * (1/3600) * (120 - pvc['duration'] )) ))
+                            await client.cache.increment_user_balance(pvc['guild_id'], pvc['id'], pvc=-( math.ceil(client.data[pvc['guild_id']]["rate"] * (1/3600) * (120 - pvc['duration'] )) ), reason="PVC auto charge")
                             continue
                     try :
                         await client.get_guild(pvc['guild_id']).get_channel(pvc['vcid']).delete()
@@ -113,7 +113,7 @@ class PVC(commands.Cog):
                 await channel.send( embed = bembed(f'Want To Extend Your PVC ? , This will charge you {pvc_coin(member.guild.id)[0]} **{ int( (duration[0]/3600) * rate) }** {pvc_coin(member.guild.id)[1]} !') , view = view)
                 await view.wait()
                 if view.value : 
-                    await self.client.cache.increment_user_balance(member.guild.id, member.id, pvc=-int((duration[0]/3600) * rate))
+                    await self.client.cache.increment_user_balance(member.guild.id, member.id, pvc=-int((duration[0]/3600) * rate), reason="PVC extension charge")
                     await client.db.execute("UPDATE pvcs SET duration = duration + $1 WHERE id = $2 AND guild_id = $3" , duration[0] , member.id , member.guild.id )
                     await channel.send( embed = bembed(f"{member} your vc Extened for `{duration[1]}` , See Info With pvcinfo Command!"))
                     return None
@@ -170,7 +170,7 @@ class PVC(commands.Cog):
                 except :
                     await PVC.delete()
                     return
-                await self.client.cache.increment_user_balance(member.guild.id, member.id, pvc=-int((duration[0]/3600) * rate))
+                await self.client.cache.increment_user_balance(member.guild.id, member.id, pvc=-int((duration[0]/3600) * rate), reason="PVC creation charge")
                 if auto :
                     await channel.send( embed = bembed(f"{member} your vc created named {PVC.mention} on 🛺 PayAsPerYouGO mode, Manage With pvcinfo Command!"))   
                 else :

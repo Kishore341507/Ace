@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from discord.ext import commands, tasks
 from pytz import timezone
 from discord.ext.commands import BucketType, cooldown
@@ -256,6 +257,11 @@ class Market(commands.Cog):
     else:
       await self.client.db.execute('UPDATE users SET bank = bank - $1, stocks = stocks + $2 WHERE id = $3 AND guild_id = $4', total_cost, amount, ctx.author.id, ctx.guild.id)
       await self.client.cache.redis.delete(f"user:{ctx.guild.id}:{ctx.author.id}")
+      asyncio.create_task(
+          self.client.cache._log_transaction(
+              ctx.guild.id, ctx.author.id, reason="Bought market stocks", bank=-total_cost
+          )
+      )
 
     user_name = ctx.author.nick if ctx.author.nick else ctx.author.display_name
 
@@ -318,6 +324,11 @@ class Market(commands.Cog):
         'UPDATE users SET bank = bank + $1, stocks = stocks - $2 WHERE id = $3 AND guild_id = $4',
         total_value, amount, ctx.author.id, ctx.guild.id)
     await self.client.cache.redis.delete(f"user:{ctx.guild.id}:{ctx.author.id}")
+    asyncio.create_task(
+        self.client.cache._log_transaction(
+            ctx.guild.id, ctx.author.id, reason="Sold market stocks", bank=total_value
+        )
+    )
 
     embed = discord.Embed(
         title=f"{ctx.author.display_name}",

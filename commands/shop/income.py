@@ -42,7 +42,7 @@ class income(commands.Cog):
                     pvc += f"{ctx.guild.get_role(x['role_id']).mention} | {pvc_coin(ctx.guild.id)[0]} {x['pvc']:,} {pvc_coin(ctx.guild.id)[1]}\n"                  
                 self.income_cooldown[ctx.guild.id][ctx.author.id][x['role_id']] = time.time() + x['cooldown']
         if bank_add + cash_add + pvc_add != 0 :
-            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=cash_add, bank=bank_add, pvc=pvc_add)
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=cash_add, bank=bank_add, pvc=pvc_add, reason="Role income collect")
         
         output = "🤷🏾‍♂️ But Nothing To Collect"
         

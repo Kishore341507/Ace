@@ -118,9 +118,9 @@ class store(commands.Cog):
         
         elif item['price'] <= bal[t] : 
             if t == 'cash' :
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-item["price"])
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-item["price"], reason=f"Bought item: {item['name']}")
             elif t == 'pvc' :  
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, pvc=-item["price"])
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, pvc=-item["price"], reason=f"Bought item: {item['name']}")
             
             ecoembed.description = f"✅ You have bought **{item['name']}** item for {coin(ctx.guild.id) if item['currency'] == 1 else pvc_coin(ctx.guild.id)[0]} {item['price']}!"
             await ctx.send(embed = ecoembed)
@@ -130,7 +130,7 @@ class store(commands.Cog):
                 except :
                     await ctx.send("There is some issue in giving the roles , please inform admins to put the bot role above reward role and bot have manage role perms !")
             
-            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=item["cash"], bank=item["bank"], pvc=item["pvc"]) 
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=item["cash"], bank=item["bank"], pvc=item["pvc"], reason=f"Item rewards from: {item['name']}") 
             if item['limit'] is not None :
                 await client.db.execute('UPDATE store SET "limit" = "limit" - 1 WHERE id = $1 AND guild_id = $2', itemid , ctx.guild.id)
           

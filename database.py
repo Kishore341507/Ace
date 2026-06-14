@@ -35,7 +35,7 @@ class MyBot(commands.Bot):
         
         redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
         self.redis = await redis.from_url(redis_url, decode_responses=True)
-        self.cache = CacheManager(self.db, self.redis)
+        self.cache = CacheManager(self, self.db, self.redis)
         
         try:
             await self.redis.ping()

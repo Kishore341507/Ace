@@ -107,11 +107,11 @@ class EcoManager(commands.Cog):
             member = target
             bal = await self.client.cache.get_user(ctx.guild.id, member.id)
             if location == "bank":
-                await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=amount)
+                await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=amount, reason=f"Added by Admin: {ctx.author.name}")
             elif location == "cash":
-                await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=amount)
+                await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=amount, reason=f"Added by Admin: {ctx.author.name}")
             elif location == "pvc":
-                await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=amount)
+                await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=amount, reason=f"Added by Admin: {ctx.author.name}")
             elif location == "shares":
                 await client.db.execute(f"UPDATE users SET stocks = stocks + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                 await client.cache.redis.delete(f"user:{ctx.guild.id}:{member.id}")
@@ -130,11 +130,11 @@ class EcoManager(commands.Cog):
                         continue
                     bal = await self.client.cache.get_user(ctx.guild.id, member.id)
                     if location == "bank":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=amount, reason=f"Added by Admin (all): {ctx.author.name}")
                     elif location == "cash":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=amount, reason=f"Added by Admin (all): {ctx.author.name}")
                     elif location == "pvc":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=amount, reason=f"Added by Admin (all): {ctx.author.name}")
                     elif location == "shares":
                         await client.db.execute(f"UPDATE users SET stocks = stocks + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                         await client.cache.redis.delete(f"user:{ctx.guild.id}:{member.id}")
@@ -146,11 +146,11 @@ class EcoManager(commands.Cog):
                         continue
                     bal = await self.client.cache.get_user(ctx.guild.id, member.id)
                     if location == "bank":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=amount, reason=f"Added by Admin (role): {ctx.author.name}")
                     elif location == "cash":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=amount, reason=f"Added by Admin (role): {ctx.author.name}")
                     elif location == "pvc":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=amount, reason=f"Added by Admin (role): {ctx.author.name}")
                     elif location == "shares":
                         await client.db.execute(f"UPDATE users SET stocks = stocks + $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                         await client.cache.redis.delete(f"user:{ctx.guild.id}:{member.id}")
@@ -178,11 +178,11 @@ class EcoManager(commands.Cog):
             member = target
             bal = await self.client.cache.get_user(ctx.guild.id, member.id)
             if location == "bank":
-                await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=-amount)
+                await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=-amount, reason=f"Removed by Admin: {ctx.author.name}")
             elif location == "cash":
-                await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=-amount)
+                await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=-amount, reason=f"Removed by Admin: {ctx.author.name}")
             elif location == "pvc":
-                await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=-amount)
+                await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=-amount, reason=f"Removed by Admin: {ctx.author.name}")
             elif location == "shares":
                 await client.db.execute(f"UPDATE users SET stocks = stocks - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                 await client.cache.redis.delete(f"user:{ctx.guild.id}:{member.id}")
@@ -202,11 +202,11 @@ class EcoManager(commands.Cog):
                         continue
                     bal = await self.client.cache.get_user(ctx.guild.id, member.id)
                     if location == "bank":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=-amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=-amount, reason=f"Removed by Admin (all): {ctx.author.name}")
                     elif location == "cash":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=-amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=-amount, reason=f"Removed by Admin (all): {ctx.author.name}")
                     elif location == "pvc":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=-amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=-amount, reason=f"Removed by Admin (all): {ctx.author.name}")
                     elif location == "shares":
                         await client.db.execute(f"UPDATE users SET stocks = stocks - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                         await client.cache.redis.delete(f"user:{ctx.guild.id}:{member.id}")
@@ -218,11 +218,11 @@ class EcoManager(commands.Cog):
                         continue
                     bal = await self.client.cache.get_user(ctx.guild.id, member.id)
                     if location == "bank":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=-amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, bank=-amount, reason=f"Removed by Admin (role): {ctx.author.name}")
                     elif location == "cash":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=-amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, cash=-amount, reason=f"Removed by Admin (role): {ctx.author.name}")
                     elif location == "pvc":
-                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=-amount)
+                        await client.cache.increment_user_balance(ctx.guild.id, member.id, pvc=-amount, reason=f"Removed by Admin (role): {ctx.author.name}")
                     elif location == "shares":
                         await client.db.execute(f"UPDATE users SET stocks = stocks - $1 WHERE id = $2 AND guild_id = $3", amount, member.id ,ctx.guild.id)
                         await client.cache.redis.delete(f"user:{ctx.guild.id}:{member.id}")

@@ -76,7 +76,7 @@ class Economy(commands.Cog):
 
             if not retry_after:
                 await self.client.cache.get_user(message.guild.id, message.author.id)
-                await self.client.cache.increment_user_balance(message.guild.id, message.author.id, cash=random.randint(0, self.client.data[message.guild.id]['am_cash']), pvc=random.randint(0, self.client.data[message.guild.id]['am_pvc']))
+                await self.client.cache.increment_user_balance(message.guild.id, message.author.id, cash=random.randint(0, self.client.data[message.guild.id]['am_cash']), pvc=random.randint(0, self.client.data[message.guild.id]['am_pvc']), reason="Auto Money (chatting)")
       except :
             pass
 
@@ -194,7 +194,7 @@ class Economy(commands.Cog):
             ecoembed.description='You cannot withdraw 0 or less'
             await ctx.send (embed = ecoembed)
         else:
-            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount, bank=-amount)
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount, bank=-amount, reason="Withdraw")
             ecoembed.description = f':white_check_mark: Withdrew {coin(ctx.guild.id)} {amount:,} from your bank !'
             await ctx.send (embed = ecoembed)
             
@@ -212,7 +212,7 @@ class Economy(commands.Cog):
         bal = await self.client.cache.get_user(ctx.guild.id, user.id)
         if amount == "all":
             amount = int(bal["cash"])
-            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, bank=amount)
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, bank=amount, reason="Deposit")
             ecoembed.description = f':white_check_mark: deposit {coin(ctx.guild.id)} {amount:,} to your bank !'
             await ctx.send (embed = ecoembed)
             return
@@ -224,7 +224,7 @@ class Economy(commands.Cog):
                 amount = int(0.5 * bal["cash"])   
 
         if 0 <= amount <= bal['cash']  :
-            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, bank=amount)
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, bank=amount, reason="Deposit")
             ecoembed.description = f':white_check_mark: deposit {coin(ctx.guild.id)} {amount:,} to your bank !'
             await ctx.send (embed = ecoembed)             
         elif amount > bal['cash']:
@@ -249,7 +249,7 @@ class Economy(commands.Cog):
         amount = (random.randint( client.data[ctx.guild.id]['economy']['work']['min'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['min'] , client.data[ctx.guild.id]['economy']['work']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['max'])) 
            
         await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
-        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
+        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount, reason="Work command")
         ecoembed.description = f"good work , you get {coin(ctx.guild.id)} **{amount:,}** cash"  
         await ctx.send(embed = ecoembed)  
 
@@ -280,7 +280,7 @@ class Economy(commands.Cog):
         crime_amount = client.data[ctx.guild.id]['economy']['crime']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['crime']['max']   
         amount = (random.randint(-int(crime_amount/2) , crime_amount))    
         await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
-        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
+        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount, reason="Crime command")
         
         crime_win = [ f"you beat a server admin and find {coin(ctx.guild.id)} **{amount:,}** cash"  ,
         f"you triggered a mod successfully and found {coin(ctx.guild.id)} **{amount:,}** cash" ,
@@ -353,12 +353,12 @@ class Economy(commands.Cog):
             rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else default_economy['rob']['percent'] 
             if mem_total < 5000:
                 if user_cash < 1000:
-                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount), reason="Fined for failed rob attempt")
                     ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {int(abs(mem_total) * rob_amount) : ,} for trying to rob a poor person."
                     await ctx.send(embed = ecoembed)
                 else :
-                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=int(user_cash * rob_amount))
-                    await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=-int(user_cash * rob_amount))
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=int(user_cash * rob_amount), reason="Robbed other player")
+                    await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=-int(user_cash * rob_amount), reason="Robbed by other player")
                     ecoembed.description = f"✅ | You robbed {coin(ctx.guild.id)} {(int(user_cash * rob_amount)): ,} from {user}."
                     ecoembed.color = 0x08FC08
                     await ctx.send (embed = ecoembed)    
@@ -366,21 +366,21 @@ class Economy(commands.Cog):
                 x = random.randint(1, 2 )
                 if x==1:
                     if user_cash < 1000:
-                        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
+                        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount), reason="Fined for failed rob attempt")
                         ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} for trying to rob a poor person."
                         await ctx.send(embed = ecoembed)
                     else:
-                        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=int(user_cash * rob_amount))
-                        await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=-int(user_cash * rob_amount))
+                        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=int(user_cash * rob_amount), reason="Robbed other player")
+                        await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=-int(user_cash * rob_amount), reason="Robbed by other player")
                         ecoembed.description = f"✅ | You robbed {coin(ctx.guild.id)} {(int(user_cash * rob_amount)): ,} from {user}."
                         ecoembed.color = 0x08FC08
                         await ctx.send (embed = ecoembed)  
                 else :
-                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount), reason="Fined for failed rob attempt")
                     ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} **better luck next time.**"
                     await ctx.send (embed = ecoembed)
             elif mem_total > 10000:
-                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount), reason="Fined for failed rob attempt")
                 ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} Rich people dont rob."
                 await ctx.send(embed = ecoembed)
   
@@ -432,9 +432,9 @@ class Economy(commands.Cog):
             ecoembed.description = 'You cannot send 0 or less'
             await ctx.send (embed = ecoembed)
         else:
-            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, reason=f"Gave money to {user.name}")
             await self.client.cache.get_user(ctx.guild.id, user.id)
-            await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=amount)
+            await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=amount, reason=f"Received money from {ctx.author.name}")
             ecoembed.description = f'You have sent {coin(ctx.guild.id)} {amount :,} to {user}'
             ecoembed.color = 0x08FC08
             await ctx.send (embed = ecoembed)
@@ -453,7 +453,7 @@ class Economy(commands.Cog):
             await ctx.send(embed = bembed(f"Do You Want Reset {user}'s Money ?") , view = view )
             await view.wait()
             if view.value :
-                await self.client.cache.update_user(ctx.guild.id, user.id, cash=0, bank=0, stocks=0)
+                await self.client.cache.update_user(ctx.guild.id, user.id, reason=f"Economy reset by admin {ctx.author.name}", cash=0, bank=0, stocks=0)
                 await ctx.send( embed = bembed(f"{user.name}'s Economy Reset "))
     
         else :    
@@ -461,7 +461,7 @@ class Economy(commands.Cog):
             await ctx.send(embed = bembed("Are You Sure ?") , view = view )
             await view.wait()
             if view.value :
-                await self.client.cache.update_user(ctx.guild.id, ctx.author.id, cash=0, bank=0, stocks=0)
+                await self.client.cache.update_user(ctx.guild.id, ctx.author.id, reason="Economy reset by self", cash=0, bank=0, stocks=0)
                 await ctx.send( embed = bembed(f"{ctx.author.name}'s Economy Reset "))
     @resetmoney.error
     async def er(self , ctx , error ):

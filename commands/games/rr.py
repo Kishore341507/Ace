@@ -41,9 +41,9 @@ class MyView(View):
                         text = f"**__Russian Roulette Survivors__**\n"
                         if (len(self.player)) == 0:
                             self.player.append(self.author)
-                            await client.cache.increment_user_balance(self.ctx.guild.id, self.ctx.author.id, cash=-self.amount)
+                            await client.cache.increment_user_balance(self.ctx.guild.id, self.ctx.author.id, cash=-self.amount, reason="Russian Roulette bet loss")
                         for i in self.player:
-                            await client.cache.increment_user_balance(self.ctx.guild.id, i.id, cash=(self.amount + (int((self.amount)/(len(self.player))))))
+                            await client.cache.increment_user_balance(self.ctx.guild.id, i.id, cash=(self.amount + (int((self.amount)/(len(self.player))))), reason="Russian Roulette win")
                             text = text + f"{i.mention} win {(int((self.amount)/(len(self.player))))}\n"
                         await self.ctx.send(text)
                         self.ctx.command.reset_cooldown(self.ctx)
@@ -69,18 +69,18 @@ class MyView(View):
             await interaction.response.send_message("you cant !!" , ephemeral=True)
         elif interaction.user in player:
                 self.player.remove(interaction.user)
-                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=amount)
+                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=amount, reason="Russian Roulette leave refund")
                 button.label = f"join {len(player)}"
                 await interaction.response.edit_message(view=self)
         elif bal2["cash"] >= amount:
             if len(player) < 4 :
-                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=-amount)
+                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=-amount, reason="Russian Roulette join bet")
                 player.append(interaction.user)
                 button.label = f"join {len(player)}"
                 await interaction.response.edit_message(view=self)                
             else :
                 await interaction.response.edit_message(view = None)
-                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=-amount)
+                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=-amount, reason="Russian Roulette join bet")
                 player.append(interaction.user) 
                 await self.start()
                 
@@ -100,7 +100,7 @@ class MyView(View):
         elif interaction.user == self.author and len(player)==1:
             await interaction.response.edit_message(view = None)
             
-            await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=amount)
+            await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, cash=amount, reason="Russian Roulette refund (no players)")
             # await economy.update_one({"id": interaction.user.id} , {"$inc" : {"cash": +amount}})
             await self.ctx.send("The Russian Roulette game ended.\n\n**Not enought Participants.**")
             self.ctx.command.reset_cooldown(self.ctx)
@@ -143,7 +143,7 @@ class russian_roulette(commands.Cog):
             await ctx.send(embed=bembed(f'You cannot rr less than and equal to {coin(ctx.guild.id)} {_min:,} or more than {coin(ctx.guild.id)} {_max:,}', discord.Color.brand_red()).set_author(ctx.author)) 
             ctx.command.reset_cooldown(ctx)
         else: 
-            await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount) 
+            await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, reason="Russian Roulette host bet") 
             view = MyView(timeout=240 , amount= amount , author = ctx.author , ctx = ctx)
             ecoembed = discord.Embed(description= f'Russian Roulette from **{ctx.author}** , if you want to accept this tap join\n> **{amount}** {coin(ctx.guild.id)} \n> Autostart(ed) <t:{int(time.time() + 120)}:R>', color=  discord.Color.blurple() )
             # ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
