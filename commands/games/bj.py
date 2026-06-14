@@ -54,7 +54,7 @@ class BjButton(discord.ui.Button['bjview']):
         view.ctx.command.reset_cooldown(view.ctx)
         if winner == 1:
             view.embed.color = 0x47d220
-            await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", 2 * view.amount, view.ctx.author.id, interaction.guild.id)
+            await client.cache.increment_user_balance(interaction.guild.id, view.ctx.author.id, cash=(2 * view.amount))
             # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"cash": + ( 2 * view.amount)}})
             await interaction.response.edit_message(embed=view.embed, view=view)
 
@@ -63,7 +63,7 @@ class BjButton(discord.ui.Button['bjview']):
             await interaction.response.edit_message(embed=view.embed, view=view)
 
         else:
-            await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", view.amount, view.ctx.author.id, interaction.guild.id)
+            await client.cache.increment_user_balance(interaction.guild.id, view.ctx.author.id, cash=view.amount)
             # await view.economy.update_one({"id": view.ctx.author.id} , {"$inc" : {"cash": + view.amount}})
             await interaction.response.edit_message(embed=view.embed, view=view)
 
@@ -184,10 +184,7 @@ class Bj(commands.Cog):
         _min = client.data[ctx.guild.id]['games']['blackjack']['min'] if client.data[ctx.guild.id]['games'] else default_games['blackjack']['min']
         
         bj_amount = _max
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-        if bal is None:
-            await open_account(ctx.guild.id, ctx.author.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
         try:
             amount = int(amount)
         except ValueError:
@@ -271,7 +268,7 @@ class Bj(commands.Cog):
                         value=f"{pTotal}\n\nScore: {sum(pCardNum)}", inline=True)
         embed.add_field(name=f"**Dealer Hand**",
                         value=f"{y[0]} <:BACK:1147778438359429120>\n\nScore: {dCardNum[0]}\n", inline=True)
-        await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id)
+        await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
         view = bjview(timeout=180, ctx=ctx, cards=self.cards, dCARD=dCARD,
                       dCardNum=dCardNum, pCARD=pCARD, pCardNum=pCardNum, embed=embed, amount=amount)
         await ctx.send(embed=embed, view=view)

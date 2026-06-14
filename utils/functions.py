@@ -2,7 +2,7 @@ import discord
 from database import client
 
 async def open_account( guild_id : int , id : int):
-        await client.db.execute('INSERT INTO users(id , guild_id , bank) VALUES ($1 , $2 ,$3)' , id , guild_id , client.data[guild_id].get( "opening_amount" , None) or 1000)
+        await client.cache.get_user(guild_id, id, client.data[guild_id].get( "opening_amount" , None) or 1000)
 
 def coin( guild_id : int ) :
     try :

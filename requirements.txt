@@ -8,3 +8,4 @@ python-dotenv
 tabulate
 matplotlib
 pytz
+redis>=5.0.0

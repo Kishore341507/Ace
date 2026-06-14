@@ -54,12 +54,12 @@ class PVC(commands.Cog):
             if client.get_guild(pvc['guild_id']) :
                 if client.get_guild(pvc['guild_id']).get_channel(pvc['vcid']) :
                     if pvc['auto'] and len(client.get_guild(pvc['guild_id']).get_channel(pvc['vcid']).members ) != 0 :
-                        bal = await client.db.fetchrow('SELECT pvc FROM users WHERE id = $1 AND guild_id = $2' , pvc['id'] , pvc['guild_id'] )
+                        bal = await client.cache.get_user(pvc['guild_id'], pvc['id'])
                         if not bal or bal['pvc'] < math.ceil(int(client.data[pvc['guild_id']]["rate"] * (1/3600) * (120 - pvc['duration'] ))):
                             pass
                         else :
                             await client.db.execute('UPDATE pvcs SET duration = 120 WHERE id = $1' , pvc['id'])
-                            await client.db.execute('UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3 ' , ( math.ceil(client.data[pvc['guild_id']]["rate"] * (1/3600) * (120 - pvc['duration'] )) ), pvc['id'] , pvc['guild_id'] )
+                            await client.cache.increment_user_balance(pvc['guild_id'], pvc['id'], pvc=-( math.ceil(client.data[pvc['guild_id']]["rate"] * (1/3600) * (120 - pvc['duration'] )) ))
                             continue
                     try :
                         await client.get_guild(pvc['guild_id']).get_channel(pvc['vcid']).delete()
@@ -92,10 +92,7 @@ class PVC(commands.Cog):
             duration = [120 , "2min"]
             payg = True
 
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, member.guild.id)
-        if bal is None:
-            await open_account(member.guild.id, member.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', member.id, member.guild.id)
+        bal = await self.client.cache.get_user(member.guild.id, member.id)
         
         info = await self.client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', member.id, member.guild.id)
         status = client.data[member.guild.id]["pvc"] 
@@ -116,7 +113,7 @@ class PVC(commands.Cog):
                 await channel.send( embed = bembed(f'Want To Extend Your PVC ? , This will charge you {pvc_coin(member.guild.id)[0]} **{ int( (duration[0]/3600) * rate) }** {pvc_coin(member.guild.id)[1]} !') , view = view)
                 await view.wait()
                 if view.value : 
-                    await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3" , int((duration[0]/3600) * rate) , member.id , member.guild.id )
+                    await self.client.cache.increment_user_balance(member.guild.id, member.id, pvc=-int((duration[0]/3600) * rate))
                     await client.db.execute("UPDATE pvcs SET duration = duration + $1 WHERE id = $2 AND guild_id = $3" , duration[0] , member.id , member.guild.id )
                     await channel.send( embed = bembed(f"{member} your vc Extened for `{duration[1]}` , See Info With pvcinfo Command!"))
                     return None
@@ -173,7 +170,7 @@ class PVC(commands.Cog):
                 except :
                     await PVC.delete()
                     return
-                await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3" , int((duration[0]/3600) * rate) , member.id , member.guild.id )
+                await self.client.cache.increment_user_balance(member.guild.id, member.id, pvc=-int((duration[0]/3600) * rate))
                 if auto :
                     await channel.send( embed = bembed(f"{member} your vc created named {PVC.mention} on 🛺 PayAsPerYouGO mode, Manage With pvcinfo Command!"))   
                 else :

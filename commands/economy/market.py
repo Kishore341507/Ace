@@ -30,13 +30,8 @@ async def amountConverterMarket(user_id: int, guild_id: int, argument: str, type
   total_economy = docs['economy']
   sold_stocks = docs['stocks']
 
-  bal = await client.db.fetchrow(f'SELECT bank, cash, pvc, stocks FROM users WHERE id = $1 AND guild_id = $2 ', user_id, guild_id)
+  bal = await client.cache.get_user(guild_id, user_id)
   argument = argument.lower()
-  if bal is None:
-    await open_account(guild_id, user_id)
-    bal = await client.db.fetchrow(
-        f'SELECT bank, cash, pvc, stocks FROM users WHERE id = $1 AND guild_id = $2 ',
-        user_id, guild_id)
 
   if type == "sell":
     if len(argument) >= 2:
@@ -260,6 +255,7 @@ class Market(commands.Cog):
       return
     else:
       await self.client.db.execute('UPDATE users SET bank = bank - $1, stocks = stocks + $2 WHERE id = $3 AND guild_id = $4', total_cost, amount, ctx.author.id, ctx.guild.id)
+      await self.client.cache.redis.delete(f"user:{ctx.guild.id}:{ctx.author.id}")
 
     user_name = ctx.author.nick if ctx.author.nick else ctx.author.display_name
 
@@ -321,6 +317,7 @@ class Market(commands.Cog):
     await self.client.db.execute(
         'UPDATE users SET bank = bank + $1, stocks = stocks - $2 WHERE id = $3 AND guild_id = $4',
         total_value, amount, ctx.author.id, ctx.guild.id)
+    await self.client.cache.redis.delete(f"user:{ctx.guild.id}:{ctx.author.id}")
 
     embed = discord.Embed(
         title=f"{ctx.author.display_name}",
@@ -355,10 +352,7 @@ class Market(commands.Cog):
   async def account(self, ctx, user: discord.Member = None):
     if user is None:
       user = ctx.author
-    bal = await client.db.fetchrow(f'SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', user.id, ctx.guild.id)
-    if bal is None:
-      await open_account(ctx.guild.id, user.id)
-      bal = await self.client.db.fetchrow( 'SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', user.id, ctx.guild.id)
+    bal = await client.cache.get_user(ctx.guild.id, user.id)
     docs = await client.db.fetchrow("SELECT SUM(cash + bank) as economy , SUM(stocks) as stocks FROM users WHERE guild_id = $1;", ctx.guild.id)
     total_stocks = client.data[ctx.guild.id]['market']['stocks']
     total_economy = docs['economy']

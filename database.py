@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import os
 import json
 from datetime import datetime
-
+import redis.asyncio as redis
 
 load_dotenv()
 
@@ -25,12 +25,24 @@ class MyBot(commands.Bot):
         super().__init__(*args, **kwargs)
 
     async def setup_hook(self):
+        from utils.cache import CacheManager
         
         async def _setup_connection(con):
                     await con.set_type_codec('jsonb', schema='pg_catalog',
                                             encoder= json.dumps , decoder=json.loads)
         
         self.db = await asyncpg.create_pool(dsn= os.environ.get(f"DB") , init=_setup_connection )
+        
+        redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+        self.redis = await redis.from_url(redis_url, decode_responses=True)
+        self.cache = CacheManager(self.db, self.redis)
+        
+        try:
+            await self.redis.ping()
+            print("Successfully connected to Redis cache!")
+        except Exception as e:
+            print(f"Warning: Failed to connect to Redis cache: {e}")
+            
         print("Successfully connected to Database!")
         # await run_queries('./migrations/V0_initial.sql', self.db)
         # await run_queries('./migrations/V1_alter_guild.sql', self.db)

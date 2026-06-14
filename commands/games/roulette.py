@@ -79,10 +79,7 @@ class Roulette(commands.Cog):
 
         game_limit = _max
         
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-        if bal is None:
-            await open_account( ctx.guild.id , user.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
         if amount == "all":
             amount = bal['cash']
         elif amount == "half":
@@ -119,7 +116,7 @@ class Roulette(commands.Cog):
         embed.set_author(name= ctx.author , icon_url= ctx.author.display_avatar)
         embed.set_footer(text= f"Time remaining: {int(retry_after)} seconds {'| if bet place after result , it will count in next result' if int(retry_after) == 0 else '' }")        
         self.players.append({"guild" : ctx.guild.id  , "channel" : ctx.channel.id , "user_id" : ctx.author.id , "amount" : int(amount) , "space" : space })
-        await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", amount, ctx.author.id, ctx.guild.id)
+        await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
 
         await ctx.send(embed = embed)
 
@@ -138,7 +135,7 @@ class Roulette(commands.Cog):
                 multi = self.roulette_result(result ,user)
                 if multi != 0 :
                     # await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", (multi*user['amount']), x.id , ctx.guild.id)
-                    await client.db.execute("UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3", (multi*user['amount']), user['user_id'] , ctx.guild.id) # temp
+                    await client.cache.increment_user_balance(ctx.guild.id, user['user_id'], cash=(multi*user['amount'])) # temp
                     # await coll.update_one({"id": x.id} , {"$inc" : {"cash": + (multi*user['amount']) , "gambler" : + int((multi*user['amount'])/100) }})
                     dis = dis + f"\n<@{user['user_id']}> won {coin(ctx.guild.id)} {multi * user['amount']}"
 

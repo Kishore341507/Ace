@@ -87,10 +87,7 @@ class store(commands.Cog):
 
         itemid = item['id']
 
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-        if bal is None:
-            await open_account(ctx.guild.id, ctx.author.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
         
         if item['currency'] == 1 :
             t = 'cash'
@@ -121,9 +118,9 @@ class store(commands.Cog):
         
         elif item['price'] <= bal[t] : 
             if t == 'cash' :
-                await client.db.execute("UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3", item["price"] , ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-item["price"])
             elif t == 'pvc' :  
-                await client.db.execute("UPDATE users SET pvc = pvc - $1 WHERE id = $2 AND guild_id = $3", item["price"] , ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, pvc=-item["price"])
             
             ecoembed.description = f"✅ You have bought **{item['name']}** item for {coin(ctx.guild.id) if item['currency'] == 1 else pvc_coin(ctx.guild.id)[0]} {item['price']}!"
             await ctx.send(embed = ecoembed)
@@ -133,7 +130,7 @@ class store(commands.Cog):
                 except :
                     await ctx.send("There is some issue in giving the roles , please inform admins to put the bot role above reward role and bot have manage role perms !")
             
-            await client.db.execute("UPDATE users SET cash = cash + $1 , bank = bank + $2 , pvc = pvc + $3 WHERE id = $4 AND guild_id = $5", item["cash"] , item['bank'] , item['pvc'] , ctx.author.id , ctx.guild.id) 
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=item["cash"], bank=item["bank"], pvc=item["pvc"]) 
             if item['limit'] is not None :
                 await client.db.execute('UPDATE store SET "limit" = "limit" - 1 WHERE id = $1 AND guild_id = $2', itemid , ctx.guild.id)
           

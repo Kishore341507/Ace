@@ -73,7 +73,7 @@ class PVC_COMMANDS(commands.Cog):
             except :
                 pass
             if refund :
-                await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[ctx.guild.id]['rate']/3600)) , info['id'] , ctx.guild.id )
+                await client.cache.increment_user_balance(ctx.guild.id, info['id'], pvc=int((info['duration'] - 180 ) * (client.data[ctx.guild.id]['rate']/3600)))
     
 
         view = discord.ui.View()
@@ -417,12 +417,13 @@ class PVC_COMMANDS(commands.Cog):
         async def update_friends(interaction):
             info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
 
-            bal = await client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            bal = await client.cache.get_user(interaction.guild.id, interaction.user.id)
             view = discord.ui.View()
             friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] if interaction.guild.get_member(id) is not None] if bal['friends'] else None )
             async def callback(interaction):
                 data = [ member.id for member in friend.values if not member.bot ]
                 await client.db.execute( "UPDATE users SET friends = $1 WHERE id = $2 AND guild_id = $3" , data , interaction.user.id , interaction.guild.id )
+                await client.cache.redis.delete(f"user:{interaction.guild.id}:{interaction.user.id}")
                 temp = "\n- "+'\n- '.join( [member.mention for member in friend.values if not member.bot ] )
                 embed = bembed(f"✅ FriendList Updated\n{temp}")
                 await interaction.response.edit_message(embed=embed , view = view )
@@ -483,7 +484,7 @@ class PVC_COMMANDS(commands.Cog):
                    await client.db.execute("DELETE FROM pvcs WHERE vcid = $1" , info['vcid'])
                 except :
                     pass
-                await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) , ctx.author.id , ctx.guild.id )
+                await client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, pvc=int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)))
                 await ctx.message.delete()
         delete_pvc = discord.ui.Button( style=discord.ButtonStyle.gray , emoji='<:bin:1188639295423139950>' , row = 2 )
         delete_pvc.callback = update_delete_pvc
@@ -625,12 +626,13 @@ class PVC_COMMANDS(commands.Cog):
         async def friends(self, interaction: discord.Interaction , button: discord.ui.Button,):
             info = await client.db.fetchrow('SELECT * FROM pvcs WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
 
-            bal = await client.db.fetchrow('SELECT friends FROM users WHERE id = $1 AND guild_id = $2 ', interaction.user.id, interaction.guild.id)
+            bal = await client.cache.get_user(interaction.guild.id, interaction.user.id)
             view = discord.ui.View()
             friend = discord.ui.UserSelect(placeholder="Add/Remove Friends" ,min_values= 0 , max_values=25 , default_values= [ interaction.guild.get_member(id) for id in bal['friends'] if interaction.guild.get_member(id) is not None ] if bal['friends'] else None )
             async def callback(interaction):
                 data = [ member.id for member in friend.values if not member.bot ]
                 await client.db.execute( "UPDATE users SET friends = $1 WHERE id = $2 AND guild_id = $3" , data , interaction.user.id , interaction.guild.id )
+                await client.cache.redis.delete(f"user:{interaction.guild.id}:{interaction.user.id}")
                 temp = "\n- "+'\n- '.join( [member.mention for member in friend.values if not member.bot ] )
                 embed = bembed(f"✅ FriendList Updated\n{temp}")
                 await interaction.response.edit_message(embed=embed , view = view )
@@ -712,7 +714,7 @@ class PVC_COMMANDS(commands.Cog):
                    await interaction.guild.get_channel(info['vcid']).delete()
                 except :
                     pass
-                await client.db.execute("UPDATE users SET pvc = pvc + $1 WHERE id = $2 AND guild_id = $3" , int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)) , interaction.user.id , interaction.guild.id )
+                await client.cache.increment_user_balance(interaction.guild.id, interaction.user.id, pvc=int((info['duration'] - 180 ) * (client.data[interaction.guild.id]['rate']/3600)))
 
         @discord.ui.button(emoji= '📢' , custom_id="pvc:public", row=2)
         async def public(self, interaction: discord.Interaction , button: discord.ui.Button,):

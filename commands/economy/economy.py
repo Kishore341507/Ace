@@ -75,9 +75,8 @@ class Economy(commands.Cog):
             retry_after = bucket.update_rate_limit()
 
             if not retry_after:
-                x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 , pvc = pvc + $2 WHERE id = $3 AND guild_id = $4' , random.randint(0, self.client.data[message.guild.id]['am_cash']) , random.randint(0, self.client.data[message.guild.id]['am_pvc']) , message.author.id , message.guild.id) 
-                if "0" in x :
-                    await open_account( message.guild.id , message.author.id)
+                await self.client.cache.get_user(message.guild.id, message.author.id)
+                await self.client.cache.increment_user_balance(message.guild.id, message.author.id, cash=random.randint(0, self.client.data[message.guild.id]['am_cash']), pvc=random.randint(0, self.client.data[message.guild.id]['am_pvc']))
       except :
             pass
 
@@ -141,10 +140,7 @@ class Economy(commands.Cog):
     @cooldown(1, 5, BucketType.member)
     async def balance(self, ctx, user: discord.Member = None):
         user = user or ctx.author
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        if bal is None:
-                await open_account(ctx.guild.id , user.id)
-                bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, user.id)
         rank = await self.client.db.fetchval("SELECT position FROM (SELECT id, ROW_NUMBER() OVER (ORDER BY (cash + bank) DESC) AS position FROM users WHERE guild_id = $1 ) ranked WHERE id = $2" , ctx.guild.id ,  user.id)
         embed = discord.Embed(
                 timestamp=ctx.message.created_at,
@@ -183,10 +179,7 @@ class Economy(commands.Cog):
         user = ctx.author
         ecoembed = discord.Embed(color= 0xF90651 )
         ecoembed.set_author(name = user , icon_url= user.display_avatar.url)
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2' , user.id , ctx.guild.id)
-        if bal is None:
-                await open_account( ctx.guild.id , user.id)
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, user.id)
         try:
             amount = int(amount)
         except ValueError:
@@ -201,8 +194,7 @@ class Economy(commands.Cog):
             ecoembed.description='You cannot withdraw 0 or less'
             await ctx.send (embed = ecoembed)
         else:
-            # await coll.update_one({"id": user.id}, {"$inc": {"cash": +amount, "bank": -amount}})
-            await client.db.execute("UPDATE users SET cash = cash + $1 , bank = bank - $1 WHERE id = $2 AND guild_id = $3" , amount , ctx.author.id , ctx.guild.id )
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount, bank=-amount)
             ecoembed.description = f':white_check_mark: Withdrew {coin(ctx.guild.id)} {amount:,} from your bank !'
             await ctx.send (embed = ecoembed)
             
@@ -217,13 +209,10 @@ class Economy(commands.Cog):
         user = ctx.author
         ecoembed = discord.Embed(color= 0x08FC08)
         ecoembed.set_author(name = user , icon_url= user.display_avatar.url)
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        if bal is None:
-                await open_account( ctx.guild.id , user.id)
-                bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, user.id)
         if amount == "all":
             amount = int(bal["cash"])
-            await client.db.execute("UPDATE users SET cash = cash - $1 , bank = bank + $1 WHERE id = $2 AND guild_id = $3" , amount , ctx.author.id , ctx.guild.id )
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, bank=amount)
             ecoembed.description = f':white_check_mark: deposit {coin(ctx.guild.id)} {amount:,} to your bank !'
             await ctx.send (embed = ecoembed)
             return
@@ -235,7 +224,7 @@ class Economy(commands.Cog):
                 amount = int(0.5 * bal["cash"])   
 
         if 0 <= amount <= bal['cash']  :
-            await client.db.execute("UPDATE users SET cash = cash - $1 , bank = bank + $1 WHERE id = $2 AND guild_id = $3" , amount , ctx.author.id , ctx.guild.id )
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount, bank=amount)
             ecoembed.description = f':white_check_mark: deposit {coin(ctx.guild.id)} {amount:,} to your bank !'
             await ctx.send (embed = ecoembed)             
         elif amount > bal['cash']:
@@ -259,10 +248,8 @@ class Economy(commands.Cog):
         
         amount = (random.randint( client.data[ctx.guild.id]['economy']['work']['min'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['min'] , client.data[ctx.guild.id]['economy']['work']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['work']['max'])) 
            
-        x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
-        if "0" in x :
-            await open_account( ctx.guild.id , ctx.author.id)
-            await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
+        await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
+        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
         ecoembed.description = f"good work , you get {coin(ctx.guild.id)} **{amount:,}** cash"  
         await ctx.send(embed = ecoembed)  
 
@@ -292,10 +279,8 @@ class Economy(commands.Cog):
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
         crime_amount = client.data[ctx.guild.id]['economy']['crime']['max'] if client.data[ctx.guild.id]['economy'] else default_economy['crime']['max']   
         amount = (random.randint(-int(crime_amount/2) , crime_amount))    
-        x =  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
-        if "0" in x :
-            await open_account( ctx.guild.id , ctx.author.id)
-            await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount  , ctx.author.id , ctx.guild.id) 
+        await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
+        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
         
         crime_win = [ f"you beat a server admin and find {coin(ctx.guild.id)} **{amount:,}** cash"  ,
         f"you triggered a mod successfully and found {coin(ctx.guild.id)} **{amount:,}** cash" ,
@@ -347,14 +332,8 @@ class Economy(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return
         else:
-            user_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-            member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
-            if user_bal is None:
-                await open_account( ctx.guild.id , user.id)
-                user_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-            if member_bal is None:
-                await open_account( ctx.guild.id , ctx.author.id)
-                member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
+            user_bal = await self.client.cache.get_user(ctx.guild.id, user.id)
+            member_bal = await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
             if member_bal['stocks'] > 0:
                 embed=bembed('Sorry! You cannot rob someone while owning stocks from the market. Sell them first :c', discord.Color.brand_red())
                 embed.set_author(name=ctx.author.display_name, icon_url= ctx.author.display_avatar)
@@ -374,12 +353,12 @@ class Economy(commands.Cog):
             rob_amount = client.data[ctx.guild.id]['economy']['rob']['percent'] if client.data[ctx.guild.id]['economy'] else default_economy['rob']['percent'] 
             if mem_total < 5000:
                 if user_cash < 1000:
-                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , int(abs(mem_total) * rob_amount)  , ctx.author.id , ctx.guild.id) 
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
                     ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {int(abs(mem_total) * rob_amount) : ,} for trying to rob a poor person."
                     await ctx.send(embed = ecoembed)
                 else :
-                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , int(user_cash * rob_amount)  , ctx.author.id , ctx.guild.id) 
-                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , int(user_cash * rob_amount)  , user.id , ctx.guild.id) 
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=int(user_cash * rob_amount))
+                    await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=-int(user_cash * rob_amount))
                     ecoembed.description = f"✅ | You robbed {coin(ctx.guild.id)} {(int(user_cash * rob_amount)): ,} from {user}."
                     ecoembed.color = 0x08FC08
                     await ctx.send (embed = ecoembed)    
@@ -387,21 +366,21 @@ class Economy(commands.Cog):
                 x = random.randint(1, 2 )
                 if x==1:
                     if user_cash < 1000:
-                        await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(abs(mem_total) *  rob_amount))  , ctx.author.id , ctx.guild.id) 
+                        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
                         ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} for trying to rob a poor person."
                         await ctx.send(embed = ecoembed)
                     else:
-                        await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , int(user_cash * rob_amount)  , ctx.author.id , ctx.guild.id) 
-                        await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , int(user_cash * rob_amount)  , user.id , ctx.guild.id) 
+                        await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=int(user_cash * rob_amount))
+                        await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=-int(user_cash * rob_amount))
                         ecoembed.description = f"✅ | You robbed {coin(ctx.guild.id)} {(int(user_cash * rob_amount)): ,} from {user}."
                         ecoembed.color = 0x08FC08
                         await ctx.send (embed = ecoembed)  
                 else :
-                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(abs(mem_total) *  rob_amount))  , ctx.author.id , ctx.guild.id) 
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
                     ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} **better luck next time.**"
                     await ctx.send (embed = ecoembed)
             elif mem_total > 10000:
-                await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , (int(abs(mem_total) *  rob_amount))  , ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-int(abs(mem_total) * rob_amount))
                 ecoembed.description = f"❎ | You've been fined {coin(ctx.guild.id)} {(int(abs(mem_total) * rob_amount)): ,} Rich people dont rob."
                 await ctx.send(embed = ecoembed)
   
@@ -436,12 +415,7 @@ class Economy(commands.Cog):
     async def give(self, ctx, user: discord.Member , amount:  amountconverter ):
         ecoembed = discord.Embed(color=  0xF90651)
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar.url)
-        member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
-        
-        if member_bal is None:
-                await open_account(ctx.guild.id , ctx.author.id)
-                member_bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
-        
+        member_bal = await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
         mem_cash = member_bal["cash"]
         
         try:
@@ -458,11 +432,9 @@ class Economy(commands.Cog):
             ecoembed.description = 'You cannot send 0 or less'
             await ctx.send (embed = ecoembed)
         else:
-            await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
-            x = await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
-            if "0" in x :
-                await open_account(ctx.guild.id , user.id)
-                await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , amount , user.id , ctx.guild.id) 
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
+            await self.client.cache.get_user(ctx.guild.id, user.id)
+            await self.client.cache.increment_user_balance(ctx.guild.id, user.id, cash=amount)
             ecoembed.description = f'You have sent {coin(ctx.guild.id)} {amount :,} to {user}'
             ecoembed.color = 0x08FC08
             await ctx.send (embed = ecoembed)
@@ -481,7 +453,7 @@ class Economy(commands.Cog):
             await ctx.send(embed = bembed(f"Do You Want Reset {user}'s Money ?") , view = view )
             await view.wait()
             if view.value :
-                await self.client.db.execute('UPDATE users SET cash = 0 , bank = 0, stocks = 0 WHERE id = $1 AND guild_id = $2'  , user.id , ctx.guild.id) 
+                await self.client.cache.update_user(ctx.guild.id, user.id, cash=0, bank=0, stocks=0)
                 await ctx.send( embed = bembed(f"{user.name}'s Economy Reset "))
     
         else :    
@@ -489,7 +461,7 @@ class Economy(commands.Cog):
             await ctx.send(embed = bembed("Are You Sure ?") , view = view )
             await view.wait()
             if view.value :
-                await self.client.db.execute('UPDATE users SET cash = 0 , bank = 0, stocks = 0 WHERE id = $1 AND guild_id = $2', ctx.author.id , ctx.guild.id) 
+                await self.client.cache.update_user(ctx.guild.id, ctx.author.id, cash=0, bank=0, stocks=0)
                 await ctx.send( embed = bembed(f"{ctx.author.name}'s Economy Reset "))
     @resetmoney.error
     async def er(self , ctx , error ):

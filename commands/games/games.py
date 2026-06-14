@@ -24,7 +24,7 @@ class Games(commands.Cog):
         user = ctx.author
         _max = client.data[ctx.guild.id]['games']['coinflip']['max'] if client.data[ctx.guild.id]['games'] else default_games['coinflip']['max']
         _min = client.data[ctx.guild.id]['games']['coinflip']['min'] if client.data[ctx.guild.id]['games'] else default_games['coinflip']['min']
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, user.id)
         try:
             amount = int(amount)
         except ValueError:
@@ -42,13 +42,13 @@ class Games(commands.Cog):
                 await ctx.send(f'You cannot flip {_min} , less or more then {_max}') 
         else:
                 embed = bembed(f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... <a:coinflip:1205817149612884028>")
-                await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
                 result = random.choice(['head','tail'])
                 result_side = "<:tickapCoin:1191976654042570792>"
                 msg = await ctx.send(content = ctx.author.mention, embed=embed)
                 await asyncio.sleep(random.randint(1,4))
                 if result == side:
-                  await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id)
+                  await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(2*amount))
                   embed.description = f"You spent {coin(ctx.guild.id)} **{amount:,}** and chose **{side}**\nThe coin flips... {result_side} and you Won {coin(ctx.guild.id)} **{amount*2:,}**"
                   embed.color = discord.Color.brand_green()
                   await msg.edit(embed=embed)
@@ -94,13 +94,9 @@ class Games(commands.Cog):
         third = random.choice(emoji)
         outupt = f"{first} | {second} | {third}"
         
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
         
         st_amount = _max
-        
-        if bal is None:
-            await open_account( ctx.guild.id ,ctx.author.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , ctx.author.id , ctx.guild.id)
         try:
             amount = int(amount)    
         except ValueError:
@@ -119,17 +115,17 @@ class Games(commands.Cog):
         else :
                 if first == second == third:
                     ecoembed.description=f"You won {coin(ctx.guild.id)} {3*amount}\n\n{outupt}" 
-                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , 2*amount , ctx.author.id , ctx.guild.id) 
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(2*amount))
                     ecoembed.color =  discord.Color.brand_green()
                     await ctx.send(embed=ecoembed)
                 elif first == second or second  == third:
                     ecoembed.description=f"You won {coin(ctx.guild.id)} {int(1.5*amount)} \n\n{outupt}"
-                    await self.client.db.execute('UPDATE users SET cash = cash + $1 WHERE id = $2 AND guild_id = $3' , (int(0.5*amount)) , ctx.author.id , ctx.guild.id) 
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(int(0.5*amount)))
                     ecoembed.color =  discord.Color.brand_green()
                     await ctx.send(embed=ecoembed)
                 else:
                     ecoembed.description=f"You lost {coin(ctx.guild.id)} {amount}\n\n{outupt}" 
-                    await self.client.db.execute('UPDATE users SET cash = cash - $1 WHERE id = $2 AND guild_id = $3' , amount , ctx.author.id , ctx.guild.id) 
+                    await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
                     ecoembed.color =  discord.Color.brand_red()
                     await ctx.send(embed=ecoembed)
     
@@ -161,8 +157,7 @@ class Games(commands.Cog):
         _min = client.data[ctx.guild.id]['games']['roll']['min'] if client.data[ctx.guild.id]['games'] else default_games['roll']['min']
         
         user = ctx.author
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, user.id)
         try:
             amount = int(amount)
         except ValueError:
@@ -174,9 +169,7 @@ class Games(commands.Cog):
                 amount = int(0.5 * bal["cash"])
                 if amount > _max:
                     amount=_max     
-        if bal is None:
-                await open_account( ctx.guild.id , user.id)
-                bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ' , user.id , ctx.guild.id)
+
         if amount > bal['cash']:
                 await ctx.send('You do not have enough money to roll that much')
         elif amount <= _min or amount > _max:
@@ -184,19 +177,19 @@ class Games(commands.Cog):
         else:
             x = random.randint(1, 6)
             if rang == "even" and x in [2,4,6]:
-                await self.client.db.execute('UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3'  , amount ,  ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
                 ecoembed.description= f"You win {coin(ctx.guild.id)} {2 * amount :,}\n:game_die: You rolled **{x}**"
                 await ctx.send(embed = ecoembed)
             elif rang == "odd" and x in [1,3,5]:    
-                await self.client.db.execute('UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3'  , amount ,  ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=amount)
                 ecoembed.description= f"You win {coin(ctx.guild.id)} {2 * amount :,}\n:game_die: You rolled **{x}**"
                 await ctx.send(embed = ecoembed)
             elif rang in [1,2,3,4,5,6] and x == rang :
-                await self.client.db.execute('UPDATE users SET cash = cash + $1  WHERE id = $2 AND guild_id = $3'  , 4*amount ,  ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=(4*amount))
                 ecoembed.description= f"You win {coin(ctx.guild.id)} {5 * amount :,}\n:game_die: You rolled **{x}**"
                 await ctx.send(embed = ecoembed)
             else:
-                await self.client.db.execute('UPDATE users SET cash = cash - $1  WHERE id = $2 AND guild_id = $3'  , amount ,  ctx.author.id , ctx.guild.id) 
+                await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=-amount)
                 ecoembed.description= f"You lose {coin(ctx.guild.id)}{amount: ,}\n:game_die: You rolled **{x}**"
                 ecoembed.color = discord.Color.red()
                 await ctx.send(embed = ecoembed)

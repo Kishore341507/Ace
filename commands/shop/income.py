@@ -20,10 +20,7 @@ class income(commands.Cog):
         ecoembed.set_author(name = ctx.author , icon_url= ctx.author.display_avatar)
         dis = "✅ Role income successfully collected!\n\n"   
         docs = await client.db.fetch('SELECT role_id ,bank , cash , pvc , cooldown FROM  income WHERE guild_id = $1 ORDER BY cash DESC' , ctx.guild.id)        
-        bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
-        if bal is None:
-            await open_account(ctx.guild.id, ctx.author.id)
-            bal = await self.client.db.fetchrow('SELECT * FROM users WHERE id = $1 AND guild_id = $2 ', ctx.author.id, ctx.guild.id)
+        bal = await self.client.cache.get_user(ctx.guild.id, ctx.author.id)
         
         bank = ""
         cash = ""
@@ -45,7 +42,7 @@ class income(commands.Cog):
                     pvc += f"{ctx.guild.get_role(x['role_id']).mention} | {pvc_coin(ctx.guild.id)[0]} {x['pvc']:,} {pvc_coin(ctx.guild.id)[1]}\n"                  
                 self.income_cooldown[ctx.guild.id][ctx.author.id][x['role_id']] = time.time() + x['cooldown']
         if bank_add + cash_add + pvc_add != 0 :
-            await client.db.execute("UPDATE users SET bank = bank + $1 , cash = cash + $2 , pvc = pvc + $3 WHERE id = $4 AND guild_id = $5", bank_add , cash_add , pvc_add , ctx.author.id, ctx.guild.id)
+            await self.client.cache.increment_user_balance(ctx.guild.id, ctx.author.id, cash=cash_add, bank=bank_add, pvc=pvc_add)
         
         output = "🤷🏾‍♂️ But Nothing To Collect"
         

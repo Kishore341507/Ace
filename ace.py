@@ -14,7 +14,8 @@ async def on_ready():
     embed = bembed("Bot is online!", discord.Color.green())
     embed.set_footer(text="Bot is now online.")
     embed.timestamp = datetime.now()
-    await client.error_logging_ch.send(embed=embed)
+    if hasattr(client, 'error_logging_ch') and client.error_logging_ch:
+        await client.error_logging_ch.send(embed=embed)
 
 @client.command()
 @commands.cooldown(1, 5, commands.BucketType.user)
